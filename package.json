@@ -9,7 +9,7 @@
     "lint": "eslint",
     "deploy": "vercel --prod",
     "deploy:preview": "vercel",
-    "postinstall": "prisma generate",
+
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio"
