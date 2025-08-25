@@ -17,6 +17,11 @@ console.log('🌐 Database URL:', normalizedDatabaseUrl ? 'Set' : 'Not set');
 if (normalizedDatabaseUrl) {
   try {
     const parsed = new URL(normalizedDatabaseUrl);
+    // DB명이 비어 있으면 기본 DB명 보충
+    if (!parsed.pathname || parsed.pathname === '/') {
+      parsed.pathname = '/deeps_mock';
+      normalizedDatabaseUrl = parsed.toString();
+    }
     // 일부 MySQL 변형에서 prepared statements 제약 회피
     if (!parsed.searchParams.has('planetscale_mode')) {
       parsed.searchParams.set('planetscale_mode', 'true');
