@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prebuild": "prisma generate",
     "build:verbose": "next build --debug",
     "build:debug": "NODE_ENV=production DEBUG=* next build --debug",
     "start": "next start",
