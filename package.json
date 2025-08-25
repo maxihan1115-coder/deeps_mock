@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
-    "build:verbose": "prisma generate && next build --debug",
-    "build:debug": "NODE_ENV=production DEBUG=* prisma generate && next build --debug",
+    "build": "next build",
+    "build:verbose": "next build --debug",
+    "build:debug": "NODE_ENV=production DEBUG=* next build --debug",
     "start": "next start",
     "lint": "eslint",
     "deploy": "vercel --prod",
     "deploy:preview": "vercel",
+    "postinstall": "prisma generate",
 
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
