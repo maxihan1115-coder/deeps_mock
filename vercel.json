@@ -4,5 +4,12 @@
     "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "DEBUG": "*",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
   }
 }

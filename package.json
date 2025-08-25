@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:verbose": "next build --debug",
+    "build:debug": "NODE_ENV=production DEBUG=* next build --debug",
     "start": "next start",
     "lint": "eslint",
     "deploy": "vercel --prod",

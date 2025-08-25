@@ -17,22 +17,30 @@ class MySQLGameStore {
   }
   // 사용자 관련 메서드
   async createUser(username: string): Promise<User> {
-    const nextUuid = await this.getNextUuid();
-    
-    const user = await prisma.user.create({
-      data: {
-        username,
-        uuid: nextUuid,
-      },
-    });
+    console.log('🏗️ Creating user in database:', username);
+    try {
+      const nextUuid = await this.getNextUuid();
+      console.log('🔢 Next UUID:', nextUuid);
+      
+      const user = await prisma.user.create({
+        data: {
+          username,
+          uuid: nextUuid,
+        },
+      });
+      console.log('✅ User created successfully:', user.id);
 
-    return {
-      id: user.id,
-      username: user.username,
-      uuid: user.uuid,
-      createdAt: user.createdAt,
-      lastLoginAt: user.lastLoginAt,
-    };
+      return {
+        id: user.id,
+        username: user.username,
+        uuid: user.uuid,
+        createdAt: user.createdAt,
+        lastLoginAt: user.lastLoginAt,
+      };
+    } catch (error) {
+      console.error('❌ Error creating user:', error);
+      throw error;
+    }
   }
 
   async getUserById(id: string): Promise<User | undefined> {
