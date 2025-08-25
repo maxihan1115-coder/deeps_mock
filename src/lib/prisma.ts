@@ -8,7 +8,7 @@ const globalForPrisma = globalThis as unknown as {
 console.log('🔌 Initializing Prisma client...');
 // ENV 정규화: 양쪽 따옴표/공백 제거
 const rawDatabaseUrl = process.env.DATABASE_URL;
-const normalizedDatabaseUrl = rawDatabaseUrl
+let normalizedDatabaseUrl = rawDatabaseUrl
   ? rawDatabaseUrl.trim().replace(/^"|"$/g, '').replace(/^'|'$/g, '')
   : undefined;
 console.log('🌐 Database URL:', normalizedDatabaseUrl ? 'Set' : 'Not set');
@@ -17,6 +17,11 @@ console.log('🌐 Database URL:', normalizedDatabaseUrl ? 'Set' : 'Not set');
 if (normalizedDatabaseUrl) {
   try {
     const parsed = new URL(normalizedDatabaseUrl);
+    // 일부 MySQL 변형에서 prepared statements 제약 회피
+    if (!parsed.searchParams.has('planetscale_mode')) {
+      parsed.searchParams.set('planetscale_mode', 'true');
+      normalizedDatabaseUrl = parsed.toString();
+    }
     const maskedAuth = parsed.username
       ? `${parsed.username}:${parsed.password ? '***' : ''}`
       : '';
