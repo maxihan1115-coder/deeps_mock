@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "deploy": "vercel --prod",
-    "deploy:preview": "vercel"
+    "deploy:preview": "vercel",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
@@ -22,6 +26,8 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.541.0",
     "mysql2": "^3.14.3",
+    "pg": "^8.13.0",
+    "@types/pg": "^8.11.10",
     "next": "15.5.0",
     "prisma": "^6.14.0",
     "react": "19.1.0",
@@ -29,14 +35,14 @@
     "react-hook-form": "^7.62.0",
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0",
-    "zod": "^4.1.1"
+    "zod": "^4.1.1",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.0",
     "tailwindcss": "^4",
