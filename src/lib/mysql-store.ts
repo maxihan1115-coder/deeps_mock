@@ -326,19 +326,28 @@ class MySQLGameStore {
   }
 
   // 임시 코드 관련 메서드
-  async createTempCode(userId: string): Promise<string> {
-    const code = uuidv4();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15분 후 만료
+  async createTempCode(userId: string): Promise<{ code: string; expiresAt: Date }> {
+    console.log('🔐 Creating temp code for user:', userId);
+    try {
+      const code = uuidv4();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15분 후 만료
+      console.log('🔑 Generated code:', code);
+      console.log('⏰ Expires at:', expiresAt);
 
-    await prisma.tempCode.create({
-      data: {
-        code,
-        userId,
-        expiresAt,
-      },
-    });
+      await prisma.tempCode.create({
+        data: {
+          code,
+          userId,
+          expiresAt,
+        },
+      });
+      console.log('✅ Temp code saved to database');
 
-    return code;
+      return { code, expiresAt };
+    } catch (error) {
+      console.error('❌ Error creating temp code:', error);
+      throw error;
+    }
   }
 
   async validateTempCode(code: string): Promise<{ isValid: boolean; userId?: string }> {
