@@ -218,7 +218,7 @@ class MySQLGameStore {
       maxProgress: quest.maxProgress,
       reward: quest.reward,
       isCompleted: quest.isCompleted,
-      expiresAt: quest.expiresAt,
+      expiresAt: quest.expiresAt || undefined,
       createdAt: quest.createdAt,
     }));
   }
@@ -237,7 +237,7 @@ class MySQLGameStore {
       maxProgress: quest.maxProgress,
       reward: quest.reward,
       isCompleted: quest.isCompleted,
-      expiresAt: quest.expiresAt,
+      expiresAt: quest.expiresAt || undefined,
       createdAt: quest.createdAt,
     }));
   }
@@ -269,7 +269,7 @@ class MySQLGameStore {
       maxProgress: updatedQuest.maxProgress,
       reward: updatedQuest.reward,
       isCompleted: updatedQuest.isCompleted,
-      expiresAt: updatedQuest.expiresAt,
+      expiresAt: updatedQuest.expiresAt || undefined,
       createdAt: updatedQuest.createdAt,
     };
   }

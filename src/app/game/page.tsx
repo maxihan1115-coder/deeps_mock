@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { LogOut, User, Calendar } from 'lucide-react';
 
 interface GamePageProps {
-  searchParams: { userId?: string; username?: string; uuid?: string };
+  searchParams: Promise<{ userId?: string; username?: string; uuid?: string }>;
 }
 
 export default function GamePage({ searchParams }: GamePageProps) {
@@ -27,16 +27,21 @@ export default function GamePage({ searchParams }: GamePageProps) {
 
   // URL 파라미터에서 사용자 정보 확인
   useEffect(() => {
-    if (searchParams.userId && searchParams.username && searchParams.uuid) {
-      setCurrentUser({
-        id: searchParams.userId,
-        username: searchParams.username,
-        uuid: searchParams.uuid,
-      });
-    } else {
-      // 사용자 정보가 없으면 로그인 페이지로 리다이렉트
-      router.push('/');
-    }
+    const getSearchParams = async () => {
+      const params = await searchParams;
+      if (params.userId && params.username && params.uuid) {
+        setCurrentUser({
+          id: params.userId,
+          username: params.username,
+          uuid: parseInt(params.uuid),
+        });
+      } else {
+        // 사용자 정보가 없으면 로그인 페이지로 리다이렉트
+        router.push('/');
+      }
+    };
+    
+    getSearchParams();
   }, [searchParams, router]);
 
   // 로그아웃

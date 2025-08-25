@@ -40,12 +40,4 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 임시 코드 검증 함수 (다른 API에서 사용)
-export async function validateRequestCode(code: string): Promise<{ isValid: boolean; userId?: string }> {
-  return await mysqlGameStore.validateTempCode(code);
-}
 
-// 만료된 코드 정리 함수
-export async function cleanupExpiredCodes(): Promise<void> {
-  await mysqlGameStore.cleanupExpiredCodes();
-}

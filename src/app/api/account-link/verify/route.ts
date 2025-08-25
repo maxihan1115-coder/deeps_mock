@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateRequestCode, cleanupExpiredCodes } from '../request-code/route';
+import { mysqlGameStore } from '@/lib/mysql-store';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,10 +13,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 만료된 코드 정리
-    await cleanupExpiredCodes();
+    await mysqlGameStore.cleanupExpiredCodes();
 
     // 임시 코드 검증
-    const validation = await validateRequestCode(requestCode);
+    const validation = await mysqlGameStore.validateTempCode(requestCode);
 
     if (!validation.isValid) {
       return NextResponse.json(

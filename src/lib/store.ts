@@ -13,7 +13,7 @@ class GameStore {
     const user: User = {
       id: uuidv4(),
       username,
-      uuid: uuidv4(),
+      uuid: this.users.size + 1, // 순차적 UUID
       createdAt: new Date(),
       lastLoginAt: new Date(),
     };

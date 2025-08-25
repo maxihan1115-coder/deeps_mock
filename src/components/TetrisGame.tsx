@@ -216,12 +216,14 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
         case 'ArrowUp':
         case ' ':
           // 블록 회전
-          const rotatedShape = prevState.currentBlock.shape[0].map((_, i) =>
-            prevState.currentBlock.shape.map(row => row[row.length - 1 - i])
-          );
-          const rotatedBlock = { ...prevState.currentBlock, shape: rotatedShape };
-          if (isValidPosition(rotatedBlock, prevState.board)) {
-            newState.currentBlock = rotatedBlock;
+          if (prevState.currentBlock) {
+            const rotatedShape = prevState.currentBlock.shape[0].map((_, i) =>
+              prevState.currentBlock!.shape.map(row => row[row.length - 1 - i])
+            );
+            const rotatedBlock = { ...prevState.currentBlock, shape: rotatedShape };
+            if (isValidPosition(rotatedBlock, prevState.board)) {
+              newState.currentBlock = rotatedBlock;
+            }
           }
           break;
       }
@@ -398,7 +400,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
                 key={`next-${y}-${x}`}
                 className="w-6 h-6 border border-gray-200"
                 style={{
-                  backgroundColor: cell ? gameState.nextBlock.color : 'transparent'
+                  backgroundColor: cell && gameState.nextBlock ? gameState.nextBlock.color : 'transparent'
                 }}
               />
             ))
@@ -469,7 +471,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
                 onClick={() => {
                   if (gameState.currentBlock) {
                     const rotatedShape = gameState.currentBlock.shape[0].map((_, i) =>
-                      gameState.currentBlock.shape.map(row => row[row.length - 1 - i])
+                      gameState.currentBlock!.shape.map(row => row[row.length - 1 - i])
                     );
                     const rotatedBlock = { ...gameState.currentBlock, shape: rotatedShape };
                     if (isValidPosition(rotatedBlock, gameState.board)) {

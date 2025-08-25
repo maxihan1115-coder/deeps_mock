@@ -81,7 +81,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">UUID:</span>
             <Badge variant="outline" className="text-xs font-mono">
-              {userUuid.slice(0, 8)}...
+              {userUuid.toString().slice(0, 8)}...
             </Badge>
           </div>
         </div>
