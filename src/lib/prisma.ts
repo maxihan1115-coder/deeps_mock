@@ -6,13 +6,17 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 console.log('🔌 Initializing Prisma client...');
+// ENV 정규화: 양쪽 따옴표/공백 제거
 const rawDatabaseUrl = process.env.DATABASE_URL;
-console.log('🌐 Database URL:', rawDatabaseUrl ? 'Set' : 'Not set');
+const normalizedDatabaseUrl = rawDatabaseUrl
+  ? rawDatabaseUrl.trim().replace(/^"|"$/g, '').replace(/^'|'$/g, '')
+  : undefined;
+console.log('🌐 Database URL:', normalizedDatabaseUrl ? 'Set' : 'Not set');
 
 // 추가 진단 로그: 호스트/포트/DB명 표시 (비밀번호는 마스킹)
-if (rawDatabaseUrl) {
+if (normalizedDatabaseUrl) {
   try {
-    const parsed = new URL(rawDatabaseUrl);
+    const parsed = new URL(normalizedDatabaseUrl);
     const maskedAuth = parsed.username
       ? `${parsed.username}:${parsed.password ? '***' : ''}`
       : '';
@@ -33,6 +37,9 @@ if (rawDatabaseUrl) {
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   log: ['query', 'info', 'warn', 'error'],
+  datasources: normalizedDatabaseUrl
+    ? { db: { url: normalizedDatabaseUrl } }
+    : undefined,
 });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
