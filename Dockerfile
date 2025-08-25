@@ -21,8 +21,13 @@ RUN echo "Prisma client generated successfully"
 
 # Build the application
 RUN echo "Starting build process..."
-RUN npm run build
+RUN npm run build || (echo "Build failed" && exit 1)
 RUN echo "Build completed successfully"
+
+# Check build output
+RUN echo "Checking build output..."
+RUN ls -la .next/ || echo "No .next directory found"
+RUN echo "Build output checked successfully"
 
 # Expose port
 EXPOSE 3000
