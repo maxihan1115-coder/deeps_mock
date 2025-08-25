@@ -8,7 +8,8 @@ import AccountLink from '@/components/AccountLink';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User, Calendar } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LogOut, User, Calendar, Gamepad2, Trophy } from 'lucide-react';
 
 interface GamePageProps {
   searchParams: Promise<{ userId?: string; username?: string; uuid?: string }>;
@@ -120,63 +121,83 @@ export default function GamePage({ searchParams }: GamePageProps) {
 
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8 justify-center items-start">
-          {/* 게임 영역 */}
-          <div className="flex-shrink-0">
-            <TetrisGame
-              userId={currentUser.id}
-              onScoreUpdate={handleScoreUpdate}
-              onGameOver={handleGameOver}
-            />
-          </div>
+        <Tabs defaultValue="game" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="game" className="flex items-center gap-2">
+              <Gamepad2 className="w-4 h-4" />
+              게임
+            </TabsTrigger>
+            <TabsTrigger value="quests" className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              퀘스트
+            </TabsTrigger>
+          </TabsList>
 
-          {/* 사이드바 */}
-          <div className="flex flex-col gap-6">
-            {/* 사용자 정보 */}
-            <Card className="w-80">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  사용자 정보
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">사용자명:</span>
-                  <span className="text-sm">{currentUser.username}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">UUID:</span>
-                  <Badge variant="outline" className="text-xs font-mono">
-                    {currentUser.uuid}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">현재 점수:</span>
-                  <span className="text-sm font-bold text-blue-600">{currentScore}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">게임 횟수:</span>
-                  <span className="text-sm">{gameCount}</span>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="game" className="space-y-0">
+            <div className="flex gap-8 justify-center items-start">
+              {/* 게임 영역 */}
+              <div className="flex-shrink-0">
+                <TetrisGame
+                  userId={currentUser.id}
+                  onScoreUpdate={handleScoreUpdate}
+                  onGameOver={handleGameOver}
+                />
+              </div>
 
-            {/* 계정 연동 패널 */}
-            {showAccountLink && (
-              <AccountLink
-                userUuid={currentUser.uuid}
-                username={currentUser.username}
-              />
-            )}
+              {/* 사이드바 */}
+              <div className="flex flex-col gap-6">
+                {/* 사용자 정보 */}
+                <Card className="w-80">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="w-5 h-5" />
+                      사용자 정보
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">사용자명:</span>
+                      <span className="text-sm">{currentUser.username}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">UUID:</span>
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {currentUser.uuid}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">현재 점수:</span>
+                      <span className="text-sm font-bold text-blue-600">{currentScore}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">게임 횟수:</span>
+                      <span className="text-sm">{gameCount}</span>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {/* 퀘스트 패널 */}
-            <QuestPanel
-              userId={currentUser.id}
-              currentScore={currentScore}
-            />
-          </div>
-        </div>
+                {/* 계정 연동 패널 */}
+                {showAccountLink && (
+                  <AccountLink
+                    userUuid={currentUser.uuid}
+                    username={currentUser.username}
+                  />
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="quests" className="space-y-0">
+            <div className="flex justify-center">
+              <div className="w-full max-w-4xl">
+                <QuestPanel
+                  userId={currentUser.id}
+                  currentScore={currentScore}
+                />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

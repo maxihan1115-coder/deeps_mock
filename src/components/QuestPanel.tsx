@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Quest } from '@/types';
-import { Trophy, Calendar, Clock, Target, ExternalLink } from 'lucide-react';
+import { Trophy, Calendar, Clock, Target } from 'lucide-react';
 
 interface QuestPanelProps {
   userId: string;
@@ -173,7 +173,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
 
   if (isLoading) {
     return (
-      <Card className="w-80">
+      <Card className="w-full max-w-4xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="w-5 h-5" />
@@ -191,7 +191,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
   }
 
   return (
-    <Card className="w-80 max-h-96 overflow-y-auto">
+    <Card className="w-full max-w-4xl max-h-96 overflow-y-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="w-5 h-5" />
@@ -209,15 +209,6 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               className="w-full"
             >
               {isInitializing ? '초기화 중...' : '퀘스트 초기화'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => window.open('/quests', '_blank')}
-            >
-              <ExternalLink className="w-3 h-3 mr-1" />
-              퀘스트 페이지 열기
             </Button>
           </div>
         ) : (
