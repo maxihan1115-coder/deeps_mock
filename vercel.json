@@ -18,5 +18,7 @@
     "env": {
       "NODE_ENV": "production"
     }
-  }
+  },
+  "regions": ["icn1"],
+  "framework": "nextjs"
 }
