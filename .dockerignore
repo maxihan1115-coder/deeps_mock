@@ -12,3 +12,5 @@ README.md
 .vercel
 .DS_Store
 *.log
+dev.db
+*.db
