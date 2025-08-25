@@ -28,7 +28,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
       const data = await response.json();
 
       if (data.success) {
-        setRequestCode(data.payload);
+        setRequestCode(data.payload.code);
       } else {
         setError(data.error || '임시 코드 요청에 실패했습니다.');
       }
