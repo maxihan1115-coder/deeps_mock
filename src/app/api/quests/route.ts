@@ -74,7 +74,25 @@ export async function GET(request: NextRequest) {
     const quests = await mysqlGameStore.getQuests(userId);
     console.log('Retrieved quests for userId:', userId, 'count:', quests.length);
 
-    const successResponse = createSuccessResponse(quests);
+    // 퀘스트 참여 정보 조회
+    const participation = await prisma.questParticipation.findUnique({
+      where: { gameUuid: user.uuid },
+    });
+
+    const result = {
+      quests,
+      participation: participation ? {
+        isParticipating: true,
+        startDate: participation.startDate.getTime(),
+        startDateFormatted: participation.startDate.toISOString(),
+      } : {
+        isParticipating: false,
+        startDate: null,
+        startDateFormatted: null,
+      },
+    };
+
+    const successResponse = createSuccessResponse(result);
     return NextResponse.json(successResponse);
   } catch (error) {
     console.error('Get quests error:', error);
