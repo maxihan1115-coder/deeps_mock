@@ -497,13 +497,16 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           {/* 게임 시작 전 오버레이 */}
           {!isGameStarted && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center rounded-lg">
-              <div className="text-center space-y-4">
+              <div className="text-center space-y-6">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
                   BORA TETRIS
                 </h2>
-                <div className="text-xl font-semibold bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
+                <Button
+                  onClick={startGame}
+                  className="text-xl font-semibold px-8 py-3 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                >
                   START
-                </div>
+                </Button>
               </div>
             </div>
           )}
