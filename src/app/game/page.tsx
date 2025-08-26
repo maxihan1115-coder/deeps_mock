@@ -129,16 +129,25 @@ export default function GamePage({ searchParams }: GamePageProps) {
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="game" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="game" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-3 mb-8 bg-gray-100 p-1 rounded-xl">
+            <TabsTrigger 
+              value="game" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:scale-105 rounded-lg font-medium"
+            >
               <Gamepad2 className="w-4 h-4" />
               게임
             </TabsTrigger>
-            <TabsTrigger value="quests" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="quests" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:scale-105 rounded-lg font-medium"
+            >
               <Trophy className="w-4 h-4" />
               퀘스트
             </TabsTrigger>
-            <TabsTrigger value="platform" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="platform" 
+              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:scale-105 rounded-lg font-medium"
+            >
               <Link className="w-4 h-4" />
               플랫폼 연동
             </TabsTrigger>
