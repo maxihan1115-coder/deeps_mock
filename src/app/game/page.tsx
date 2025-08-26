@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import TetrisGame from '@/components/TetrisGame';
 import QuestPanel from '@/components/QuestPanel';
 import AccountLink from '@/components/AccountLink';
@@ -14,12 +14,24 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, User, Calendar, Gamepad2, Trophy, Link } from 'lucide-react';
 
-interface GamePageProps {
-  searchParams: Promise<{ userId?: string; username?: string; uuid?: string }>;
+export default function GamePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    }>
+      <GamePageContent />
+    </Suspense>
+  );
 }
 
-export default function GamePage({ searchParams }: GamePageProps) {
+function GamePageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<{
     id: string;
     username: string;
@@ -33,21 +45,19 @@ export default function GamePage({ searchParams }: GamePageProps) {
 
   // URL 파라미터에서 사용자 정보 확인
   useEffect(() => {
-    const getSearchParams = async () => {
-      const params = await searchParams;
-      if (params.userId && params.username && params.uuid) {
-        setCurrentUser({
-          id: params.userId,
-          username: params.username,
-          uuid: parseInt(params.uuid),
-        });
-      } else {
-        // 사용자 정보가 없으면 로그인 페이지로 리다이렉트
-        router.push('/');
-      }
-    };
-    
-    getSearchParams();
+    const userId = searchParams.get('userId');
+    const username = searchParams.get('username');
+    const uuid = searchParams.get('uuid');
+
+    if (userId && username && uuid) {
+      setCurrentUser({
+        id: userId,
+        username,
+        uuid: parseInt(uuid, 10),
+      });
+    } else {
+      router.push('/');
+    }
   }, [searchParams, router]);
 
   // 로그아웃
