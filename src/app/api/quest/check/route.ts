@@ -8,47 +8,67 @@ import {
   API_ERROR_CODES 
 } from '@/lib/api-errors';
 
-// 퀘스트 목록 데이터 (실제로는 데이터베이스에서 관리)
+// 테트리스 게임에 맞는 퀘스트 목록 데이터
 const QUEST_LIST = [
   {
     id: 1,
-    title: "GET_EPIC_PLAYER",
-    totalTimes: 2
+    title: "FIRST_GAME",
+    totalTimes: 1
   },
   {
     id: 2,
-    title: "ENTER_POST_SEASON",
+    title: "SCORE_1000",
     totalTimes: 1
   },
   {
     id: 3,
-    title: "USE_LEAGUE_STRATEGY_CARD",
-    totalTimes: 10
+    title: "SCORE_5000",
+    totalTimes: 1
   },
   {
     id: 4,
-    title: "LEARN_MANAGER_SKILL_BLOCK_6",
+    title: "SCORE_10000",
     totalTimes: 1
   },
   {
     id: 5,
-    title: "WEEKLY_MISSION_CLEAR",
-    totalTimes: 2
+    title: "CLEAR_LINES_10",
+    totalTimes: 10
   },
   {
     id: 6,
-    title: "DAILY_LOGIN",
-    totalTimes: 7
+    title: "CLEAR_LINES_50",
+    totalTimes: 50
   },
   {
     id: 7,
-    title: "WIN_GAMES",
-    totalTimes: 5
+    title: "REACH_LEVEL_5",
+    totalTimes: 1
   },
   {
     id: 8,
-    title: "COMPLETE_TUTORIAL",
+    title: "REACH_LEVEL_10",
     totalTimes: 1
+  },
+  {
+    id: 9,
+    title: "PLAY_GAMES_5",
+    totalTimes: 5
+  },
+  {
+    id: 10,
+    title: "PLAY_GAMES_20",
+    totalTimes: 20
+  },
+  {
+    id: 11,
+    title: "HARD_DROP_10",
+    totalTimes: 10
+  },
+  {
+    id: 12,
+    title: "DAILY_LOGIN",
+    totalTimes: 7
   }
 ];
 
