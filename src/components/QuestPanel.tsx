@@ -49,7 +49,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 1,
-              reward: '경험치 50',
+              reward: 50,
               isCompleted: false,
             },
             {
@@ -59,7 +59,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 1,
-              reward: '경험치 100',
+              reward: 100,
               isCompleted: false,
             },
             {
@@ -69,7 +69,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 1,
-              reward: '경험치 200',
+              reward: 200,
               isCompleted: false,
             },
             {
@@ -79,7 +79,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 1,
-              reward: '경험치 500',
+              reward: 500,
               isCompleted: false,
             },
             {
@@ -89,7 +89,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 10,
-              reward: '경험치 150',
+              reward: 150,
               isCompleted: false,
             },
             {
@@ -99,7 +99,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 50,
-              reward: '경험치 300',
+              reward: 300,
               isCompleted: false,
             },
             {
@@ -109,7 +109,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 1,
-              reward: '경험치 250',
+              reward: 250,
               isCompleted: false,
             },
             {
@@ -119,7 +119,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 1,
-              reward: '경험치 500',
+              reward: 500,
               isCompleted: false,
             },
             {
@@ -129,7 +129,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 5,
-              reward: '경험치 100',
+              reward: 100,
               isCompleted: false,
             },
             {
@@ -139,7 +139,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 20,
-              reward: '경험치 300',
+              reward: 300,
               isCompleted: false,
             },
             {
@@ -149,7 +149,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'single',
               progress: 0,
               totalTimes: 10,
-              reward: '경험치 80',
+              reward: 80,
               isCompleted: false,
             },
             {
@@ -159,7 +159,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               type: 'daily',
               progress: 0,
               totalTimes: 7,
-              reward: '경험치 200',
+              reward: 200,
               isCompleted: false,
             },
           ]);
