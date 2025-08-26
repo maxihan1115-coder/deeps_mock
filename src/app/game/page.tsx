@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import TetrisGame from '@/components/TetrisGame';
 import QuestPanel from '@/components/QuestPanel';
 import AccountLink from '@/components/AccountLink';
+import AttendanceCheck from '@/components/AttendanceCheck';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -179,6 +180,9 @@ export default function GamePage({ searchParams }: GamePageProps) {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* 출석체크 */}
+                <AttendanceCheck userId={currentUser.id} />
               </div>
             </div>
           </TabsContent>

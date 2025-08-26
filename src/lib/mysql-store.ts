@@ -128,6 +128,25 @@ class MySQLGameStore {
     return !!record;
   }
 
+  async getAttendanceRecords(userId: string): Promise<AttendanceRecord[]> {
+    const records = await prisma.attendanceRecord.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        date: 'desc',
+      },
+      take: 30, // 최근 30일
+    });
+
+    return records.map(record => ({
+      id: record.id,
+      userId: record.userId,
+      date: record.date,
+      createdAt: record.createdAt,
+    }));
+  }
+
   // 퀘스트 관련 메서드
   async initializeQuests(userId: string): Promise<Quest[]> {
     // 기존 퀘스트 삭제
