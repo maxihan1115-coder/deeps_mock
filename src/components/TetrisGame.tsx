@@ -49,6 +49,10 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   const onLinesUpdateRef = useRef(onLinesUpdate);
   onLinesUpdateRef.current = onLinesUpdate;
   
+  // onGameOver를 ref로 저장
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
+  
   const [gameState, setGameState] = useState<TetrisGameState>({
     board: Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0)),
     currentBlock: null,
@@ -193,7 +197,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           // 게임 오버 체크
           if (!isValidPosition(newState.currentBlock, newState.board)) {
             newState.isGameOver = true;
-            onGameOver();
+            onGameOverRef.current();
           }
         }
       } else {
@@ -204,7 +208,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       
       return newState;
     });
-  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, onGameOver]);
+  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock]);
 
   // 키보드 이벤트 처리
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -296,7 +300,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             // 게임 오버 체크
             if (!isValidPosition(newState.currentBlock, newState.board)) {
               newState.isGameOver = true;
-              onGameOver();
+              onGameOverRef.current();
             }
           }
           break;

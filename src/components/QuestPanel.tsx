@@ -18,6 +18,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLinked, setIsLinked] = useState<boolean | null>(null);
 
   // 퀘스트 조회
   const fetchQuests = async () => {
@@ -29,13 +30,101 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
       console.log('Quest API response:', data);
       
       if (data.success) {
-        setQuests(data.payload);
-        console.log('Quests set:', data.payload);
+        setQuests(data.payload.quests || data.payload);
+        setIsLinked(true);
+        setError(null);
+        console.log('Quests set:', data.payload.quests || data.payload);
       } else {
         console.error('Quest API error:', data.error);
-        // 미연동 유저인 경우 에러 상태 설정
+        // 미연동 유저인 경우에도 기본 퀘스트 목록을 보여줌
         if (data.error === 'INVALID_USER' && data.payload === '미연동 유저') {
-          setError('플랫폼 연동이 필요합니다. 플랫폼 연동 탭에서 연동을 완료해주세요.');
+          setIsLinked(false);
+          setError('미연동 상태: 플랫폼 연동을 완료하면 퀘스트 진행도가 저장됩니다.');
+          // 기본 퀘스트 목록 설정
+          setQuests([
+            {
+              id: '1',
+              title: 'GET_EPIC_PLAYER',
+              description: '에픽 플레이어를 획득하세요',
+              type: 'ACHIEVEMENT',
+              progress: 0,
+              totalTimes: 2,
+              reward: '경험치 100',
+              isCompleted: false,
+            },
+            {
+              id: '2',
+              title: 'ENTER_POST_SEASON',
+              description: '포스트 시즌에 진입하세요',
+              type: 'ACHIEVEMENT',
+              progress: 0,
+              totalTimes: 1,
+              reward: '경험치 200',
+              isCompleted: false,
+            },
+            {
+              id: '3',
+              title: 'USE_LEAGUE_STRATEGY_CARD',
+              description: '리그 전략 카드를 사용하세요',
+              type: 'DAILY',
+              progress: 0,
+              totalTimes: 10,
+              reward: '경험치 50',
+              isCompleted: false,
+            },
+            {
+              id: '4',
+              title: 'LEARN_MANAGER_SKILL_BLOCK_6',
+              description: '매니저 스킬 블록 6을 학습하세요',
+              type: 'ACHIEVEMENT',
+              progress: 0,
+              totalTimes: 1,
+              reward: '경험치 150',
+              isCompleted: false,
+            },
+            {
+              id: '5',
+              title: 'WEEKLY_MISSION_CLEAR',
+              description: '주간 미션을 클리어하세요',
+              type: 'WEEKLY',
+              progress: 0,
+              totalTimes: 2,
+              reward: '경험치 300',
+              isCompleted: false,
+            },
+            {
+              id: '6',
+              title: 'DAILY_LOGIN',
+              description: '7일 연속 로그인하세요',
+              type: 'DAILY',
+              progress: 0,
+              totalTimes: 7,
+              reward: '경험치 100',
+              isCompleted: false,
+            },
+            {
+              id: '7',
+              title: 'WIN_GAMES',
+              description: '게임에서 승리하세요',
+              type: 'ACHIEVEMENT',
+              progress: 0,
+              totalTimes: 5,
+              reward: '경험치 80',
+              isCompleted: false,
+            },
+            {
+              id: '8',
+              title: 'COMPLETE_TUTORIAL',
+              description: '튜토리얼을 완료하세요',
+              type: 'ACHIEVEMENT',
+              progress: 0,
+              totalTimes: 1,
+              reward: '경험치 50',
+              isCompleted: false,
+            },
+          ]);
+        } else {
+          setError('퀘스트 조회 중 오류가 발생했습니다.');
         }
       }
     } catch (error) {
@@ -205,12 +294,34 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {error ? (
-          <div className="text-center space-y-3">
-            <div className="text-red-500 font-medium">{error}</div>
-            <div className="text-sm text-gray-600">
-              플랫폼 연동 탭에서 계정 연동을 완료한 후 다시 시도해주세요.
+        {/* 연동 상태 표시 */}
+        {isLinked === false && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <span className="text-sm font-medium text-yellow-800">미연동 상태</span>
             </div>
+            <p className="text-xs text-yellow-700 mt-1">
+              플랫폼 연동을 완료하면 퀘스트 진행도가 저장됩니다.
+            </p>
+          </div>
+        )}
+        
+        {isLinked === true && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-medium text-green-800">연동 완료</span>
+            </div>
+            <p className="text-xs text-green-700 mt-1">
+              퀘스트 진행도가 실시간으로 저장됩니다.
+            </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center space-y-3 mb-4">
+            <div className="text-red-500 font-medium">{error}</div>
             <Button
               onClick={() => {
                 setError(null);
@@ -222,7 +333,9 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               다시 시도
             </Button>
           </div>
-        ) : quests.length === 0 ? (
+        )}
+
+        {quests.length === 0 ? (
           <div className="text-center space-y-3">
             <div className="text-gray-500">퀘스트가 없습니다.</div>
             <Button
@@ -252,10 +365,10 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
                   <span>진행도</span>
-                  <span>{quest.progress} / {quest.maxProgress}</span>
+                  <span>{quest.progress} / {quest.totalTimes}</span>
                 </div>
                 <Progress 
-                  value={(quest.progress / quest.maxProgress) * 100} 
+                  value={(quest.progress / quest.totalTimes) * 100} 
                   className="h-2"
                 />
               </div>
