@@ -133,7 +133,7 @@ export default function AttendanceCheck({ userId }: AttendanceCheckProps) {
           출석체크
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {/* 이번 주 출석 현황 */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
@@ -150,8 +150,8 @@ export default function AttendanceCheck({ userId }: AttendanceCheckProps) {
             </Badge>
           </div>
           
-          {/* 요일별 출석 표시 */}
-          <div className="grid grid-cols-7 gap-1">
+          {/* 요일별 출석 표시 - 컴팩트 버전 */}
+          <div className="grid grid-cols-7 gap-0.5">
             {weekDates.map((date, index) => {
               const attended = isDateAttended(date);
               const isTodayDate = isToday(date);
@@ -159,25 +159,25 @@ export default function AttendanceCheck({ userId }: AttendanceCheckProps) {
               return (
                 <div
                   key={index}
-                  className={`flex flex-col items-center p-2 rounded-lg text-xs ${
+                  className={`flex flex-col items-center p-1 rounded text-xs ${
                     isTodayDate 
-                      ? 'bg-blue-100 border-2 border-blue-300' 
+                      ? 'bg-blue-100 border border-blue-300' 
                       : attended 
                         ? 'bg-green-100' 
                         : 'bg-gray-100'
                   }`}
                 >
-                  <span className="font-medium text-gray-600">
+                  <span className="text-xs font-medium text-gray-600">
                     {getDayName(date)}
                   </span>
                   <span className="text-xs text-gray-500">
                     {date.getDate()}
                   </span>
-                  <div className="mt-1">
+                  <div className="mt-0.5">
                     {attended ? (
-                      <Check className="w-3 h-3 text-green-600" />
+                      <Check className="w-2.5 h-2.5 text-green-600" />
                     ) : (
-                      <X className="w-3 h-3 text-gray-400" />
+                      <X className="w-2.5 h-2.5 text-gray-400" />
                     )}
                   </div>
                 </div>
@@ -187,33 +187,25 @@ export default function AttendanceCheck({ userId }: AttendanceCheckProps) {
         </div>
 
         {/* 오늘 출석체크 버튼 */}
-        <div className="space-y-2">
+        <div>
           {todayAttended ? (
-            <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center justify-center gap-2 text-green-700">
-                <Check className="w-4 h-4" />
-                <span className="font-medium">오늘 출석 완료!</span>
+            <div className="text-center p-2 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center justify-center gap-1 text-green-700">
+                <Check className="w-3 h-3" />
+                <span className="text-sm font-medium">오늘 출석 완료!</span>
               </div>
-              <p className="text-xs text-green-600 mt-1">
-                내일 다시 출석해주세요
-              </p>
             </div>
           ) : (
             <Button
               onClick={checkAttendance}
               className="w-full"
               variant="default"
+              size="sm"
             >
-              <Calendar className="w-4 h-4 mr-2" />
+              <Calendar className="w-3 h-3 mr-1" />
               오늘 출석하기
             </Button>
           )}
-        </div>
-
-        {/* 출석 안내 */}
-        <div className="text-xs text-gray-500 space-y-1">
-          <p>• 매일 출석하면 보상을 받을 수 있습니다</p>
-          <p>• 연속 출석 시 추가 보상이 지급됩니다</p>
         </div>
       </CardContent>
     </Card>
