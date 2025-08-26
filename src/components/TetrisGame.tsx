@@ -137,6 +137,59 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
     return lineScores[linesCleared] * level;
   }, []);
 
+  // 하드 드롭 (블록을 즉시 떨어뜨리기)
+  const hardDrop = useCallback(() => {
+    setGameState(prevState => {
+      if (!prevState.currentBlock || prevState.isGameOver || prevState.isPaused) {
+        return prevState;
+      }
+
+      const newState = { ...prevState };
+      let dropDistance = 0;
+      let currentBlock = { ...prevState.currentBlock };
+
+      // 블록이 더 이상 떨어질 수 없을 때까지 아래로 이동
+      while (isValidPosition({ ...currentBlock, y: currentBlock.y + 1 }, prevState.board)) {
+        currentBlock.y += 1;
+        dropDistance += 1;
+      }
+
+      // 블록을 보드에 고정
+      newState.board = placeBlock(currentBlock, prevState.board);
+      
+      // 라인 제거 및 점수 계산
+      const { newBoard, linesCleared } = clearLines(newState.board);
+      newState.board = newBoard;
+      
+      if (linesCleared > 0) {
+        const scoreGain = calculateScore(linesCleared, newState.level);
+        newState.score += scoreGain;
+        newState.lines += linesCleared;
+        newState.level = Math.floor(newState.lines / 10) + 1;
+        
+        onScoreUpdateRef.current(newState.score);
+      }
+
+      // 하드 드롭 보너스 점수 (떨어진 거리 * 2)
+      if (dropDistance > 0) {
+        newState.score += dropDistance * 2;
+        onScoreUpdateRef.current(newState.score);
+      }
+      
+      // 다음 블록 생성
+      newState.currentBlock = newState.nextBlock || createNewBlock();
+      newState.nextBlock = createNewBlock();
+      
+      // 게임 오버 체크
+      if (!isValidPosition(newState.currentBlock, newState.board)) {
+        newState.isGameOver = true;
+        onGameOver();
+      }
+      
+      return newState;
+    });
+  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, onGameOver]);
+
   // 게임 상태 업데이트
   const updateGame = useCallback(() => {
     setGameState(prevState => {
@@ -225,7 +278,6 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
           }
           break;
         case 'ArrowUp':
-        case ' ':
           // 블록 회전
           if (prevState.currentBlock) {
             const rotatedShape = prevState.currentBlock.shape[0].map((_, i) =>
@@ -237,6 +289,10 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
             }
           }
           break;
+        case ' ':
+          // 하드 드롭 (즉시 떨어뜨리기)
+          hardDrop();
+          return prevState; // hardDrop에서 상태를 직접 업데이트하므로 여기서는 변경하지 않음
       }
       
       return newState;
@@ -493,6 +549,11 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
               >
                 <RotateCw className="w-4 h-4" />
               </Button>
+            </div>
+            
+            {/* 키보드 컨트롤 안내 */}
+            <div className="text-xs text-gray-500 text-center space-y-1">
+              <p>← → : 이동 | ↑ : 회전 | ↓ : 빠른 하강 | 스페이스바 : 즉시 떨어뜨리기</p>
             </div>
           )}
         </CardContent>
