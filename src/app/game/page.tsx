@@ -179,32 +179,6 @@ export default function GamePage({ searchParams }: GamePageProps) {
                     </div>
                   </CardContent>
                 </Card>
-
-                               </div>
-             </div>
-           </TabsContent>
-
-           <TabsContent value="quests" className="space-y-0">
-             <div className="flex justify-center">
-               <div className="w-full max-w-4xl">
-                 <QuestPanel
-                   userId={currentUser.id}
-                   currentScore={currentScore}
-                 />
-               </div>
-             </div>
-           </TabsContent>
-
-           <TabsContent value="platform" className="space-y-0">
-             <div className="flex justify-center">
-               <div className="w-full max-w-4xl">
-                 <AccountLink
-                   userUuid={currentUser.uuid}
-                   username={currentUser.username}
-                 />
-               </div>
-             </div>
-           </TabsContent>
               </div>
             </div>
           </TabsContent>
@@ -215,6 +189,17 @@ export default function GamePage({ searchParams }: GamePageProps) {
                 <QuestPanel
                   userId={currentUser.id}
                   currentScore={currentScore}
+                />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="platform" className="space-y-0">
+            <div className="flex justify-center">
+              <div className="w-full max-w-4xl">
+                <AccountLink
+                  userUuid={currentUser.uuid}
+                  username={currentUser.username}
                 />
               </div>
             </div>
