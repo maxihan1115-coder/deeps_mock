@@ -7,6 +7,7 @@ import QuestPanel from '@/components/QuestPanel';
 import AccountLink from '@/components/AccountLink';
 import AttendanceCheck from '@/components/AttendanceCheck';
 import HighScoreDisplay from '@/components/HighScoreDisplay';
+import HighScoreRanking from '@/components/HighScoreRanking';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -203,6 +204,9 @@ export default function GamePage({ searchParams }: GamePageProps) {
                   currentLevel={currentLevel}
                   currentLines={currentLines}
                 />
+
+                {/* 랭킹 */}
+                <HighScoreRanking currentUserId={currentUser.id} />
 
                 {/* 출석체크 */}
                 <AttendanceCheck userId={currentUser.id} />
