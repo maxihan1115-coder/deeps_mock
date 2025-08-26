@@ -96,10 +96,9 @@ export default function GamePage({ searchParams }: GamePageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-gray-900">테트리스 게임</h1>
-              <Badge variant="outline" className="text-sm">
-                현재 점수: {currentScore}
-              </Badge>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+                BORA TETRIS
+              </h1>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -113,14 +112,6 @@ export default function GamePage({ searchParams }: GamePageProps) {
                   UUID: {currentUser.uuid}
                 </Badge>
               </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAccountLink(!showAccountLink)}
-              >
-                플랫폼 연동
-              </Button>
               
               <Button
                 variant="outline"
