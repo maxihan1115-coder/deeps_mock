@@ -9,6 +9,11 @@ WORKDIR /app
 
 # package.json과 package-lock.json 복사
 COPY package.json package-lock.json* ./
+
+# prisma 스키마를 먼저 복사 (postinstall에서 prisma generate가 실행되므로 필요)
+COPY prisma ./prisma/
+
+# 의존성 설치 (postinstall 포함)
 RUN npm ci
 
 # 빌드 단계
@@ -17,7 +22,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Prisma 클라이언트 생성
+# Prisma 클라이언트 생성 (보강)
 RUN npx prisma generate
 
 # Next.js 빌드
