@@ -110,7 +110,11 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           if (boardY >= 0) {
             // 색상 정보를 저장하기 위해 블록 타입 인덱스를 저장
             const blockIndex = TETRIS_SHAPES.findIndex(shape => 
-              JSON.stringify(shape) === JSON.stringify(block.shape)
+              shape.length === block.shape.length && 
+              shape.every((row, i) => 
+                row.length === block.shape[i].length && 
+                row.every((cell, j) => cell === block.shape[i][j])
+              )
             );
             newBoard[boardY][boardX] = blockIndex >= 0 ? blockIndex + 2 : 1; // 2부터 시작하여 0과 1과 구분
           }
@@ -412,8 +416,8 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                   if (cell >= 2) {
                     const blockIndex = cell - 2;
                     cellColor = COLORS[blockIndex] || '#3b82f6';
-                  } else {
-                    cellColor = '#3b82f6'; // 기본 파란색
+                  } else if (cell === 1) {
+                    cellColor = '#3b82f6'; // 기본 파란색 (기존 블록)
                   }
                 }
               } else {
@@ -421,8 +425,8 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                 if (cell >= 2) {
                   const blockIndex = cell - 2;
                   cellColor = COLORS[blockIndex] || '#3b82f6';
-                } else {
-                  cellColor = '#3b82f6'; // 기본 파란색
+                } else if (cell === 1) {
+                  cellColor = '#3b82f6'; // 기본 파란색 (기존 블록)
                 }
               }
             }
