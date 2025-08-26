@@ -48,7 +48,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '첫 번째 테트리스 게임을 플레이하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 1,
+              maxProgress: 1,
               reward: 50,
               isCompleted: false,
             },
@@ -58,7 +58,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '1000점 이상을 달성하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 1,
+              maxProgress: 1,
               reward: 100,
               isCompleted: false,
             },
@@ -68,7 +68,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '5000점 이상을 달성하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 1,
+              maxProgress: 1,
               reward: 200,
               isCompleted: false,
             },
@@ -78,7 +78,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '10000점 이상을 달성하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 1,
+              maxProgress: 1,
               reward: 500,
               isCompleted: false,
             },
@@ -88,7 +88,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '총 10줄을 제거하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 10,
+              maxProgress: 10,
               reward: 150,
               isCompleted: false,
             },
@@ -98,7 +98,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '총 50줄을 제거하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 50,
+              maxProgress: 50,
               reward: 300,
               isCompleted: false,
             },
@@ -108,7 +108,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '레벨 5에 도달하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 1,
+              maxProgress: 1,
               reward: 250,
               isCompleted: false,
             },
@@ -118,7 +118,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '레벨 10에 도달하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 1,
+              maxProgress: 1,
               reward: 500,
               isCompleted: false,
             },
@@ -128,7 +128,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '5게임을 플레이하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 5,
+              maxProgress: 5,
               reward: 100,
               isCompleted: false,
             },
@@ -138,7 +138,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '20게임을 플레이하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 20,
+              maxProgress: 20,
               reward: 300,
               isCompleted: false,
             },
@@ -148,7 +148,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '하드 드롭을 10번 사용하세요',
               type: 'single',
               progress: 0,
-              totalTimes: 10,
+              maxProgress: 10,
               reward: 80,
               isCompleted: false,
             },
@@ -158,7 +158,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               description: '7일 연속 로그인하세요',
               type: 'daily',
               progress: 0,
-              totalTimes: 7,
+              maxProgress: 7,
               reward: 200,
               isCompleted: false,
             },
@@ -405,10 +405,10 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
                   <span>진행도</span>
-                  <span>{quest.progress} / {quest.totalTimes}</span>
+                  <span>{quest.progress} / {quest.maxProgress}</span>
                 </div>
                 <Progress 
-                  value={(quest.progress / quest.totalTimes) * 100} 
+                  value={(quest.progress / quest.maxProgress) * 100} 
                   className="h-2"
                 />
               </div>
