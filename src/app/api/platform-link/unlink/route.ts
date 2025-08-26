@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     // 연동 정보 조회
     const platformLink = await prisma.platformLink.findUnique({
-      where: { gameUuid },
+      where: { gameUuid: parseInt(gameUuid) },
     });
 
     if (!platformLink) {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // 연동 해제 (isActive를 false로 설정)
     const updatedPlatformLink = await prisma.platformLink.update({
-      where: { gameUuid },
+      where: { gameUuid: parseInt(gameUuid) },
       data: {
         isActive: false,
         updatedAt: new Date(),

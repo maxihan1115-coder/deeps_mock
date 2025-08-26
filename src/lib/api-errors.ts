@@ -17,7 +17,7 @@ export const ERROR_STATUS_MAP: Record<ApiErrorCode, number> = {
 };
 
 // 표준 API 응답 형식
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   error: ApiErrorCode | null;
   payload: T | string | null;

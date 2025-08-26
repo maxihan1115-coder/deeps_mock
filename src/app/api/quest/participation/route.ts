@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 퀘스트 참여 정보 조회
-    const participation = await prisma.questParticipation.findUnique({
+    const participation = await prisma.questParticipation.findFirst({
       where: { gameUuid: parseInt(gameUuid) },
     });
 

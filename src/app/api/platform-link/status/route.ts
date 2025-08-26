@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // 연동 상태 조회
     const platformLink = await prisma.platformLink.findUnique({
-      where: { gameUuid },
+      where: { gameUuid: parseInt(gameUuid) },
     });
 
     const status = {

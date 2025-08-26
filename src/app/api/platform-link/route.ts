@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // 이미 연동된 게임 UUID인지 확인
     const existingLink = await prisma.platformLink.findUnique({
-      where: { gameUuid },
+      where: { gameUuid: parseInt(gameUuid) },
     });
 
     if (existingLink) {
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     // 재연동 방지: 이전에 해제된 이력이 있는지 확인
     const disconnectHistory = await prisma.platformLinkHistory.findFirst({
       where: {
-        gameUuid,
+        gameUuid: parseInt(gameUuid),
         action: 'DISCONNECT',
       },
       orderBy: {
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     // 새로운 연동 정보 저장
     const platformLink = await prisma.platformLink.create({
       data: {
-        gameUuid,
+        gameUuid: parseInt(gameUuid),
         platformUuid,
         platformType,
       },
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     // 연동 이력에 기록 추가
     await prisma.platformLinkHistory.create({
       data: {
-        gameUuid,
+        gameUuid: parseInt(gameUuid),
         platformUuid,
         platformType,
         action: 'CONNECT',

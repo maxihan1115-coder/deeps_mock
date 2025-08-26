@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     console.log('Retrieved quests for userId:', userId, 'count:', quests.length);
 
     // 퀘스트 참여 정보 조회
-    const participation = await prisma.questParticipation.findUnique({
+    const participation = await prisma.questParticipation.findFirst({
       where: { gameUuid: user.uuid },
     });
 

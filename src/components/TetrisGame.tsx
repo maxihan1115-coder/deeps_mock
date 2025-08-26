@@ -257,7 +257,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           // 하드 드롭 (즉시 떨어뜨리기) - 직접 구현
           if (prevState.currentBlock) {
             let dropDistance = 0;
-            let currentBlock = { ...prevState.currentBlock };
+            const currentBlock = { ...prevState.currentBlock };
 
             // 블록이 더 이상 떨어질 수 없을 때까지 아래로 이동
             while (isValidPosition({ ...currentBlock, y: currentBlock.y + 1 }, prevState.board)) {

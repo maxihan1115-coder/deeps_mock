@@ -66,7 +66,7 @@ async function handleQuestStart(request: AuthenticatedRequest) {
     const timestamp = startDate.getTime();
 
     // 기존 참여 정보 확인
-    const existingParticipation = await prisma.questParticipation.findUnique({
+    const existingParticipation = await prisma.questParticipation.findFirst({
       where: { gameUuid: user.uuid },
     });
 
@@ -75,7 +75,7 @@ async function handleQuestStart(request: AuthenticatedRequest) {
     if (existingParticipation) {
       // 기존 참여 정보 업데이트
       questParticipation = await prisma.questParticipation.update({
-        where: { gameUuid: user.uuid },
+        where: { id: existingParticipation.id },
         data: {
           startDate,
           updatedAt: new Date(),
