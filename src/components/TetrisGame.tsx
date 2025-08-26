@@ -491,8 +491,22 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         <CardHeader>
           <CardTitle className="text-center">테트리스</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 relative">
           {renderBoard()}
+          
+          {/* 게임 시작 전 오버레이 */}
+          {!isGameStarted && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center rounded-lg">
+              <div className="text-center space-y-4">
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+                  BORA TETRIS
+                </h2>
+                <div className="text-xl font-semibold bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
+                  START
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* 컨트롤 버튼 */}
           {isGameStarted && (
