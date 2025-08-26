@@ -167,6 +167,9 @@ export default function GamePage({ searchParams }: GamePageProps) {
 
               {/* 사이드바 */}
               <div className="flex flex-col gap-6">
+                {/* 출석체크 */}
+                <AttendanceCheck userId={currentUser.id} />
+
                 {/* 사용자 정보 */}
                 <Card className="w-80">
                   <CardHeader>
@@ -207,9 +210,6 @@ export default function GamePage({ searchParams }: GamePageProps) {
 
                 {/* 랭킹 */}
                 <HighScoreRanking currentUserId={currentUser.id} />
-
-                {/* 출석체크 */}
-                <AttendanceCheck userId={currentUser.id} />
               </div>
             </div>
           </TabsContent>
