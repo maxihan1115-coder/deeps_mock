@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlGameStore } from '@/lib/mysql-store';
 import { prisma } from '@/lib/prisma';
+import { 
+  createSuccessResponse, 
+  createErrorResponse, 
+  getErrorStatusCode,
+  API_ERROR_CODES 
+} from '@/lib/api-errors';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,9 +16,13 @@ export async function GET(request: NextRequest) {
     console.log('Quest API called with userId:', userId);
 
     if (!userId) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '사용자 ID가 필요합니다.'
+      );
       return NextResponse.json(
-        { success: false, error: '사용자 ID가 필요합니다.', payload: null },
-        { status: 400 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
 
@@ -22,9 +32,13 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '존재하지 않는 유저'
+      );
       return NextResponse.json(
-        { success: false, error: '사용자 정보를 찾을 수 없습니다.', payload: null },
-        { status: 404 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
 
@@ -34,29 +48,30 @@ export async function GET(request: NextRequest) {
     });
 
     if (!platformLink) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '미연동 유저'
+      );
       return NextResponse.json(
-        { 
-          success: false, 
-          error: '퀘스트 서비스를 이용하려면 먼저 플랫폼 연동을 완료해주세요.',
-          payload: null 
-        },
-        { status: 403 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
 
     const quests = await mysqlGameStore.getQuests(userId);
     console.log('Retrieved quests for userId:', userId, 'count:', quests.length);
 
-    return NextResponse.json({
-      success: true,
-      error: null,
-      payload: quests,
-    });
+    const successResponse = createSuccessResponse(quests);
+    return NextResponse.json(successResponse);
   } catch (error) {
     console.error('Get quests error:', error);
+    const errorResponse = createErrorResponse(
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+      '퀘스트 조회 중 오류가 발생했습니다.'
+    );
     return NextResponse.json(
-      { success: false, error: '퀘스트 조회 중 오류가 발생했습니다.', payload: null },
-      { status: 500 }
+      errorResponse,
+      { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) }
     );
   }
 }

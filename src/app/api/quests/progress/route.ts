@@ -1,36 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlGameStore } from '@/lib/mysql-store';
+import { 
+  createSuccessResponse, 
+  createErrorResponse, 
+  getErrorStatusCode,
+  API_ERROR_CODES 
+} from '@/lib/api-errors';
 
 export async function POST(request: NextRequest) {
   try {
     const { userId, questId, progress } = await request.json();
 
     if (!userId || !questId || progress === undefined) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '사용자 ID, 퀘스트 ID, 진행도가 필요합니다.'
+      );
       return NextResponse.json(
-        { success: false, error: '사용자 ID, 퀘스트 ID, 진행도가 필요합니다.', payload: null },
-        { status: 400 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
 
     const updatedQuest = await mysqlGameStore.updateQuestProgress(userId, questId, progress);
 
     if (!updatedQuest) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_QUEST,
+        '존재하지 않는 퀘스트 ID'
+      );
       return NextResponse.json(
-        { success: false, error: '퀘스트를 찾을 수 없습니다.', payload: null },
-        { status: 404 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_QUEST) }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      error: null,
-      payload: updatedQuest,
-    });
+    const successResponse = createSuccessResponse(updatedQuest);
+    return NextResponse.json(successResponse);
   } catch (error) {
     console.error('Update quest progress error:', error);
+    const errorResponse = createErrorResponse(
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+      '퀘스트 진행도 업데이트 중 오류가 발생했습니다.'
+    );
     return NextResponse.json(
-      { success: false, error: '퀘스트 진행도 업데이트 중 오류가 발생했습니다.', payload: null },
-      { status: 500 }
+      errorResponse,
+      { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) }
     );
   }
 }
