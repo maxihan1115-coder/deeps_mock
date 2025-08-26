@@ -189,6 +189,13 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (gameState.isGameOver || gameState.isPaused) return;
 
+    // 게임 관련 키인지 확인
+    const gameKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '];
+    if (!gameKeys.includes(event.key)) return;
+
+    // 기본 동작 방지 (페이지 스크롤 등)
+    event.preventDefault();
+
     setGameState(prevState => {
       if (!prevState.currentBlock) return prevState;
 
