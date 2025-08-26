@@ -109,8 +109,9 @@ export default function GamePage({ searchParams }: GamePageProps) {
               </div>
               
               <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-600">게임 {gameCount}회</span>
+                <Badge variant="outline" className="text-xs font-mono">
+                  UUID: {currentUser.uuid}
+                </Badge>
               </div>
               
               <Button
@@ -169,36 +170,6 @@ export default function GamePage({ searchParams }: GamePageProps) {
               <div className="flex flex-col gap-6">
                 {/* 출석체크 */}
                 <AttendanceCheck userId={currentUser.id} />
-
-                {/* 사용자 정보 */}
-                <Card className="w-80">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <User className="w-5 h-5" />
-                      사용자 정보
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium">사용자명:</span>
-                      <span className="text-sm">{currentUser.username}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium">UUID:</span>
-                      <Badge variant="outline" className="text-xs font-mono">
-                        {currentUser.uuid}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium">현재 점수:</span>
-                      <span className="text-sm font-bold text-blue-600">{currentScore}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-medium">게임 횟수:</span>
-                      <span className="text-sm">{gameCount}</span>
-                    </div>
-                  </CardContent>
-                </Card>
 
                 {/* 최고 점수 */}
                 <HighScoreDisplay
