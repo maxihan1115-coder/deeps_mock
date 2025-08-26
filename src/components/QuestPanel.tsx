@@ -17,6 +17,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // 퀘스트 조회
   const fetchQuests = async () => {
@@ -32,9 +33,14 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
         console.log('Quests set:', data.payload);
       } else {
         console.error('Quest API error:', data.error);
+        // 미연동 유저인 경우 에러 상태 설정
+        if (data.error === 'INVALID_USER' && data.payload === '미연동 유저') {
+          setError('플랫폼 연동이 필요합니다. 플랫폼 연동 탭에서 연동을 완료해주세요.');
+        }
       }
     } catch (error) {
       console.error('Failed to fetch quests:', error);
+      setError('퀘스트 조회 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -199,7 +205,24 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {quests.length === 0 ? (
+        {error ? (
+          <div className="text-center space-y-3">
+            <div className="text-red-500 font-medium">{error}</div>
+            <div className="text-sm text-gray-600">
+              플랫폼 연동 탭에서 계정 연동을 완료한 후 다시 시도해주세요.
+            </div>
+            <Button
+              onClick={() => {
+                setError(null);
+                fetchQuests();
+              }}
+              size="sm"
+              variant="outline"
+            >
+              다시 시도
+            </Button>
+          </div>
+        ) : quests.length === 0 ? (
           <div className="text-center space-y-3">
             <div className="text-gray-500">퀘스트가 없습니다.</div>
             <Button
