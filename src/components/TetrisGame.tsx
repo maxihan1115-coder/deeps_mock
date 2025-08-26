@@ -158,7 +158,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       let currentBlock = { ...prevState.currentBlock };
 
       // 블록이 더 이상 떨어질 수 없을 때까지 아래로 이동
-      while (isValidPosition({ ...currentBlock, y: currentBlock.y + 1 }, prevState.board)) {
+      while (isValidPosition({ ...currentBlock, y: currentBlock.y + 1 }, newState.board)) {
         currentBlock.y += 1;
         dropDistance += 1;
       }
