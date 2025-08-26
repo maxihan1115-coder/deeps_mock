@@ -102,6 +102,19 @@ model HighScore {
   @@map("high_scores")
 }
 
+model PlatformLink {
+  id            String   @id @default(uuid())
+  gameUuid      Int      @unique // 게임 UUID (연동된 게임 계정)
+  platformUuid  String   // 플랫폼 UUID (연동된 플랫폼 계정)
+  platformType  String   // 플랫폼 타입 (예: "quest_service", "game_service")
+  linkedAt      DateTime @default(now())
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("platform_links")
+}
+
 enum QuestType {
   DAILY
   WEEKLY
