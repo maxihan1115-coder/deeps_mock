@@ -65,11 +65,11 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
   };
 
   return (
-    <Card className="w-80">
+    <Card className="w-full max-w-4xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Link className="w-5 h-5" />
-          계정 연동
+          플랫폼 연동
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -92,7 +92,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
             disabled={isLoading}
             className="w-full"
           >
-            {isLoading ? '임시 코드 요청 중...' : '계정 연동 시작'}
+            {isLoading ? '임시 코드 요청 중...' : '플랫폼 연동 시작'}
           </Button>
         ) : (
           <div className="space-y-3">
@@ -105,7 +105,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">연동 링크:</span>
+                <span className="text-sm font-medium">플랫폼 연동 링크:</span>
                 <Button
                   variant="outline"
                   size="sm"

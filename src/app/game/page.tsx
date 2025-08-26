@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, User, Calendar, Gamepad2, Trophy } from 'lucide-react';
+import { LogOut, User, Calendar, Gamepad2, Trophy, Link } from 'lucide-react';
 
 interface GamePageProps {
   searchParams: Promise<{ userId?: string; username?: string; uuid?: string }>;
@@ -103,7 +103,7 @@ export default function GamePage({ searchParams }: GamePageProps) {
                 size="sm"
                 onClick={() => setShowAccountLink(!showAccountLink)}
               >
-                계정 연동
+                플랫폼 연동
               </Button>
               
               <Button
@@ -122,7 +122,7 @@ export default function GamePage({ searchParams }: GamePageProps) {
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="game" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="game" className="flex items-center gap-2">
               <Gamepad2 className="w-4 h-4" />
               게임
@@ -130,6 +130,10 @@ export default function GamePage({ searchParams }: GamePageProps) {
             <TabsTrigger value="quests" className="flex items-center gap-2">
               <Trophy className="w-4 h-4" />
               퀘스트
+            </TabsTrigger>
+            <TabsTrigger value="platform" className="flex items-center gap-2">
+              <Link className="w-4 h-4" />
+              플랫폼 연동
             </TabsTrigger>
           </TabsList>
 
@@ -176,13 +180,31 @@ export default function GamePage({ searchParams }: GamePageProps) {
                   </CardContent>
                 </Card>
 
-                {/* 계정 연동 패널 */}
-                {showAccountLink && (
-                  <AccountLink
-                    userUuid={currentUser.uuid}
-                    username={currentUser.username}
-                  />
-                )}
+                               </div>
+             </div>
+           </TabsContent>
+
+           <TabsContent value="quests" className="space-y-0">
+             <div className="flex justify-center">
+               <div className="w-full max-w-4xl">
+                 <QuestPanel
+                   userId={currentUser.id}
+                   currentScore={currentScore}
+                 />
+               </div>
+             </div>
+           </TabsContent>
+
+           <TabsContent value="platform" className="space-y-0">
+             <div className="flex justify-center">
+               <div className="w-full max-w-4xl">
+                 <AccountLink
+                   userUuid={currentUser.uuid}
+                   username={currentUser.username}
+                 />
+               </div>
+             </div>
+           </TabsContent>
               </div>
             </div>
           </TabsContent>
