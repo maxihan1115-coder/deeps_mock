@@ -45,7 +45,7 @@ export interface Quest {
   reward: number;
   isCompleted: boolean;
   expiresAt?: Date;
-  createdAt: Date;
+  createdAt?: Date;
 }
 
 // API 응답 타입
