@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { 
+  createSuccessResponse, 
+  createErrorResponse, 
+  getErrorStatusCode,
+  API_ERROR_CODES 
+} from '@/lib/api-errors';
 
 // 연동 완료 정보 저장
 export async function POST(request: NextRequest) {
@@ -8,9 +14,13 @@ export async function POST(request: NextRequest) {
     const { gameUuid, platformUuid, platformType } = body;
 
     if (!gameUuid || !platformUuid || !platformType) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '필수 정보가 누락되었습니다.'
+      );
       return NextResponse.json(
-        { success: false, error: '필수 정보가 누락되었습니다.' },
-        { status: 400 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
 
@@ -20,14 +30,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingLink) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '이미 연동된 유저'
+      );
       return NextResponse.json(
-        { 
-          success: false, 
-          error: '이미 연동된 게임 계정입니다.',
-          linkedAt: existingLink.linkedAt,
-          platformType: existingLink.platformType
-        },
-        { status: 409 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
 
@@ -40,21 +49,23 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      platformLink: {
-        id: platformLink.id,
-        gameUuid: platformLink.gameUuid,
-        platformUuid: platformLink.platformUuid,
-        platformType: platformLink.platformType,
-        linkedAt: platformLink.linkedAt,
-      },
+    const successResponse = createSuccessResponse({
+      id: platformLink.id,
+      gameUuid: platformLink.gameUuid,
+      platformUuid: platformLink.platformUuid,
+      platformType: platformLink.platformType,
+      linkedAt: platformLink.linkedAt,
     });
+    return NextResponse.json(successResponse);
   } catch (error) {
     console.error('플랫폼 연동 저장 오류:', error);
+    const errorResponse = createErrorResponse(
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+      '플랫폼 연동 저장 중 오류가 발생했습니다.'
+    );
     return NextResponse.json(
-      { success: false, error: '플랫폼 연동 저장 중 오류가 발생했습니다.' },
-      { status: 500 }
+      errorResponse,
+      { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) }
     );
   }
 }
@@ -67,9 +78,13 @@ export async function GET(request: NextRequest) {
     const platformUuid = searchParams.get('platformUuid');
 
     if (!gameUuid && !platformUuid) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '조회할 UUID가 필요합니다.'
+      );
       return NextResponse.json(
-        { success: false, error: '조회할 UUID가 필요합니다.' },
-        { status: 400 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
 
@@ -87,22 +102,26 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      platformLink: platformLink ? {
+    const successResponse = createSuccessResponse(
+      platformLink ? {
         id: platformLink.id,
         gameUuid: platformLink.gameUuid,
         platformUuid: platformLink.platformUuid,
         platformType: platformLink.platformType,
         linkedAt: platformLink.linkedAt,
         isActive: platformLink.isActive,
-      } : null,
-    });
+      } : null
+    );
+    return NextResponse.json(successResponse);
   } catch (error) {
     console.error('플랫폼 연동 조회 오류:', error);
+    const errorResponse = createErrorResponse(
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+      '플랫폼 연동 조회 중 오류가 발생했습니다.'
+    );
     return NextResponse.json(
-      { success: false, error: '플랫폼 연동 조회 중 오류가 발생했습니다.' },
-      { status: 500 }
+      errorResponse,
+      { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) }
     );
   }
 }
