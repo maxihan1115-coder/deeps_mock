@@ -45,13 +45,22 @@ if (normalizedDatabaseUrl) {
   }
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
-  datasources: normalizedDatabaseUrl
-    ? { db: { url: normalizedDatabaseUrl } }
-    : undefined,
-});
+let prismaClient: PrismaClient;
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+try {
+  prismaClient = globalForPrisma.prisma ?? new PrismaClient({
+    log: ['query', 'info', 'warn', 'error'],
+    datasources: normalizedDatabaseUrl
+      ? { db: { url: normalizedDatabaseUrl } }
+      : undefined,
+  });
 
-console.log('✅ Prisma client initialized');
+  if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prismaClient;
+  
+  console.log('✅ Prisma client initialized successfully');
+} catch (error) {
+  console.error('❌ Failed to initialize Prisma client:', error);
+  throw new Error('Prisma client initialization failed');
+}
+
+export const prisma = prismaClient;

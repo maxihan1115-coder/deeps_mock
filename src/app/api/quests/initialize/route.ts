@@ -10,6 +10,19 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
+    // Prisma 클라이언트 검증
+    if (!prisma) {
+      console.error('Prisma client is not initialized');
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.SERVICE_UNAVAILABLE,
+        '데이터베이스 연결 오류'
+      );
+      return NextResponse.json(
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) }
+      );
+    }
+
     const { userId } = await request.json();
 
     if (!userId) {
