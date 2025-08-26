@@ -40,12 +40,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 재연동 방지: 이전에 해제된 이력이 있는지 확인
+    const disconnectHistory = await prisma.platformLinkHistory.findFirst({
+      where: {
+        gameUuid,
+        action: 'DISCONNECT',
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (disconnectHistory) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '재연동이 불가능한 유저'
+      );
+      return NextResponse.json(
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
+      );
+    }
+
     // 새로운 연동 정보 저장
     const platformLink = await prisma.platformLink.create({
       data: {
         gameUuid,
         platformUuid,
         platformType,
+      },
+    });
+
+    // 연동 이력에 기록 추가
+    await prisma.platformLinkHistory.create({
+      data: {
+        gameUuid,
+        platformUuid,
+        platformType,
+        action: 'CONNECT',
+        linkedAt: platformLink.linkedAt,
       },
     });
 

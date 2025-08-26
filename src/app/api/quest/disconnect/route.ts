@@ -8,12 +8,12 @@ import {
   API_ERROR_CODES 
 } from '@/lib/api-errors';
 
-async function handleQuestConnect(request: AuthenticatedRequest) {
+async function handleQuestDisconnect(request: AuthenticatedRequest) {
   try {
-    console.log('Quest connect API called');
+    console.log('Quest disconnect API called');
     
     const { uuid } = await request.json();
-    console.log('Received UUID:', uuid);
+    console.log('Received UUID for disconnect:', uuid);
 
     // UUID 검증
     if (!uuid) {
@@ -45,15 +45,15 @@ async function handleQuestConnect(request: AuthenticatedRequest) {
       );
     }
 
-    // 이미 연동된 사용자인지 확인
-    const existingPlatformLink = await prisma.platformLink.findUnique({
+    // 현재 연동 상태 확인
+    const currentPlatformLink = await prisma.platformLink.findUnique({
       where: { gameUuid: user.uuid },
     });
 
-    if (existingPlatformLink) {
+    if (!currentPlatformLink) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
-        '이미 연동된 유저'
+        '이미 해제된 유저'
       );
       return NextResponse.json(
         errorResponse,
@@ -61,63 +61,38 @@ async function handleQuestConnect(request: AuthenticatedRequest) {
       );
     }
 
-    // 재연동 방지: 이전에 해제된 이력이 있는지 확인
-    const disconnectHistory = await prisma.platformLinkHistory.findFirst({
-      where: {
-        gameUuid: user.uuid,
-        action: 'DISCONNECT',
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    if (disconnectHistory) {
-      const errorResponse = createErrorResponse(
-        API_ERROR_CODES.INVALID_USER,
-        '재연동이 불가능한 유저'
-      );
-      return NextResponse.json(
-        errorResponse,
-        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
-      );
-    }
-
-    // 연동 완료 처리
-    // BApp에서 연동 완료를 알려주므로, 플랫폼 연동 정보를 생성
-    const platformLink = await prisma.platformLink.create({
-      data: {
-        gameUuid: user.uuid,
-        platformUuid: `bapp_${uuid}`, // BApp에서 제공한 UUID
-        platformType: 'BAPP',
-        linkedAt: new Date(),
-        isActive: true,
-      },
-    });
-
-    // 연동 이력에 기록 추가
+    // 연동 해제 처리
+    console.log('Processing disconnect for user:', user.uuid);
+    
+    // 1. 연동 이력에 해제 기록 추가
     await prisma.platformLinkHistory.create({
       data: {
         gameUuid: user.uuid,
-        platformUuid: `bapp_${uuid}`,
-        platformType: 'BAPP',
-        action: 'CONNECT',
-        linkedAt: platformLink.linkedAt,
+        platformUuid: currentPlatformLink.platformUuid,
+        platformType: currentPlatformLink.platformType,
+        action: 'DISCONNECT',
+        linkedAt: currentPlatformLink.linkedAt,
+        disconnectedAt: new Date(),
       },
     });
 
-    console.log('Quest connection completed for user:', user.uuid, 'Platform link created:', platformLink.id);
+    // 2. 현재 연동 정보 삭제
+    await prisma.platformLink.delete({
+      where: { gameUuid: user.uuid },
+    });
+
+    console.log('Quest disconnect completed for user:', user.uuid);
 
     // 성공 응답
     const successResponse = createSuccessResponse(null);
     return NextResponse.json(successResponse);
 
   } catch (error) {
-    console.error('Quest connect error:', error);
+    console.error('Quest disconnect error:', error);
     console.error('Error details:', error instanceof Error ? error.message : error);
     const errorResponse = createErrorResponse(
       API_ERROR_CODES.SERVICE_UNAVAILABLE,
-      '퀘스트 연동 처리 중 오류가 발생했습니다.'
+      '퀘스트 연동 해제 처리 중 오류가 발생했습니다.'
     );
     return NextResponse.json(
       errorResponse,
@@ -127,4 +102,4 @@ async function handleQuestConnect(request: AuthenticatedRequest) {
 }
 
 // API 키 검증과 함께 핸들러 실행
-export const POST = withApiAuth(handleQuestConnect);
+export const POST = withApiAuth(handleQuestDisconnect);

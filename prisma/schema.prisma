@@ -115,6 +115,19 @@ model PlatformLink {
   @@map("platform_links")
 }
 
+model PlatformLinkHistory {
+  id            String   @id @default(uuid())
+  gameUuid      Int      // 게임 UUID (재연동 방지를 위한 이력)
+  platformUuid  String   // 플랫폼 UUID
+  platformType  String   // 플랫폼 타입
+  action        String   // 액션 타입 (CONNECT, DISCONNECT)
+  linkedAt      DateTime // 연동 시점
+  disconnectedAt DateTime? // 해제 시점
+  createdAt     DateTime @default(now())
+
+  @@map("platform_link_history")
+}
+
 enum QuestType {
   DAILY
   WEEKLY
