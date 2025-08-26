@@ -73,15 +73,15 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">사용자명:</span>
-            <span className="text-sm">{username}</span>
+            <span className="text-sm font-semibold text-gray-900">{username}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">UUID:</span>
-            <Badge variant="outline" className="text-xs font-mono">
-              {userUuid.toString().slice(0, 8)}...
+            <Badge variant="outline" className="text-xs font-mono bg-gray-50">
+              {userUuid}
             </Badge>
           </div>
         </div>
