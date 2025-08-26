@@ -191,7 +191,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
   }
 
   return (
-    <Card className="w-full max-w-4xl max-h-96 overflow-y-auto">
+    <Card className="w-full max-w-4xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="w-5 h-5" />
