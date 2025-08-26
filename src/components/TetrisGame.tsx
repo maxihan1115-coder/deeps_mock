@@ -29,16 +29,25 @@ const COLORS = ['#00f5ff', '#ffff00', '#a000f0', '#00f000', '#f00000', '#0000f0'
 interface TetrisGameProps {
   userId: string;
   onScoreUpdate: (score: number) => void;
+  onLevelUpdate: (level: number) => void;
+  onLinesUpdate: (lines: number) => void;
   onGameOver: () => void;
 }
 
-export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: TetrisGameProps) {
+export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver }: TetrisGameProps) {
   const BOARD_WIDTH = 10;
   const BOARD_HEIGHT = 20;
   
   // onScoreUpdate를 ref로 저장하여 최신 값 참조
   const onScoreUpdateRef = useRef(onScoreUpdate);
   onScoreUpdateRef.current = onScoreUpdate;
+  
+  // onLevelUpdate와 onLinesUpdate를 ref로 저장
+  const onLevelUpdateRef = useRef(onLevelUpdate);
+  onLevelUpdateRef.current = onLevelUpdate;
+  
+  const onLinesUpdateRef = useRef(onLinesUpdate);
+  onLinesUpdateRef.current = onLinesUpdate;
   
   const [gameState, setGameState] = useState<TetrisGameState>({
     board: Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0)),
@@ -168,6 +177,8 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
         newState.level = Math.floor(newState.lines / 10) + 1;
         
         onScoreUpdateRef.current(newState.score);
+        onLevelUpdateRef.current(newState.level);
+        onLinesUpdateRef.current(newState.lines);
       }
 
       // 하드 드롭 보너스 점수 (떨어진 거리 * 2)
@@ -220,6 +231,8 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
             newState.level = Math.floor(newState.lines / 10) + 1;
             
             onScoreUpdateRef.current(newState.score);
+            onLevelUpdateRef.current(newState.level);
+            onLinesUpdateRef.current(newState.lines);
           }
           
           // 다음 블록 생성

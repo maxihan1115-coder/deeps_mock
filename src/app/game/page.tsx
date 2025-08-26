@@ -6,6 +6,7 @@ import TetrisGame from '@/components/TetrisGame';
 import QuestPanel from '@/components/QuestPanel';
 import AccountLink from '@/components/AccountLink';
 import AttendanceCheck from '@/components/AttendanceCheck';
+import HighScoreDisplay from '@/components/HighScoreDisplay';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,8 @@ export default function GamePage({ searchParams }: GamePageProps) {
     uuid: number;
   } | null>(null);
   const [currentScore, setCurrentScore] = useState(0);
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [currentLines, setCurrentLines] = useState(0);
   const [gameCount, setGameCount] = useState(0);
   const [showAccountLink, setShowAccountLink] = useState(false);
 
@@ -57,6 +60,16 @@ export default function GamePage({ searchParams }: GamePageProps) {
   // 점수 업데이트
   const handleScoreUpdate = (score: number) => {
     setCurrentScore(score);
+  };
+
+  // 레벨 업데이트
+  const handleLevelUpdate = (level: number) => {
+    setCurrentLevel(level);
+  };
+
+  // 라인 업데이트
+  const handleLinesUpdate = (lines: number) => {
+    setCurrentLines(lines);
   };
 
   // 게임 오버 처리
@@ -145,6 +158,8 @@ export default function GamePage({ searchParams }: GamePageProps) {
                 <TetrisGame
                   userId={currentUser.id}
                   onScoreUpdate={handleScoreUpdate}
+                  onLevelUpdate={handleLevelUpdate}
+                  onLinesUpdate={handleLinesUpdate}
                   onGameOver={handleGameOver}
                 />
               </div>
@@ -180,6 +195,14 @@ export default function GamePage({ searchParams }: GamePageProps) {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* 최고 점수 */}
+                <HighScoreDisplay
+                  userId={currentUser.id}
+                  currentScore={currentScore}
+                  currentLevel={currentLevel}
+                  currentLines={currentLines}
+                />
 
                 {/* 출석체크 */}
                 <AttendanceCheck userId={currentUser.id} />
