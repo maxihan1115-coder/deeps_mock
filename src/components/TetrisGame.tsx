@@ -550,8 +550,10 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
                 <RotateCw className="w-4 h-4" />
               </Button>
             </div>
-            
-            {/* 키보드 컨트롤 안내 */}
+          )}
+          
+          {/* 키보드 컨트롤 안내 */}
+          {isGameStarted && (
             <div className="text-xs text-gray-500 text-center space-y-1">
               <p>← → : 이동 | ↑ : 회전 | ↓ : 빠른 하강 | 스페이스바 : 즉시 떨어뜨리기</p>
             </div>
