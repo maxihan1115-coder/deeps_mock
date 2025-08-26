@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       console.log('Quests initialized, new count:', (await mysqlGameStore.getQuests(user.id)).length);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       error: null,
       payload: {
@@ -60,6 +60,21 @@ export async function POST(request: NextRequest) {
         message: '로그인 성공',
       },
     });
+
+    // 세션 쿠키 설정 (HTTP/IP 환경 호환: secure=false, sameSite=lax)
+    const sessionPayload = Buffer.from(
+      JSON.stringify({ id: user.id, username: user.username, uuid: user.uuid })
+    ).toString('base64');
+
+    response.cookies.set('session', sessionPayload, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false, // IP/HTTP 환경 호환. HTTPS 도입 시 true로 변경 권장
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
