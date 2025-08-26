@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TetrisGameState, TetrisBlock } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +35,10 @@ interface TetrisGameProps {
 export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: TetrisGameProps) {
   const BOARD_WIDTH = 10;
   const BOARD_HEIGHT = 20;
+  
+  // onScoreUpdate를 ref로 저장하여 최신 값 참조
+  const onScoreUpdateRef = useRef(onScoreUpdate);
+  onScoreUpdateRef.current = onScoreUpdate;
   
   const [gameState, setGameState] = useState<TetrisGameState>({
     board: Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0)),
@@ -162,7 +166,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
             newState.lines += linesCleared;
             newState.level = Math.floor(newState.lines / 10) + 1;
             
-            onScoreUpdate(newState.score);
+            onScoreUpdateRef.current(newState.score);
           }
           
           // 다음 블록 생성
@@ -183,7 +187,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onGameOver }: Tetris
       
       return newState;
     });
-  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, onScoreUpdate, onGameOver]);
+  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, onGameOver]);
 
   // 키보드 이벤트 처리
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
