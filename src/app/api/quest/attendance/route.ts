@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withApiAuth, AuthenticatedRequest } from '@/lib/api-auth';
+import { withAuthToken, AuthenticatedTokenRequest } from '@/lib/auth-token';
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -8,24 +8,13 @@ import {
   API_ERROR_CODES 
 } from '@/lib/api-errors';
 
-async function handleAttendanceCheck(request: AuthenticatedRequest) {
+async function handleAttendanceCheck(request: AuthenticatedTokenRequest) {
   try {
     console.log('Attendance check API called');
     
-    const { uuid, attendanceDate } = await request.json();
-    console.log('Received UUID:', uuid, 'Attendance date:', attendanceDate);
-
-    // UUID 검증
-    if (!uuid) {
-      const errorResponse = createErrorResponse(
-        API_ERROR_CODES.INVALID_USER,
-        '게임 내 유저 고유 ID가 필요합니다.'
-      );
-      return NextResponse.json(
-        errorResponse,
-        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
-      );
-    }
+    const { attendanceDate } = await request.json();
+    const gameUuid = request.gameUuid;
+    console.log('Game UUID from JWT token:', gameUuid, 'Attendance date:', attendanceDate);
 
     // attendanceDate 검증
     if (!attendanceDate) {
@@ -53,9 +42,9 @@ async function handleAttendanceCheck(request: AuthenticatedRequest) {
     }
 
     // 사용자 존재 여부 확인
-    console.log('Looking for user with UUID:', uuid.toString());
+    console.log('Looking for user with UUID:', gameUuid);
     const user = await prisma.user.findUnique({
-      where: { uuid: uuid.toString() },
+      where: { uuid: gameUuid },
     });
     console.log('Found user:', user ? 'Yes' : 'No');
 
@@ -63,22 +52,6 @@ async function handleAttendanceCheck(request: AuthenticatedRequest) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
         '존재하지 않는 유저'
-      );
-      return NextResponse.json(
-        errorResponse,
-        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
-      );
-    }
-
-    // 플랫폼 연동 상태 확인
-    const platformLink = await prisma.platformLink.findUnique({
-      where: { gameUuid: user.uuid },
-    });
-
-    if (!platformLink) {
-      const errorResponse = createErrorResponse(
-        API_ERROR_CODES.INVALID_USER,
-        '미연동 유저'
       );
       return NextResponse.json(
         errorResponse,
@@ -116,5 +89,5 @@ async function handleAttendanceCheck(request: AuthenticatedRequest) {
   }
 }
 
-// API 키 검증과 함께 핸들러 실행
-export const POST = withApiAuth(handleAttendanceCheck);
+// JWT Auth token 검증과 함께 핸들러 실행
+export const POST = withAuthToken(handleAttendanceCheck);

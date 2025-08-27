@@ -7,6 +7,7 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
+import jwt from 'jsonwebtoken';
 
 async function handleQuestConnect(request: AuthenticatedRequest) {
   try {
@@ -83,6 +84,31 @@ async function handleQuestConnect(request: AuthenticatedRequest) {
       );
     }
 
+    // JWT 토큰 생성
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.SERVICE_UNAVAILABLE,
+        'JWT_SECRET이 설정되지 않았습니다.'
+      );
+      return NextResponse.json(
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) }
+      );
+    }
+
+    const authToken = jwt.sign(
+      {
+        gameUuid: user.uuid,
+        platformType: 'BAPP',
+        platformUuid: `bapp_${uuid}`,
+      },
+      secret,
+      { expiresIn: '30d' } // 30일 만료
+    );
+
+    console.log('Generated JWT auth token for user:', user.uuid);
+
     // 연동 완료 처리
     // BApp에서 연동 완료를 알려주므로, 플랫폼 연동 정보를 생성
     const platformLink = await prisma.platformLink.create({
@@ -108,8 +134,14 @@ async function handleQuestConnect(request: AuthenticatedRequest) {
 
     console.log('Quest connection completed for user:', user.uuid, 'Platform link created:', platformLink.id);
 
-    // 성공 응답
-    const successResponse = createSuccessResponse(null);
+    // 성공 응답 (JWT 토큰 포함)
+    const successResponse = createSuccessResponse({
+      authToken: authToken,
+      gameUuid: user.uuid,
+      platformType: 'BAPP',
+      expiresIn: '30d',
+      message: '플랫폼 연동이 완료되었습니다.'
+    });
     return NextResponse.json(successResponse);
 
   } catch (error) {
