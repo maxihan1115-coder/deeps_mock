@@ -10,16 +10,31 @@ import {
 
 async function handleGetUserInfo(request: AuthenticatedTokenRequest) {
   try {
-    console.log('Get user info by JWT token API called');
+    console.log('Get user info by API Key API called');
     
-    const gameUuid = request.gameUuid;
-    const platformType = request.platformType;
-    console.log('Game UUID from JWT token:', gameUuid, 'Platform type:', platformType);
+    // URL 파라미터에서 gameUuid 추출
+    const url = new URL(request.url);
+    const gameUuid = url.searchParams.get('gameUuid');
+    
+    console.log('Game UUID from URL parameter:', gameUuid);
 
     if (!gameUuid) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
-        '유효하지 않은 JWT 토큰입니다.'
+        'gameUuid 파라미터가 필요합니다.'
+      );
+      return NextResponse.json(
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
+      );
+    }
+
+    // gameUuid를 숫자로 변환
+    const gameUuidNumber = parseInt(gameUuid);
+    if (isNaN(gameUuidNumber)) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '유효하지 않은 gameUuid 형식입니다.'
       );
       return NextResponse.json(
         errorResponse,
@@ -29,7 +44,7 @@ async function handleGetUserInfo(request: AuthenticatedTokenRequest) {
 
     // 사용자 정보 조회
     const user = await prisma.user.findUnique({
-      where: { uuid: gameUuid },
+      where: { uuid: gameUuidNumber },
       select: {
         id: true,
         username: true,
@@ -52,7 +67,7 @@ async function handleGetUserInfo(request: AuthenticatedTokenRequest) {
 
     // 플랫폼 연동 정보 조회
     const platformLink = await prisma.platformLink.findUnique({
-      where: { gameUuid: gameUuid },
+      where: { gameUuid: gameUuidNumber },
       select: {
         platformUuid: true,
         platformType: true,
@@ -61,7 +76,7 @@ async function handleGetUserInfo(request: AuthenticatedTokenRequest) {
       },
     });
 
-    console.log('User info retrieved for gameUuid:', gameUuid);
+    console.log('User info retrieved for gameUuid:', gameUuidNumber);
 
     // 성공 응답
     const successResponse = createSuccessResponse({
@@ -78,10 +93,6 @@ async function handleGetUserInfo(request: AuthenticatedTokenRequest) {
         linkedAt: platformLink.linkedAt,
         isActive: platformLink.isActive,
       } : null,
-      tokenInfo: {
-        gameUuid: gameUuid,
-        platformType: platformType,
-      },
     });
     return NextResponse.json(successResponse);
 
@@ -99,5 +110,5 @@ async function handleGetUserInfo(request: AuthenticatedTokenRequest) {
   }
 }
 
-// JWT Auth token 검증과 함께 핸들러 실행
+// API Key 검증과 함께 핸들러 실행
 export const GET = withAuthToken(handleGetUserInfo);

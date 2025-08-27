@@ -12,9 +12,33 @@ async function handleAttendanceCheck(request: AuthenticatedTokenRequest) {
   try {
     console.log('Attendance check API called');
     
-    const { attendanceDate } = await request.json();
-    const gameUuid = request.gameUuid;
-    console.log('Game UUID from JWT token:', gameUuid, 'Attendance date:', attendanceDate);
+    const { gameUuid, attendanceDate } = await request.json();
+    console.log('Game UUID from request body:', gameUuid, 'Attendance date:', attendanceDate);
+
+    // gameUuid 검증
+    if (!gameUuid) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        'gameUuid가 필요합니다.'
+      );
+      return NextResponse.json(
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
+      );
+    }
+
+    // gameUuid를 숫자로 변환
+    const gameUuidNumber = parseInt(gameUuid);
+    if (isNaN(gameUuidNumber)) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '유효하지 않은 gameUuid 형식입니다.'
+      );
+      return NextResponse.json(
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
+      );
+    }
 
     // attendanceDate 검증
     if (!attendanceDate) {
@@ -42,9 +66,9 @@ async function handleAttendanceCheck(request: AuthenticatedTokenRequest) {
     }
 
     // 사용자 존재 여부 확인
-    console.log('Looking for user with UUID:', gameUuid);
+    console.log('Looking for user with UUID:', gameUuidNumber);
     const user = await prisma.user.findUnique({
-      where: { uuid: gameUuid },
+      where: { uuid: gameUuidNumber },
     });
     console.log('Found user:', user ? 'Yes' : 'No');
 
@@ -89,5 +113,5 @@ async function handleAttendanceCheck(request: AuthenticatedTokenRequest) {
   }
 }
 
-// JWT Auth token 검증과 함께 핸들러 실행
+// API Key 검증과 함께 핸들러 실행
 export const POST = withAuthToken(handleAttendanceCheck);
