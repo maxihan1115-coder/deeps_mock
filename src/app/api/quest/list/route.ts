@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { withAuthToken, AuthenticatedTokenRequest } from '@/lib/auth-token';
+import { NextResponse, NextRequest } from 'next/server';
+import { withAuthToken } from '@/lib/auth-token';
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -71,7 +71,7 @@ const QUEST_LIST = [
   }
 ];
 
-async function handleQuestList(_request: AuthenticatedTokenRequest) {
+async function handleQuestList(_request: NextRequest) {
   try {
     console.log('Quest list API called');
 

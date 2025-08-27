@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withAuthToken, AuthenticatedTokenRequest } from '@/lib/auth-token';
+import { withAuthToken } from '@/lib/auth-token';
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -8,7 +8,7 @@ import {
   API_ERROR_CODES 
 } from '@/lib/api-errors';
 
-async function handleGetUserInfo(request: AuthenticatedTokenRequest) {
+async function handleGetUserInfo(request: NextRequest) {
   try {
     console.log('Get user info by API Key API called');
     
