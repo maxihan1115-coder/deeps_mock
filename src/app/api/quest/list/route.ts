@@ -71,7 +71,7 @@ const QUEST_LIST = [
   }
 ];
 
-async function handleQuestList(request: AuthenticatedTokenRequest) {
+async function handleQuestList(_request: AuthenticatedTokenRequest) {
   try {
     console.log('Quest list API called');
 

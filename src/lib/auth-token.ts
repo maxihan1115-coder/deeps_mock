@@ -3,6 +3,7 @@ import { createErrorResponse } from './api-errors';
 
 export interface AuthenticatedTokenRequest extends NextRequest {
   // API Key 방식이므로 추가 정보 없음
+  // 빈 인터페이스이지만 확장성을 위해 유지
 }
 
 export function validateApiKey(token: string): boolean {

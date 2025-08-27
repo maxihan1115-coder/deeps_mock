@@ -16,8 +16,8 @@ const nextConfig = {
   
   // 실험적 기능
   experimental: {
-    // 서버 컴포넌트 최적화
-    serverComponentsExternalPackages: ['@prisma/client'],
+    // 서버 컴포넌트 최적화 (Next.js 15.5.0에서 변경됨)
+    serverExternalPackages: ['@prisma/client'],
   },
 }
 
