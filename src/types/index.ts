@@ -46,6 +46,7 @@ export interface Quest {
   isCompleted: boolean;
   expiresAt?: Date;
   createdAt?: Date;
+  lastResetTime?: Date;
 }
 
 // API 응답 타입

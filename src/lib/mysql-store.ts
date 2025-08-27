@@ -269,7 +269,7 @@ class MySQLGameStore {
     }));
   }
 
-  async updateQuestProgress(userId: string, questId: string, progress: number): Promise<Quest | null> {
+  async getQuestById(userId: string, questId: string): Promise<Quest | null> {
     const quest = await prisma.quest.findFirst({
       where: {
         id: questId,
@@ -279,12 +279,49 @@ class MySQLGameStore {
 
     if (!quest) return null;
 
+    return {
+      id: quest.id,
+      title: quest.title,
+      description: quest.description,
+      type: quest.type.toLowerCase() as Quest['type'],
+      progress: quest.progress,
+      maxProgress: quest.maxProgress,
+      reward: quest.reward,
+      isCompleted: quest.isCompleted,
+      expiresAt: quest.expiresAt || undefined,
+      createdAt: quest.createdAt,
+      lastResetTime: quest.lastResetTime || undefined,
+    };
+  }
+
+  async updateQuestProgress(
+    userId: string, 
+    questId: string, 
+    progress: number, 
+    lastResetTime?: Date
+  ): Promise<Quest | null> {
+    const quest = await prisma.quest.findFirst({
+      where: {
+        id: questId,
+        userId,
+      },
+    });
+
+    if (!quest) return null;
+
+    const updateData: any = {
+      progress: Math.min(progress, quest.maxProgress),
+      isCompleted: Math.min(progress, quest.maxProgress) >= quest.maxProgress,
+    };
+
+    // lastResetTime이 제공된 경우 업데이트
+    if (lastResetTime) {
+      updateData.lastResetTime = lastResetTime;
+    }
+
     const updatedQuest = await prisma.quest.update({
       where: { id: questId },
-      data: {
-        progress: Math.min(progress, quest.maxProgress),
-        isCompleted: Math.min(progress, quest.maxProgress) >= quest.maxProgress,
-      },
+      data: updateData,
     });
 
     return {
@@ -298,6 +335,7 @@ class MySQLGameStore {
       isCompleted: updatedQuest.isCompleted,
       expiresAt: updatedQuest.expiresAt || undefined,
       createdAt: updatedQuest.createdAt,
+      lastResetTime: updatedQuest.lastResetTime || undefined,
     };
   }
 

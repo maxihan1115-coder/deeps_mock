@@ -52,6 +52,7 @@ model Quest {
   reward      Int
   isCompleted Boolean  @default(false)
   expiresAt   DateTime?
+  lastResetTime DateTime? // 퀘스트 마지막 초기화 시간
   createdAt   DateTime @default(now())
 
   // Relations

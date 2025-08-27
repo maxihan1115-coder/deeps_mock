@@ -6,6 +6,7 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
+import { shouldResetQuest, resetQuestProgress } from '@/lib/quest-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +23,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 현재 퀘스트 정보 조회
+    const currentQuest = await mysqlGameStore.getQuestById(userId, questId);
+    
+    if (!currentQuest) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_QUEST,
+        '존재하지 않는 퀘스트 ID'
+      );
+      return NextResponse.json(
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_QUEST) }
+      );
+    }
+
+    // 퀘스트 초기화 확인 (daily, weekly 퀘스트만)
+    if (currentQuest.type === 'DAILY' || currentQuest.type === 'WEEKLY') {
+      const shouldReset = shouldResetQuest(
+        currentQuest.type.toLowerCase(), 
+        currentQuest.lastResetTime
+      );
+      
+      if (shouldReset) {
+        // 퀘스트 초기화
+        const resetData = resetQuestProgress(currentQuest.type.toLowerCase());
+        const resetQuest = await mysqlGameStore.updateQuestProgress(
+          userId, 
+          questId, 
+          resetData.progress,
+          resetData.lastResetTime
+        );
+        
+        if (resetQuest) {
+          console.log(`퀘스트 초기화 완료: ${currentQuest.title} (${currentQuest.type})`);
+        }
+      }
+    }
+
+    // 퀘스트 진행도 업데이트
     const updatedQuest = await mysqlGameStore.updateQuestProgress(userId, questId, progress);
 
     if (!updatedQuest) {

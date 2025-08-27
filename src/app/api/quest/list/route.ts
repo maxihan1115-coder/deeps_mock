@@ -52,12 +52,14 @@ const QUEST_LIST = [
   {
     id: 9,
     title: "PLAY_GAMES_5",
-    totalTimes: 5
+    totalTimes: 5,
+    type: "daily"
   },
   {
     id: 10,
     title: "PLAY_GAMES_20",
-    totalTimes: 20
+    totalTimes: 20,
+    type: "weekly"
   },
   {
     id: 11,
