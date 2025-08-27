@@ -42,7 +42,7 @@ export interface Quest {
   type: 'daily' | 'weekly' | 'monthly' | 'single';
   progress: number;
   maxProgress: number;
-  reward: number;
+  reward: string | number;
   isCompleted: boolean;
   expiresAt?: Date;
   createdAt?: Date;

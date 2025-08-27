@@ -56,7 +56,11 @@ export default function QuestsPage() {
         const completed = data.payload.filter((q: Quest) => q.isCompleted).length;
         const totalReward = data.payload
           .filter((q: Quest) => q.isCompleted)
-          .reduce((sum: number, q: Quest) => sum + q.reward, 0);
+          .reduce((sum: number, q: Quest) => {
+            // reward가 문자열인 경우 숫자로 변환 시도, 실패하면 0
+            const rewardValue = typeof q.reward === 'string' ? 0 : q.reward;
+            return sum + rewardValue;
+          }, 0);
         
         setCompletedQuests(completed);
         setTotalRewards(totalReward);
