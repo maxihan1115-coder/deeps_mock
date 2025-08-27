@@ -29,15 +29,40 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 임시 코드 생성
-    console.log('🔐 Creating temp code for user:', user.id);
-    const requestCode = await mysqlGameStore.createTempCode(user.id);
-    console.log('✅ Temp code created:', requestCode.code);
+    // BORA 플랫폼 API 호출하여 임시 코드 요청
+    console.log('🌐 Calling BORA platform API for temp code');
+    const platformResponse = await fetch(`https://api.boradeeps.cc/m/auth/v1/bapp/request-code?uuid=${uuid}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': process.env.BAPP_API_KEY || '',
+        'Content-Type': 'application/json',
+      },
+    });
 
+    const platformData = await platformResponse.json();
+    console.log('📡 BORA platform response:', platformData);
+
+    if (!platformResponse.ok || !platformData.success) {
+      console.log('❌ BORA platform API failed');
+      return NextResponse.json(
+        { success: false, error: '플랫폼 임시 코드 요청에 실패했습니다.', payload: null },
+        { status: platformResponse.status }
+      );
+    }
+
+    // 게임 내부에도 임시 코드 저장 (검증용)
+    console.log('🔐 Creating local temp code for user:', user.id);
+    const localRequestCode = await mysqlGameStore.createTempCode(user.id);
+    console.log('✅ Local temp code created:', localRequestCode.code);
+
+    // 플랫폼에서 받은 코드 반환
     return NextResponse.json({
       success: true,
       error: null,
-      payload: requestCode,
+      payload: {
+        code: platformData.payload.code,
+        expiresAt: platformData.payload.expiresAt,
+      },
     });
   } catch (error) {
     console.error('❌ Request code error:', error);

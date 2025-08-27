@@ -18,12 +18,13 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
   const [isCopied, setIsCopied] = useState(false);
   const [error, setError] = useState('');
 
-  // 임시 코드 요청
+  // 임시 코드 요청 (BORA 플랫폼 API 호출)
   const requestTempCode = async () => {
     setIsLoading(true);
     setError('');
 
     try {
+      // 서버를 통해 BORA 플랫폼 API 호출
       const response = await fetch(`/api/account-link/request-code?uuid=${userUuid}`);
       const data = await response.json();
 
