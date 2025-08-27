@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const platformResponse = await fetch(`https://api.boradeeps.cc/m/auth/v1/bapp/request-code?uuid=${uuid}`, {
       method: 'GET',
       headers: {
-        'Authorization': process.env.BAPP_API_KEY || '',
+        'Authorization': process.env.API_AUTHORIZATION || '',
         'Content-Type': 'application/json',
       },
     });
