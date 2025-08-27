@@ -31,6 +31,9 @@ export async function GET(request: NextRequest) {
 
     // BORA 플랫폼 API 호출하여 임시 코드 요청
     console.log('🌐 Calling BORA platform API for temp code');
+    console.log('🔑 Authorization header from env:', process.env.BAPP_API_KEY ? 'Set' : 'Not set');
+    console.log('🌐 API URL:', `https://api.boradeeps.cc/m/auth/v1/bapp/request-code?uuid=${uuid}`);
+    
     const platformResponse = await fetch(`https://api.boradeeps.cc/m/auth/v1/bapp/request-code?uuid=${uuid}`, {
       method: 'GET',
       headers: {
@@ -39,11 +42,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    console.log('📊 Response status:', platformResponse.status);
+    console.log('📊 Response headers:', Object.fromEntries(platformResponse.headers.entries()));
+    
     const platformData = await platformResponse.json();
     console.log('📡 BORA platform response:', platformData);
 
     if (!platformResponse.ok || !platformData.success) {
-      console.log('❌ BORA platform API failed');
+      console.log('❌ BORA platform API failed with status:', platformResponse.status);
       return NextResponse.json(
         { success: false, error: '플랫폼 임시 코드 요청에 실패했습니다.', payload: null },
         { status: platformResponse.status }
@@ -59,10 +65,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       error: null,
-      payload: {
-        code: platformData.payload.code,
-        expiresAt: platformData.payload.expiresAt,
-      },
+      payload: platformData.payload,
     });
   } catch (error) {
     console.error('❌ Request code error:', error);
