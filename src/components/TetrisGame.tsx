@@ -26,6 +26,22 @@ const TETRIS_SHAPES = [
 
 const COLORS = ['#00f5ff', '#ffff00', '#a000f0', '#00f000', '#f00000', '#0000f0', '#ffa500'];
 
+// 퀘스트 ID 매핑
+const QUEST_IDS = {
+  FIRST_GAME: '1',
+  SCORE_1000: '2',
+  SCORE_5000: '3',
+  SCORE_10000: '4',
+  CLEAR_LINES_10: '5',
+  CLEAR_LINES_50: '6',
+  REACH_LEVEL_5: '7',
+  REACH_LEVEL_10: '8',
+  PLAY_GAMES_5: '9',
+  PLAY_GAMES_20: '10',
+  HARD_DROP_10: '11',
+  DAILY_LOGIN: '12'
+};
+
 interface TetrisGameProps {
   userId: string;
   onScoreUpdate: (score: number) => void;
@@ -66,6 +82,120 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
 
   const [gameInterval, setGameInterval] = useState<NodeJS.Timeout | null>(null);
   const [isGameStarted, setIsGameStarted] = useState(false);
+  
+  // 퀘스트 관련 상태
+  const [isLinked, setIsLinked] = useState(false);
+  const [hardDropsUsed, setHardDropsUsed] = useState(0);
+  const [gamesPlayed, setGamesPlayed] = useState(0);
+  const [hasCheckedFirstGame, setHasCheckedFirstGame] = useState(false);
+
+  // 플랫폼 연동 상태 확인
+  const checkPlatformLinkStatus = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/platform-link/status?gameUuid=${userId}`);
+      const data = await response.json();
+      
+      if (data.success && data.payload.isLinked) {
+        setIsLinked(true);
+        return true;
+      } else {
+        setIsLinked(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('플랫폼 연동 상태 확인 실패:', error);
+      setIsLinked(false);
+      return false;
+    }
+  }, [userId]);
+
+  // 퀘스트 진행도 업데이트
+  const updateQuestProgress = useCallback(async (questId: string, progress: number) => {
+    if (!isLinked) return; // 플랫폼 연동이 안되어 있으면 퀘스트 업데이트 안함
+    
+    try {
+      const response = await fetch('/api/quests/progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: userId,
+          questId: questId,
+          progress: progress
+        })
+      });
+      
+      if (!response.ok) {
+        console.error('퀘스트 업데이트 실패:', response.status);
+      }
+    } catch (error) {
+      console.error('퀘스트 업데이트 오류:', error);
+    }
+  }, [isLinked, userId]);
+
+  // 게임 시작 시 퀘스트 체크
+  const checkFirstGameQuest = useCallback(() => {
+    if (!hasCheckedFirstGame && isLinked) {
+      updateQuestProgress(QUEST_IDS.FIRST_GAME, 1);
+      setHasCheckedFirstGame(true);
+    }
+  }, [hasCheckedFirstGame, isLinked, updateQuestProgress]);
+
+  // 점수 관련 퀘스트 체크
+  const checkScoreQuests = useCallback((score: number) => {
+    if (!isLinked) return;
+    
+    if (score >= 1000) {
+      updateQuestProgress(QUEST_IDS.SCORE_1000, 1);
+    }
+    if (score >= 5000) {
+      updateQuestProgress(QUEST_IDS.SCORE_5000, 1);
+    }
+    if (score >= 10000) {
+      updateQuestProgress(QUEST_IDS.SCORE_10000, 1);
+    }
+  }, [isLinked, updateQuestProgress]);
+
+  // 라인 제거 관련 퀘스트 체크
+  const checkLinesQuests = useCallback((totalLines: number) => {
+    if (!isLinked) return;
+    
+    updateQuestProgress(QUEST_IDS.CLEAR_LINES_10, Math.min(totalLines, 10));
+    updateQuestProgress(QUEST_IDS.CLEAR_LINES_50, Math.min(totalLines, 50));
+  }, [isLinked, updateQuestProgress]);
+
+  // 레벨 관련 퀘스트 체크
+  const checkLevelQuests = useCallback((level: number) => {
+    if (!isLinked) return;
+    
+    if (level >= 5) {
+      updateQuestProgress(QUEST_IDS.REACH_LEVEL_5, 1);
+    }
+    if (level >= 10) {
+      updateQuestProgress(QUEST_IDS.REACH_LEVEL_10, 1);
+    }
+  }, [isLinked, updateQuestProgress]);
+
+  // 게임 플레이 관련 퀘스트 체크
+  const checkPlayGamesQuests = useCallback((gamesCount: number) => {
+    if (!isLinked) return;
+    
+    updateQuestProgress(QUEST_IDS.PLAY_GAMES_5, Math.min(gamesCount, 5));
+    updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, Math.min(gamesCount, 20));
+  }, [isLinked, updateQuestProgress]);
+
+  // 하드 드롭 관련 퀘스트 체크
+  const checkHardDropQuests = useCallback((hardDropsCount: number) => {
+    if (!isLinked) return;
+    
+    updateQuestProgress(QUEST_IDS.HARD_DROP_10, Math.min(hardDropsCount, 10));
+  }, [isLinked, updateQuestProgress]);
+
+  // 컴포넌트 마운트 시 플랫폼 연동 상태 확인
+  useEffect(() => {
+    checkPlatformLinkStatus();
+  }, [checkPlatformLinkStatus]);
 
   // 새로운 블록 생성
   const createNewBlock = useCallback((): TetrisBlock => {
@@ -188,6 +318,11 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             onScoreUpdateRef.current(newState.score);
             onLevelUpdateRef.current(newState.level);
             onLinesUpdateRef.current(newState.lines);
+            
+            // 퀘스트 체크 (점수, 라인, 레벨)
+            checkScoreQuests(newState.score);
+            checkLinesQuests(newState.lines);
+            checkLevelQuests(newState.level);
           }
           
           // 다음 블록 생성
@@ -198,6 +333,11 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           if (!isValidPosition(newState.currentBlock, newState.board)) {
             newState.isGameOver = true;
             onGameOverRef.current();
+            
+            // 게임 오버 시 게임 플레이 퀘스트 체크
+            const newGamesPlayed = gamesPlayed + 1;
+            setGamesPlayed(newGamesPlayed);
+            checkPlayGamesQuests(newGamesPlayed);
           }
         }
       } else {
@@ -208,7 +348,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       
       return newState;
     });
-  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock]);
+  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests]);
 
   // 키보드 이벤트 처리
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -285,12 +425,22 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
               onScoreUpdateRef.current(newState.score);
               onLevelUpdateRef.current(newState.level);
               onLinesUpdateRef.current(newState.lines);
+              
+              // 퀘스트 체크 (점수, 라인, 레벨)
+              checkScoreQuests(newState.score);
+              checkLinesQuests(newState.lines);
+              checkLevelQuests(newState.level);
             }
 
             // 하드 드롭 보너스 점수 (떨어진 거리 * 2)
             if (dropDistance > 0) {
               newState.score += dropDistance * 2;
               onScoreUpdateRef.current(newState.score);
+              
+              // 하드 드롭 퀘스트 체크
+              const newHardDropsCount = hardDropsUsed + 1;
+              setHardDropsUsed(newHardDropsCount);
+              checkHardDropQuests(newHardDropsCount);
             }
             
             // 다음 블록 생성
@@ -301,6 +451,11 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             if (!isValidPosition(newState.currentBlock, newState.board)) {
               newState.isGameOver = true;
               onGameOverRef.current();
+              
+              // 게임 오버 시 게임 플레이 퀘스트 체크
+              const newGamesPlayed = gamesPlayed + 1;
+              setGamesPlayed(newGamesPlayed);
+              checkPlayGamesQuests(newGamesPlayed);
             }
           }
           break;
@@ -308,7 +463,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       
       return newState;
     });
-  }, [gameState.isGameOver, gameState.isPaused, isValidPosition]);
+  }, [gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests, checkHardDropQuests, checkPlayGamesQuests, hardDropsUsed, gamesPlayed]);
 
   // 게임 시작
   const startGame = () => {
@@ -324,6 +479,9 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       isGameOver: false,
       isPaused: false,
     }));
+    
+    // 첫 게임 퀘스트 체크
+    checkFirstGameQuest();
   };
 
   // 게임 시작/일시정지
@@ -595,6 +753,25 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           <CardTitle>게임 정보</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* 플랫폼 연동 상태 */}
+          <div className="p-3 rounded-lg border">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">플랫폼 연동:</span>
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                isLinked 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                {isLinked ? '연동됨' : '미연동'}
+              </span>
+            </div>
+            {!isLinked && (
+              <p className="text-xs text-gray-500 mt-1">
+                퀘스트 진행도를 저장하려면 플랫폼 연동이 필요합니다
+              </p>
+            )}
+          </div>
+
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>점수:</span>
@@ -607,6 +784,14 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             <div className="flex justify-between">
               <span>라인:</span>
               <span className="font-bold">{gameState.lines}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>하드 드롭:</span>
+              <span className="font-bold">{hardDropsUsed}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>게임 수:</span>
+              <span className="font-bold">{gamesPlayed}</span>
             </div>
           </div>
 
