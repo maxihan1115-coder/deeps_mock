@@ -32,7 +32,6 @@ export function getThisWeekSundayMidnightKST(): Date {
 export function shouldResetQuest(questType: string, lastResetTime?: Date): boolean {
   if (!lastResetTime) return true;
   
-  const now = getCurrentKST();
   const lastReset = new Date(lastResetTime);
   
   switch (questType) {

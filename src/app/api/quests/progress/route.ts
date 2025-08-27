@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 퀘스트 초기화 확인 (daily, weekly 퀘스트만)
-    if (currentQuest.type === 'DAILY' || currentQuest.type === 'WEEKLY') {
+    if (currentQuest.type === 'daily' || currentQuest.type === 'weekly') {
       const shouldReset = shouldResetQuest(
-        currentQuest.type.toLowerCase(), 
+        currentQuest.type, 
         currentQuest.lastResetTime
       );
       
