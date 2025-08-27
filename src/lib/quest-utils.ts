@@ -5,8 +5,7 @@ const KST_OFFSET = 9 * 60; // UTC+9 (분 단위)
 
 // 현재 한국 시간 가져오기
 export function getCurrentKST(): Date {
-  const now = new Date();
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const utc = new Date().getTime() + (new Date().getTimezoneOffset() * 60000);
   return new Date(utc + (KST_OFFSET * 60000));
 }
 
@@ -69,7 +68,7 @@ export function getNextResetTime(questType: string): Date {
 }
 
 // 퀘스트 진행도 초기화
-export function resetQuestProgress(questType: string): { progress: number, lastResetTime: Date } {
+export function resetQuestProgress(_questType: string): { progress: number, lastResetTime: Date } {
   return {
     progress: 0,
     lastResetTime: getCurrentKST()

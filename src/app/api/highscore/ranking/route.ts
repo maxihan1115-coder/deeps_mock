@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // 전체 랭킹 조회 (상위 10명)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // 각 사용자의 최고 점수만 조회하여 랭킹 생성
     const rankings = await prisma.$queryRaw`

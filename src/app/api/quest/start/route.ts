@@ -70,11 +70,9 @@ async function handleQuestStart(request: AuthenticatedRequest) {
       where: { gameUuid: user.uuid },
     });
 
-    let questParticipation;
-
     if (existingParticipation) {
       // 기존 참여 정보 업데이트
-      questParticipation = await prisma.questParticipation.update({
+      await prisma.questParticipation.update({
         where: { id: existingParticipation.id },
         data: {
           startDate,
@@ -84,7 +82,7 @@ async function handleQuestStart(request: AuthenticatedRequest) {
       console.log('Updated existing quest participation for user:', user.uuid);
     } else {
       // 새로운 참여 정보 생성
-      questParticipation = await prisma.questParticipation.create({
+      await prisma.questParticipation.create({
         data: {
           gameUuid: user.uuid,
           startDate,

@@ -224,7 +224,7 @@ class MySQLGameStore {
       },
     ];
 
-    const createdQuests = await prisma.quest.createMany({
+    await prisma.quest.createMany({
       data: questsData.map(quest => ({
         ...quest,
         userId,
@@ -309,7 +309,11 @@ class MySQLGameStore {
 
     if (!quest) return null;
 
-    const updateData: any = {
+    const updateData: {
+      progress: number;
+      isCompleted: boolean;
+      lastResetTime?: Date;
+    } = {
       progress: Math.min(progress, quest.maxProgress),
       isCompleted: Math.min(progress, quest.maxProgress) >= quest.maxProgress,
     };

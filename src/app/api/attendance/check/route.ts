@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlGameStore } from '@/lib/mysql-store';
 
+// 출석 기록 타입 정의
+interface AttendanceRecord {
+  id: string;
+  userId: string;
+  date: string;
+  createdAt: Date;
+}
+
 // 연속 출석일 계산 함수
-function calculateConsecutiveDays(attendanceRecords: any[]): number {
+function calculateConsecutiveDays(attendanceRecords: AttendanceRecord[]): number {
   if (attendanceRecords.length === 0) return 0;
   
   // 날짜를 내림차순으로 정렬 (최신 날짜가 먼저)
