@@ -1,6 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlGameStore } from '@/lib/mysql-store';
 
+// 연속 출석일 계산 함수
+function calculateConsecutiveDays(attendanceRecords: any[]): number {
+  if (attendanceRecords.length === 0) return 0;
+  
+  // 날짜를 내림차순으로 정렬 (최신 날짜가 먼저)
+  const sortedDates = attendanceRecords
+    .map(record => new Date(record.date))
+    .sort((a, b) => b.getTime() - a.getTime());
+  
+  let consecutiveDays = 1;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // 오늘 날짜가 없으면 0 반환
+  if (sortedDates[0].getTime() !== today.getTime()) {
+    return 0;
+  }
+  
+  // 연속된 날짜 계산
+  for (let i = 0; i < sortedDates.length - 1; i++) {
+    const currentDate = sortedDates[i];
+    const nextDate = sortedDates[i + 1];
+    
+    // 하루 차이인지 확인 (밀리초 단위로 계산)
+    const diffTime = currentDate.getTime() - nextDate.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    
+    if (diffDays === 1) {
+      consecutiveDays++;
+    } else {
+      break; // 연속이 끊어지면 중단
+    }
+  }
+  
+  return consecutiveDays;
+}
+
 export async function POST(request: NextRequest) {
   console.log('🔐 Login API called');
   try {
@@ -35,6 +72,18 @@ export async function POST(request: NextRequest) {
     if (!(await mysqlGameStore.hasAttendanceToday(user.id))) {
       const today = new Date().toISOString().split('T')[0];
       await mysqlGameStore.addAttendanceRecord(user.id, today);
+      
+      // DAILY_LOGIN 퀘스트 업데이트 (7일 연속 로그인)
+      try {
+        const attendanceRecords = await mysqlGameStore.getAttendanceRecords(user.id);
+        const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
+        
+        // DAILY_LOGIN 퀘스트 ID: '12'
+        await mysqlGameStore.updateQuestProgress(user.id, '12', Math.min(consecutiveDays, 7));
+        console.log('✅ DAILY_LOGIN 퀘스트 업데이트:', consecutiveDays, '일 연속');
+      } catch (error) {
+        console.error('❌ DAILY_LOGIN 퀘스트 업데이트 실패:', error);
+      }
     }
 
     // 퀘스트 초기화 (없는 경우)
