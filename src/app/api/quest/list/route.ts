@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withApiAuth, AuthenticatedRequest } from '@/lib/api-auth';
+import { withAuthToken, AuthenticatedTokenRequest } from '@/lib/auth-token';
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -71,7 +71,7 @@ const QUEST_LIST = [
   }
 ];
 
-async function handleQuestList(request: AuthenticatedRequest) {
+async function handleQuestList(request: AuthenticatedTokenRequest) {
   try {
     console.log('Quest list API called');
 
@@ -92,5 +92,5 @@ async function handleQuestList(request: AuthenticatedRequest) {
   }
 }
 
-// API 키 검증과 함께 핸들러 실행
-export const GET = withApiAuth(handleQuestList);
+// BAPP_AUTH_TOKEN 검증과 함께 핸들러 실행
+export const GET = withAuthToken(handleQuestList);

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withApiAuth, AuthenticatedRequest } from '@/lib/api-auth';
+import { withAuthToken, AuthenticatedTokenRequest } from '@/lib/auth-token';
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -8,7 +8,7 @@ import {
   API_ERROR_CODES 
 } from '@/lib/api-errors';
 
-async function handleQuestConnect(request: AuthenticatedRequest) {
+async function handleQuestConnect(request: AuthenticatedTokenRequest) {
   try {
     console.log('Quest connect API called');
     
@@ -130,5 +130,5 @@ async function handleQuestConnect(request: AuthenticatedRequest) {
   }
 }
 
-// API 키 검증과 함께 핸들러 실행
-export const POST = withApiAuth(handleQuestConnect);
+// BAPP_AUTH_TOKEN 검증과 함께 핸들러 실행
+export const POST = withAuthToken(handleQuestConnect);
