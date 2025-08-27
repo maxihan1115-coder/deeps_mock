@@ -104,7 +104,7 @@ async function handleQuestConnect(request: AuthenticatedRequest) {
         platformUuid: `bapp_${uuid}`,
       },
       secret,
-      { expiresIn: '30d' } // 30일 만료
+      { expiresIn: '3y' } // 3년 만료
     );
 
     console.log('Generated JWT auth token for user:', user.uuid);
@@ -139,7 +139,7 @@ async function handleQuestConnect(request: AuthenticatedRequest) {
       authToken: authToken,
       gameUuid: user.uuid,
       platformType: 'BAPP',
-      expiresIn: '30d',
+      expiresIn: '3y',
       message: '플랫폼 연동이 완료되었습니다.'
     });
     return NextResponse.json(successResponse);
