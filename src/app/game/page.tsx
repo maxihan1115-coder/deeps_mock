@@ -179,7 +179,7 @@ function GamePageContent() {
               {/* 사이드바 */}
               <div className="flex flex-col gap-6">
                 {/* 출석체크 */}
-                <AttendanceCheck userId={currentUser.id} />
+                <AttendanceCheck userId={currentUser.id} gameUuid={currentUser.uuid} />
 
                 {/* 최고 점수 */}
                 <HighScoreDisplay
