@@ -242,15 +242,9 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           const boardX = block.x + x;
           const boardY = block.y + y;
           if (boardY >= 0) {
-            // 색상 정보를 저장하기 위해 블록 타입 인덱스를 저장
-            const blockIndex = TETRIS_SHAPES.findIndex(shape => 
-              shape.length === block.shape.length && 
-              shape.every((row, i) => 
-                row.length === block.shape[i].length && 
-                row.every((cell, j) => cell === block.shape[i][j])
-              )
-            );
-            newBoard[boardY][boardX] = blockIndex >= 0 ? blockIndex + 2 : 1; // 2부터 시작하여 0과 1과 구분
+            // 블록의 원래 색상을 유지하기 위해 색상 인덱스를 저장
+            const colorIndex = COLORS.findIndex(color => color === block.color);
+            newBoard[boardY][boardX] = colorIndex >= 0 ? colorIndex + 2 : 1; // 2부터 시작하여 0과 1과 구분
           }
         }
       }
