@@ -29,3 +29,38 @@
 [2025-08-28T02:18:09.739Z] ✅ Token validation result: VALID
 [2025-08-28T02:18:09.739Z] ✅ Auth successful - calling handler...
 [2025-08-28T02:18:10.380Z] 🎉 Handler completed successfully
+[2025-08-28T02:23:12.079Z] 🔐 [withAuthToken] POST /api/quest/disconnect
+[2025-08-28T02:23:12.080Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:23:12.080Z] ✅ Token validation result: VALID
+[2025-08-28T02:23:12.080Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:23:13.380Z] 🎉 Handler completed successfully
+[2025-08-28T02:23:13.403Z] 🔐 [withAuthToken] POST /api/quest/disconnect
+[2025-08-28T02:23:13.404Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:23:13.404Z] ✅ Token validation result: VALID
+[2025-08-28T02:23:13.404Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:23:13.996Z] 🎉 Handler completed successfully
+[2025-08-28T02:23:14.028Z] 🔐 [withAuthToken] POST /api/quest/disconnect
+[2025-08-28T02:23:14.028Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:23:14.028Z] ✅ Token validation result: VALID
+[2025-08-28T02:23:14.028Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:23:14.568Z] 🎉 Handler completed successfully
+[2025-08-28T02:23:14.618Z] 🔐 [withAuthToken] POST /api/quest/disconnect
+[2025-08-28T02:23:14.623Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:23:14.623Z] ✅ Token validation result: VALID
+[2025-08-28T02:23:14.625Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:23:15.151Z] 🎉 Handler completed successfully
+[2025-08-28T02:23:15.186Z] 🔐 [withAuthToken] POST /api/quest/disconnect
+[2025-08-28T02:23:15.187Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:23:15.187Z] ✅ Token validation result: VALID
+[2025-08-28T02:23:15.187Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:23:15.738Z] 🎉 Handler completed successfully
+[2025-08-28T02:23:15.781Z] 🔐 [withAuthToken] POST /api/quest/disconnect
+[2025-08-28T02:23:15.782Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:23:15.782Z] ✅ Token validation result: VALID
+[2025-08-28T02:23:15.782Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:23:16.288Z] 🎉 Handler completed successfully
+[2025-08-28T02:23:16.337Z] 🔐 [withAuthToken] POST /api/quest/disconnect
+[2025-08-28T02:23:16.337Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:23:16.338Z] ✅ Token validation result: VALID
+[2025-08-28T02:23:16.338Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:23:16.706Z] 🎉 Handler completed successfully
