@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { 
+  createErrorResponse, 
+  getErrorStatusCode,
+  API_ERROR_CODES 
+} from './api-errors';
 
 // BApp API 키 (실제 환경에서는 환경변수로 관리)
 const BAPP_API_KEY = process.env.BAPP_API_KEY || 'UzRyOF........RXVuc2Y=';
@@ -30,13 +35,13 @@ export function withApiAuth(handler: (request: AuthenticatedRequest) => Promise<
     const auth = validateApiAuth(request);
     
     if (!auth.isValid) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.UNAUTHORIZED,
+        'API 인증 키 오류'
+      );
       return NextResponse.json(
-        {
-          success: false,
-          error: 'UNAUTHORIZED',
-          payload: 'API 인증 키 오류'
-        },
-        { status: 401 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.UNAUTHORIZED) }
       );
     }
     

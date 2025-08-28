@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlGameStore } from '@/lib/mysql-store';
+import { 
+  createSuccessResponse, 
+  createErrorResponse, 
+  getErrorStatusCode,
+  API_ERROR_CODES 
+} from '@/lib/api-errors';
 
 export async function GET(request: NextRequest) {
   console.log('🔑 Request code API called');
@@ -10,9 +16,13 @@ export async function GET(request: NextRequest) {
 
     if (!uuid) {
       console.log('❌ UUID missing');
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        'UUID가 필요합니다.'
+      );
       return NextResponse.json(
-        { success: false, error: 'UUID가 필요합니다.', payload: null },
-        { status: 400 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
 
@@ -23,9 +33,13 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       console.log('❌ User not found');
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '유효하지 않은 UUID입니다.'
+      );
       return NextResponse.json(
-        { success: false, error: '유효하지 않은 UUID입니다.', payload: null },
-        { status: 404 }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
 
@@ -50,9 +64,13 @@ export async function GET(request: NextRequest) {
 
     if (!platformResponse.ok || !platformData.success) {
       console.log('❌ BORA platform API failed with status:', platformResponse.status);
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.SERVICE_UNAVAILABLE,
+        '플랫폼 임시 코드 요청에 실패했습니다.'
+      );
       return NextResponse.json(
-        { success: false, error: '플랫폼 임시 코드 요청에 실패했습니다.', payload: null },
-        { status: platformResponse.status }
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) }
       );
     }
 
@@ -62,17 +80,18 @@ export async function GET(request: NextRequest) {
     console.log('✅ Local temp code created:', localRequestCode.code);
 
     // 플랫폼에서 받은 코드 반환
-    return NextResponse.json({
-      success: true,
-      error: null,
-      payload: platformData.payload,
-    });
+    const successResponse = createSuccessResponse(platformData.payload);
+    return NextResponse.json(successResponse);
   } catch (error) {
     console.error('❌ Request code error:', error);
     console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    const errorResponse = createErrorResponse(
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+      '임시 코드 요청 중 오류가 발생했습니다.'
+    );
     return NextResponse.json(
-      { success: false, error: '임시 코드 요청 중 오류가 발생했습니다.', payload: null },
-      { status: 500 }
+      errorResponse,
+      { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) }
     );
   }
 }
