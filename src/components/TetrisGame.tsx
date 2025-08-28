@@ -43,7 +43,7 @@ const QUEST_IDS = {
 };
 
 interface TetrisGameProps {
-  userId: string;
+  userId: number;  // gameUuid (숫자)
   onScoreUpdate: (score: number) => void;
   onLevelUpdate: (level: number) => void;
   onLinesUpdate: (lines: number) => void;

@@ -168,7 +168,7 @@ function GamePageContent() {
               {/* 게임 영역 */}
               <div className="flex-shrink-0">
                 <TetrisGame
-                  userId={currentUser.id}
+                  userId={currentUser.uuid}
                   onScoreUpdate={handleScoreUpdate}
                   onLevelUpdate={handleLevelUpdate}
                   onLinesUpdate={handleLinesUpdate}
