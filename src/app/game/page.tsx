@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import TetrisGame from '@/components/TetrisGame';
 import QuestPanel from '@/components/QuestPanel';
@@ -69,24 +69,24 @@ function GamePageContent() {
   };
 
   // 점수 업데이트
-  const handleScoreUpdate = (score: number) => {
+  const handleScoreUpdate = useCallback((score: number) => {
     setCurrentScore(score);
-  };
+  }, []);
 
   // 레벨 업데이트
-  const handleLevelUpdate = (level: number) => {
+  const handleLevelUpdate = useCallback((level: number) => {
     setCurrentLevel(level);
-  };
+  }, []);
 
   // 라인 업데이트
-  const handleLinesUpdate = (lines: number) => {
+  const handleLinesUpdate = useCallback((lines: number) => {
     setCurrentLines(lines);
-  };
+  }, []);
 
   // 게임 오버 처리
-  const handleGameOver = () => {
+  const handleGameOver = useCallback(() => {
     setGameCount(prev => prev + 1);
-  };
+  }, []);
 
   if (!currentUser) {
     return (

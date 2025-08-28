@@ -309,9 +309,12 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             newState.lines += linesCleared;
             newState.level = Math.floor(newState.lines / 10) + 1;
             
-            onScoreUpdateRef.current(newState.score);
-            onLevelUpdateRef.current(newState.level);
-            onLinesUpdateRef.current(newState.lines);
+            // 상태 업데이트를 다음 렌더 사이클로 지연
+            setTimeout(() => {
+              onScoreUpdateRef.current(newState.score);
+              onLevelUpdateRef.current(newState.level);
+              onLinesUpdateRef.current(newState.lines);
+            }, 0);
             
             // 퀘스트 체크 (점수, 라인, 레벨)
             checkScoreQuests(newState.score);
@@ -416,9 +419,12 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
               newState.lines += linesCleared;
               newState.level = Math.floor(newState.lines / 10) + 1;
               
-              onScoreUpdateRef.current(newState.score);
-              onLevelUpdateRef.current(newState.level);
-              onLinesUpdateRef.current(newState.lines);
+              // 상태 업데이트를 다음 렌더 사이클로 지연
+              setTimeout(() => {
+                onScoreUpdateRef.current(newState.score);
+                onLevelUpdateRef.current(newState.level);
+                onLinesUpdateRef.current(newState.lines);
+              }, 0);
               
               // 퀘스트 체크 (점수, 라인, 레벨)
               checkScoreQuests(newState.score);
@@ -429,7 +435,11 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             // 하드 드롭 보너스 점수 (떨어진 거리 * 2)
             if (dropDistance > 0) {
               newState.score += dropDistance * 2;
-              onScoreUpdateRef.current(newState.score);
+              
+              // 점수 업데이트를 다음 렌더 사이클로 지연
+              setTimeout(() => {
+                onScoreUpdateRef.current(newState.score);
+              }, 0);
               
               // 하드 드롭 퀘스트 체크
               const newHardDropsCount = hardDropsUsed + 1;
