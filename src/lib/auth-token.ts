@@ -7,7 +7,7 @@ export function validateApiKey(token: string): boolean {
 
 export function verifyApiKey(token: string): boolean {
   try {
-    const expectedToken = process.env.BAPP_AUTH_TOKEN;
+    const expectedToken = process.env.BAPP_AUTH_TOKEN || process.env.BAPP_API_KEY;
     if (!expectedToken) {
       console.error('BAPP_AUTH_TOKEN이 설정되지 않았습니다.');
       return false;
@@ -24,19 +24,27 @@ export function withAuthToken(handler: (req: NextRequest) => Promise<NextRespons
   return async (req: NextRequest): Promise<NextResponse> => {
     try {
       const authHeader = req.headers.get('authorization');
+      const apiAuthHeader = req.headers.get('api-auth');
+      const apiAuthUnderscoreHeader = req.headers.get('api_auth');
       
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      let token = '';
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // 'Bearer ' 제거
+      } else if (apiAuthHeader) {
+        token = apiAuthHeader;
+      } else if (apiAuthUnderscoreHeader) {
+        token = apiAuthUnderscoreHeader;
+      } else {
         return NextResponse.json(
           {
             success: false,
             error: 'UNAUTHORIZED',
-            payload: 'Auth token이 필요합니다.'
+            payload: 'Auth token이 필요합니다. (Authorization: Bearer, api-auth, 또는 api_auth 헤더)'
           },
           { status: 401 }
         );
       }
-
-      const token = authHeader.substring(7); // 'Bearer ' 제거
 
       if (!validateApiKey(token)) {
         return NextResponse.json(

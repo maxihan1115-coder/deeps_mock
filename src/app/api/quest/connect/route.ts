@@ -15,8 +15,10 @@ async function handleQuestConnect(request: NextRequest) {
     const { uuid } = await request.json();
     console.log('Received UUID:', uuid);
 
+    const parsedUuid = Number.parseInt(String(uuid), 10);
+
     // UUID 검증
-    if (!uuid) {
+    if (!Number.isFinite(parsedUuid)) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
         '게임 내 유저 고유 ID가 필요합니다.'
@@ -28,9 +30,9 @@ async function handleQuestConnect(request: NextRequest) {
     }
 
     // 사용자 존재 여부 확인
-    console.log('Looking for user with UUID:', uuid.toString());
+    console.log('Looking for user with UUID:', parsedUuid);
     const user = await prisma.user.findUnique({
-      where: { uuid: uuid.toString() },
+      where: { uuid: parsedUuid },
     });
     console.log('Found user:', user ? 'Yes' : 'No');
 
@@ -88,7 +90,7 @@ async function handleQuestConnect(request: NextRequest) {
     const platformLink = await prisma.platformLink.create({
       data: {
         gameUuid: user.uuid,
-        platformUuid: `bapp_${uuid}`, // BApp에서 제공한 UUID
+        platformUuid: `bapp_${parsedUuid}`, // BApp에서 제공한 UUID
         platformType: 'BAPP',
         linkedAt: new Date(),
         isActive: true,
@@ -99,7 +101,7 @@ async function handleQuestConnect(request: NextRequest) {
     await prisma.platformLinkHistory.create({
       data: {
         gameUuid: user.uuid,
-        platformUuid: `bapp_${uuid}`,
+        platformUuid: `bapp_${parsedUuid}`,
         platformType: 'BAPP',
         action: 'CONNECT',
         linkedAt: platformLink.linkedAt,

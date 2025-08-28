@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withApiAuth, AuthenticatedRequest } from '@/lib/api-auth';
+import { withAuthToken } from '@/lib/auth-token';
 import { 
   createSuccessResponse, 
   createErrorResponse, 
@@ -8,15 +8,17 @@ import {
   API_ERROR_CODES 
 } from '@/lib/api-errors';
 
-async function handleQuestDisconnect(request: AuthenticatedRequest) {
+async function handleQuestDisconnect(request: NextRequest) {
   try {
     console.log('Quest disconnect API called');
     
     const { uuid } = await request.json();
     console.log('Received UUID for disconnect:', uuid);
 
+    const parsedUuid = Number.parseInt(String(uuid), 10);
+
     // UUID 검증
-    if (!uuid) {
+    if (!Number.isFinite(parsedUuid)) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
         '게임 내 유저 고유 ID가 필요합니다.'
@@ -28,9 +30,9 @@ async function handleQuestDisconnect(request: AuthenticatedRequest) {
     }
 
     // 사용자 존재 여부 확인
-    console.log('Looking for user with UUID:', uuid.toString());
+    console.log('Looking for user with UUID:', parsedUuid);
     const user = await prisma.user.findUnique({
-      where: { uuid: uuid.toString() },
+      where: { uuid: parsedUuid },
     });
     console.log('Found user:', user ? 'Yes' : 'No');
 
@@ -101,5 +103,5 @@ async function handleQuestDisconnect(request: AuthenticatedRequest) {
   }
 }
 
-// API 키 검증과 함께 핸들러 실행
-export const POST = withApiAuth(handleQuestDisconnect);
+// BAPP_AUTH_TOKEN 검증과 함께 핸들러 실행
+export const POST = withAuthToken(handleQuestDisconnect);
