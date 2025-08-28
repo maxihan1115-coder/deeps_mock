@@ -329,7 +329,11 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           // 게임 오버 체크
           if (!isValidPosition(newState.currentBlock, newState.board)) {
             newState.isGameOver = true;
-            onGameOverRef.current();
+            
+            // 게임 오버 핸들러를 다음 렌더 사이클로 지연
+            setTimeout(() => {
+              onGameOverRef.current();
+            }, 0);
             
             // 게임 오버 시 게임 플레이 퀘스트 체크
             const newGamesPlayed = gamesPlayed + 1;
@@ -454,7 +458,11 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             // 게임 오버 체크
             if (!isValidPosition(newState.currentBlock, newState.board)) {
               newState.isGameOver = true;
-              onGameOverRef.current();
+              
+              // 게임 오버 핸들러를 다음 렌더 사이클로 지연
+              setTimeout(() => {
+                onGameOverRef.current();
+              }, 0);
               
               // 게임 오버 시 게임 플레이 퀘스트 체크
               const newGamesPlayed = gamesPlayed + 1;
