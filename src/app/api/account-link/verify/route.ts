@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
 
     if (!requestCode || !socialCode || !socialProvider) {
       return NextResponse.json(
-        { success: false, error: 'request_code, social_code, social_provider가 필요합니다.', payload: null },
+        { success: false, error: 'requestCode, social_code, social_provider가 필요합니다.', payload: null },
         { status: 400 }
       );
     }

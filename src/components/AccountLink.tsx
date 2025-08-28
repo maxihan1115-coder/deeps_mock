@@ -316,7 +316,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
               </div>
               
               <div className="p-2 bg-gray-50 border rounded text-xs font-mono break-all">
-                https://www.boradeeps.cc/?request_code={requestCode}
+                https://www.boradeeps.cc/?requestCode={requestCode}
               </div>
             </div>
 
