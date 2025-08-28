@@ -32,23 +32,49 @@ export function validateApiAuth(request: NextRequest): { isValid: boolean; apiKe
 // API 키 검증이 필요한 핸들러 래퍼
 export function withApiAuth(handler: (request: AuthenticatedRequest) => Promise<NextResponse>) {
   return async (request: NextRequest): Promise<NextResponse> => {
-    const auth = validateApiAuth(request);
-    
-    if (!auth.isValid) {
+    try {
+      // 요청 정보 로깅
+      console.log('🔐 [withApiAuth] 인증 미들웨어 호출됨');
+      console.log('📅 Time:', new Date().toISOString());
+      console.log('🌐 Method:', request.method);
+      console.log('🔗 URL:', request.url);
+      console.log('📍 Path:', new URL(request.url).pathname);
+      
+      const auth = validateApiAuth(request);
+      console.log('🔍 API Auth validation result:', auth.isValid ? 'VALID' : 'INVALID');
+      
+      if (!auth.isValid) {
+        console.log('❌ API Auth failed - invalid api-auth header');
+        const errorResponse = createErrorResponse(
+          API_ERROR_CODES.UNAUTHORIZED,
+          'API 인증 키 오류'
+        );
+        return NextResponse.json(
+          errorResponse,
+          { status: getErrorStatusCode(API_ERROR_CODES.UNAUTHORIZED) }
+        );
+      }
+      
+      // 인증된 요청 객체 생성
+      console.log('✅ API Auth successful - calling handler...');
+      const authenticatedRequest = request as AuthenticatedRequest;
+      authenticatedRequest.bappAuth = auth;
+      
+      const response = await handler(authenticatedRequest);
+      console.log('🎉 API Auth handler completed successfully');
+      return response;
+    } catch (error) {
+      console.error('🚨 [withApiAuth] 미들웨어 에러 발생!');
+      console.error('❌ Error details:', error instanceof Error ? error.message : error);
+      console.error('🔍 Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       const errorResponse = createErrorResponse(
-        API_ERROR_CODES.UNAUTHORIZED,
-        'API 인증 키 오류'
+        API_ERROR_CODES.SERVICE_UNAVAILABLE,
+        '인증 처리 중 오류가 발생했습니다.'
       );
       return NextResponse.json(
         errorResponse,
-        { status: getErrorStatusCode(API_ERROR_CODES.UNAUTHORIZED) }
+        { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) }
       );
     }
-    
-    // 인증된 요청 객체 생성
-    const authenticatedRequest = request as AuthenticatedRequest;
-    authenticatedRequest.bappAuth = auth;
-    
-    return handler(authenticatedRequest);
   };
 }

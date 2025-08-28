@@ -47,55 +47,41 @@ async function handleQuestConnect(request: NextRequest) {
       );
     }
 
-    // 이미 연동된 사용자인지 확인
+    // 연동 완료 처리 - 플랫폼에서 연동 완료를 알려주는 API
+    console.log('Processing platform link notification for user:', user.uuid);
+    
+    // 기존 연동 정보 확인
     const existingPlatformLink = await prisma.platformLink.findUnique({
       where: { gameUuid: user.uuid },
     });
 
+    let platformLink;
+    
     if (existingPlatformLink) {
-      const errorResponse = createErrorResponse(
-        API_ERROR_CODES.INVALID_USER,
-        '이미 연동된 유저'
-      );
-      return NextResponse.json(
-        errorResponse,
-        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
-      );
+      // 이미 연동된 경우: 연동 정보 업데이트 (재연동 허용)
+      console.log('Updating existing platform link for user:', user.uuid);
+      platformLink = await prisma.platformLink.update({
+        where: { gameUuid: user.uuid },
+        data: {
+          platformUuid: `bapp_${parsedUuid}`,
+          platformType: 'BAPP',
+          linkedAt: new Date(),
+          isActive: true,
+        },
+      });
+    } else {
+      // 새로운 연동 생성
+      console.log('Creating new platform link for user:', user.uuid);
+      platformLink = await prisma.platformLink.create({
+        data: {
+          gameUuid: user.uuid,
+          platformUuid: `bapp_${parsedUuid}`,
+          platformType: 'BAPP',
+          linkedAt: new Date(),
+          isActive: true,
+        },
+      });
     }
-
-    // 재연동 방지: 이전에 해제된 이력이 있는지 확인
-    const disconnectHistory = await prisma.platformLinkHistory.findFirst({
-      where: {
-        gameUuid: user.uuid,
-        action: 'DISCONNECT',
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    if (disconnectHistory) {
-      const errorResponse = createErrorResponse(
-        API_ERROR_CODES.INVALID_USER,
-        '재연동이 불가능한 유저'
-      );
-      return NextResponse.json(
-        errorResponse,
-        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
-      );
-    }
-
-    // 연동 완료 처리
-    // BApp에서 연동 완료를 알려주므로, 플랫폼 연동 정보를 생성
-    const platformLink = await prisma.platformLink.create({
-      data: {
-        gameUuid: user.uuid,
-        platformUuid: `bapp_${parsedUuid}`, // BApp에서 제공한 UUID
-        platformType: 'BAPP',
-        linkedAt: new Date(),
-        isActive: true,
-      },
-    });
 
     // 연동 이력에 기록 추가
     await prisma.platformLinkHistory.create({
@@ -103,7 +89,7 @@ async function handleQuestConnect(request: NextRequest) {
         gameUuid: user.uuid,
         platformUuid: `bapp_${parsedUuid}`,
         platformType: 'BAPP',
-        action: 'CONNECT',
+        action: existingPlatformLink ? 'RECONNECT' : 'CONNECT',
         linkedAt: platformLink.linkedAt,
       },
     });

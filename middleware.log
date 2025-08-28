@@ -1,0 +1,31 @@
+[2025-08-28T02:13:26.109Z] 🔐 [withAuthToken] POST /api/quest/connect
+[2025-08-28T02:13:26.112Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:13:26.112Z] ✅ Token validation result: VALID
+[2025-08-28T02:13:26.112Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:13:26.302Z] 🎉 Handler completed successfully
+[2025-08-28T02:13:40.202Z] 🔐 [withAuthToken] POST /api/quest/connect
+[2025-08-28T02:13:40.204Z] 🔑 Auth type: api-auth header
+[2025-08-28T02:13:40.204Z] ✅ Token validation result: INVALID
+[2025-08-28T02:13:40.204Z] ❌ Auth failed - invalid token
+[2025-08-28T02:13:52.937Z] 🔐 [withAuthToken] POST /api/quest/connect
+[2025-08-28T02:13:52.938Z] ❌ No auth token found in headers
+[2025-08-28T02:14:22.188Z] 🔐 [withAuthToken] POST /api/quest/connect
+[2025-08-28T02:14:22.191Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:14:22.191Z] ✅ Token validation result: VALID
+[2025-08-28T02:14:22.192Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:14:22.485Z] 🎉 Handler completed successfully
+[2025-08-28T02:16:14.229Z] 🔐 [withAuthToken] POST /api/quest/disconnect
+[2025-08-28T02:16:14.236Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:16:14.236Z] ✅ Token validation result: VALID
+[2025-08-28T02:16:14.237Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:16:15.032Z] 🎉 Handler completed successfully
+[2025-08-28T02:18:00.904Z] 🔐 [withAuthToken] POST /api/quest/connect
+[2025-08-28T02:18:00.905Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:18:00.906Z] ✅ Token validation result: VALID
+[2025-08-28T02:18:00.907Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:18:02.255Z] 🎉 Handler completed successfully
+[2025-08-28T02:18:09.738Z] 🔐 [withAuthToken] POST /api/quest/connect
+[2025-08-28T02:18:09.739Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T02:18:09.739Z] ✅ Token validation result: VALID
+[2025-08-28T02:18:09.739Z] ✅ Auth successful - calling handler...
+[2025-08-28T02:18:10.380Z] 🎉 Handler completed successfully
