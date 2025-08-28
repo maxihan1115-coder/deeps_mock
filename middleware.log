@@ -64,3 +64,13 @@
 [2025-08-28T02:23:16.338Z] ✅ Token validation result: VALID
 [2025-08-28T02:23:16.338Z] ✅ Auth successful - calling handler...
 [2025-08-28T02:23:16.706Z] 🎉 Handler completed successfully
+[2025-08-28T08:05:52.080Z] 🔐 [withAuthToken] POST /api/quest/check
+[2025-08-28T08:05:52.084Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T08:05:52.085Z] ✅ Token validation result: VALID
+[2025-08-28T08:05:52.086Z] ✅ Auth successful - calling handler...
+[2025-08-28T08:05:53.231Z] 🎉 Handler completed successfully
+[2025-08-28T08:11:07.092Z] 🔐 [withAuthToken] POST /api/quest/check
+[2025-08-28T08:11:07.093Z] 🔑 Auth type: Authorization Bearer
+[2025-08-28T08:11:07.093Z] ✅ Token validation result: VALID
+[2025-08-28T08:11:07.094Z] ✅ Auth successful - calling handler...
+[2025-08-28T08:11:07.897Z] 🎉 Handler completed successfully

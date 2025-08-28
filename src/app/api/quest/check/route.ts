@@ -13,62 +13,86 @@ const QUEST_LIST = [
   {
     id: 1,
     title: "FIRST_GAME",
-    totalTimes: 1
+    koreanTitle: "첫 게임 플레이",
+    totalTimes: 1,
+    type: "game_count"
   },
   {
     id: 2,
     title: "SCORE_1000",
-    totalTimes: 1
+    koreanTitle: "1000점 달성",
+    totalTimes: 1000,
+    type: "max_score"
   },
   {
     id: 3,
     title: "SCORE_5000",
-    totalTimes: 1
+    koreanTitle: "5000점 달성",
+    totalTimes: 5000,
+    type: "max_score"
   },
   {
     id: 4,
     title: "SCORE_10000",
-    totalTimes: 1
+    koreanTitle: "10000점 달성",
+    totalTimes: 10000,
+    type: "max_score"
   },
   {
     id: 5,
     title: "CLEAR_LINES_10",
-    totalTimes: 10
+    koreanTitle: "10라인 클리어",
+    totalTimes: 10,
+    type: "total_lines"
   },
   {
     id: 6,
     title: "CLEAR_LINES_50",
-    totalTimes: 50
+    koreanTitle: "50라인 클리어",
+    totalTimes: 50,
+    type: "total_lines"
   },
   {
     id: 7,
     title: "REACH_LEVEL_5",
-    totalTimes: 1
+    koreanTitle: "5레벨 달성",
+    totalTimes: 5,
+    type: "max_level"
   },
   {
     id: 8,
     title: "REACH_LEVEL_10",
-    totalTimes: 1
+    koreanTitle: "10레벨 달성",
+    totalTimes: 10,
+    type: "max_level"
   },
   {
     id: 9,
     title: "PLAY_GAMES_5",
-    totalTimes: 5
+    koreanTitle: "5회 게임 플레이",
+    totalTimes: 5,
+    type: "game_count"
   },
   {
     id: 10,
     title: "PLAY_GAMES_20",
-    totalTimes: 20
+    koreanTitle: "20회 게임 플레이",
+    totalTimes: 20,
+    type: "game_count"
   },
   {
     id: 11,
     title: "HARD_DROP_10",
-    totalTimes: 10
+    koreanTitle: "하드드롭 10회",
+    totalTimes: 10,
+    type: "hard_drop"  // TODO: 하드드롭 데이터 추가 필요
   },
   {
     id: 12,
     title: "DAILY_LOGIN",
-    totalTimes: 7
+    koreanTitle: "일일 로그인 7일",
+    totalTimes: 7,
+    type: "daily_login"  // TODO: 출석 데이터 기반
   }
 ];
 
@@ -139,6 +163,35 @@ async function handleQuestCheck(request: NextRequest) {
       );
     }
 
+    // 사용자의 실제 게임 데이터 조회
+    console.log('🎮 사용자의 실제 게임 데이터를 조회합니다...');
+    
+    // 하이스코어 데이터에서 게임 통계 계산
+    const gameStats = await prisma.highScore.aggregate({
+      where: { userId: user.id },
+      _count: { id: true },  // 총 게임 횟수
+      _max: { 
+        score: true,  // 최고 점수
+        level: true   // 최고 레벨
+      },
+      _sum: { 
+        lines: true   // 총 라인 수
+      }
+    });
+
+    // 출석 데이터 조회 (일일 로그인 퀘스트용)
+    const attendanceCount = await prisma.attendanceRecord.count({
+      where: { userId: user.id }
+    });
+
+    console.log('📊 게임 통계:', {
+      totalGames: gameStats._count.id,
+      maxScore: gameStats._max.score || 0,
+      maxLevel: gameStats._max.level || 0,
+      totalLines: gameStats._sum.lines || 0,
+      attendanceDays: attendanceCount
+    });
+
     // 퀘스트 달성 여부 조회
     const questResults = [];
     
@@ -157,23 +210,37 @@ async function handleQuestCheck(request: NextRequest) {
         );
       }
 
-      // 사용자의 퀘스트 진행도 조회 (실제로는 데이터베이스에서 조회)
+      // 퀘스트 타입에 따른 현재 진행도 계산
       let currentTimes = 0;
       
-      // 예시: 사용자별 퀘스트 진행도 (실제로는 데이터베이스에서 관리)
-      const userQuestProgress = await prisma.quest.findMany({
-        where: { 
-          userId: user.id,
-          title: questInfo.title 
-        },
-      });
-
-      if (userQuestProgress.length > 0) {
-        currentTimes = userQuestProgress[0].progress;
+      switch (questInfo.type) {
+        case 'game_count':
+          currentTimes = gameStats._count.id || 0;
+          break;
+        case 'max_score':
+          currentTimes = gameStats._max.score || 0;
+          break;
+        case 'max_level':
+          currentTimes = gameStats._max.level || 0;
+          break;
+        case 'total_lines':
+          currentTimes = gameStats._sum.lines || 0;
+          break;
+        case 'daily_login':
+          currentTimes = attendanceCount;
+          break;
+        case 'hard_drop':
+          // TODO: 하드드롭 데이터가 추가되면 구현
+          currentTimes = 0;
+          break;
+        default:
+          currentTimes = 0;
       }
 
       // 달성 여부 계산
       const complete = currentTimes >= questInfo.totalTimes;
+
+      console.log(`🎯 Quest ${questId} (${questInfo.title}): ${currentTimes}/${questInfo.totalTimes} - ${complete ? '✅' : '❌'}`);
 
       questResults.push({
         id: questId,

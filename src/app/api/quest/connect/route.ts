@@ -12,10 +12,19 @@ async function handleQuestConnect(request: NextRequest) {
   try {
     console.log('Quest connect API called');
     
-    const { uuid } = await request.json();
-    console.log('Received UUID:', uuid);
+    // 전체 요청 데이터 로깅
+    const requestBody = await request.json();
+    console.log('🔍 Full request body:', JSON.stringify(requestBody));
+    console.log('🔍 Request body keys:', Object.keys(requestBody));
+    
+    const { uuid } = requestBody;
+    console.log('🔍 Received UUID:', uuid);
+    console.log('🔍 UUID type:', typeof uuid);
+    console.log('🔍 UUID length:', uuid ? String(uuid).length : 'null/undefined');
 
     const parsedUuid = Number.parseInt(String(uuid), 10);
+    console.log('🔍 Parsed UUID:', parsedUuid);
+    console.log('🔍 Is finite:', Number.isFinite(parsedUuid));
 
     // UUID 검증
     if (!Number.isFinite(parsedUuid)) {
