@@ -415,7 +415,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
               
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-500">
-                  보상: {quest.reward}점
+                  보상: {quest.reward}
                 </span>
                 {quest.isCompleted && (
                   <Badge variant="default" className="text-xs bg-green-500">
