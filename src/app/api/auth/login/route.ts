@@ -47,10 +47,14 @@ function calculateConsecutiveDays(attendanceRecords: AttendanceRecord[]): number
 }
 
 export async function POST(request: NextRequest) {
-  console.log('🔐 Login API called');
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (!isProduction) console.log('🔐 Login API called');
+  
   try {
     const { username } = await request.json();
-    console.log('📝 Login attempt for username:', username);
+    
+    if (!isProduction) console.log('📝 Login attempt for username:', username);
 
     if (!username) {
       return NextResponse.json(
@@ -60,48 +64,52 @@ export async function POST(request: NextRequest) {
     }
 
     // 기존 사용자 확인
-    console.log('🔍 Checking existing user...');
     let user = await mysqlGameStore.getUserByUsername(username);
-    console.log('👤 User found:', user ? 'Yes' : 'No');
+    if (!isProduction) console.log('👤 User found:', user ? 'Yes' : 'No');
 
     // 사용자가 없으면 새로 생성 (패스워드는 무시)
     if (!user) {
-      console.log('➕ Creating new user...');
+      if (!isProduction) console.log('➕ Creating new user...');
       user = await mysqlGameStore.createUser(username);
-      console.log('✅ New user created:', user.id);
+      if (!isProduction) console.log('✅ New user created:', user.id);
     } else {
       // 기존 사용자의 마지막 로그인 시간 업데이트
-      console.log('🔄 Updating last login...');
+      if (!isProduction) console.log('🔄 Updating last login...');
       await mysqlGameStore.updateLastLogin(user.id);
-      console.log('✅ Last login updated');
+      if (!isProduction) console.log('✅ Last login updated');
     }
 
-    // 출석체크 추가
-    if (!(await mysqlGameStore.hasAttendanceToday(user.id))) {
+    // 병렬로 출석체크와 퀘스트 확인 처리
+    const [hasAttendanceToday, existingQuests] = await Promise.all([
+      mysqlGameStore.hasAttendanceToday(user.id),
+      mysqlGameStore.getQuests(user.id)
+    ]);
+
+    // 출석체크 추가 (필요한 경우만)
+    if (!hasAttendanceToday) {
       const today = new Date().toISOString().split('T')[0];
       await mysqlGameStore.addAttendanceRecord(user.id, today);
       
-      // DAILY_LOGIN 퀘스트 업데이트 (7일 연속 로그인)
+      // DAILY_LOGIN 퀘스트 업데이트 (7일 연속 로그인) - 비동기로 처리
       try {
         const attendanceRecords = await mysqlGameStore.getAttendanceRecords(user.id);
         const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
         
         // DAILY_LOGIN 퀘스트 ID: '12'
         await mysqlGameStore.updateQuestProgress(user.id, '12', Math.min(consecutiveDays, 7));
-        console.log('✅ DAILY_LOGIN 퀘스트 업데이트:', consecutiveDays, '일 연속');
+        if (!isProduction) console.log('✅ DAILY_LOGIN 퀘스트 업데이트:', consecutiveDays, '일 연속');
       } catch (error) {
         console.error('❌ DAILY_LOGIN 퀘스트 업데이트 실패:', error);
       }
     }
 
-    // 퀘스트 초기화 (없는 경우)
-    const existingQuests = await mysqlGameStore.getQuests(user.id);
-    console.log('Existing quests for user:', user.id, 'count:', existingQuests.length);
-    
+    // 퀘스트 초기화 (없는 경우만) - 백그라운드에서 처리
     if (existingQuests.length === 0) {
-      console.log('Initializing quests for user:', user.id);
-      await mysqlGameStore.initializeQuests(user.id);
-      console.log('Quests initialized, new count:', (await mysqlGameStore.getQuests(user.id)).length);
+      if (!isProduction) console.log('Initializing quests for user:', user.id);
+      // 퀘스트 초기화를 백그라운드에서 실행 (로그인 응답 속도 개선)
+      mysqlGameStore.initializeQuests(user.id).catch(error => {
+        console.error('퀘스트 초기화 실패:', error);
+      });
     }
 
     const response = NextResponse.json({

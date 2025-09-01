@@ -51,10 +51,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 현재 최고 점수 조회
+    // 현재 최고 점수 조회 (인덱스 활용으로 최적화)
     const currentHighScore = await prisma.highScore.findFirst({
       where: { userId },
       orderBy: { score: 'desc' },
+      select: { score: true, level: true, lines: true, createdAt: true } // 필요한 필드만 선택
     });
 
     // 새로운 점수가 최고 점수보다 높거나 같으면 저장
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
           level,
           lines,
         },
+        select: { score: true, level: true, lines: true, createdAt: true } // 필요한 필드만 선택
       });
 
       return NextResponse.json({
