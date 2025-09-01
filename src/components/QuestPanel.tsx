@@ -20,6 +20,32 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLinked, setIsLinked] = useState<boolean | null>(null);
 
+  // 플랫폼 연동 상태 확인 (quest/start API 200 응답 기준)
+  const checkPlatformLinkStatus = async () => {
+    try {
+      const response = await fetch('/api/quest/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_BAPP_AUTH_TOKEN || '1300728b9eabc43c7b26fcd6507b9b59c75333bfc4e48784e9be0291ebc3615a'}`
+        },
+        body: JSON.stringify({ uuid: userId })
+      });
+      
+      if (response.status === 200) {
+        setIsLinked(true);
+        return true;
+      } else {
+        setIsLinked(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('플랫폼 연동 상태 확인 실패:', error);
+      setIsLinked(false);
+      return false;
+    }
+  };
+
   // 퀘스트 조회
   const fetchQuests = async () => {
     try {
@@ -31,14 +57,12 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
       
       if (data.success) {
         setQuests(data.payload.quests || data.payload);
-        setIsLinked(true);
         setError(null);
         console.log('Quests set:', data.payload.quests || data.payload);
       } else {
         console.error('Quest API error:', data.error);
         // 미연동 유저인 경우에도 기본 퀘스트 목록을 보여줌
         if (data.error === 'INVALID_USER' && data.payload === '미연동 유저') {
-          setIsLinked(false);
           setError('미연동 상태: 플랫폼 연동을 완료하면 퀘스트 진행도가 저장됩니다.');
           // 테트리스 게임에 맞는 기본 퀘스트 목록 설정
           setQuests([
@@ -301,9 +325,16 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
     }
   }, [currentScore, quests]);
 
-  // 초기 퀘스트 로드
+  // 초기 연동 상태 확인 및 퀘스트 로드
   useEffect(() => {
-    fetchQuests();
+    const initializePanel = async () => {
+      // 먼저 플랫폼 연동 상태 확인
+      await checkPlatformLinkStatus();
+      // 그 다음 퀘스트 로드
+      await fetchQuests();
+    };
+    
+    initializePanel();
   }, [userId]);
 
   if (isLoading) {

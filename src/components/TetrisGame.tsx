@@ -89,13 +89,19 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [hasCheckedFirstGame, setHasCheckedFirstGame] = useState(false);
 
-  // 플랫폼 연동 상태 확인
+  // 플랫폼 연동 상태 확인 (quest/start API 200 응답 기준)
   const checkPlatformLinkStatus = useCallback(async () => {
     try {
-      const response = await fetch(`/api/platform-link/status?gameUuid=${userId}`);
-      const data = await response.json();
+      const response = await fetch('/api/quest/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_BAPP_AUTH_TOKEN || '1300728b9eabc43c7b26fcd6507b9b59c75333bfc4e48784e9be0291ebc3615a'}`
+        },
+        body: JSON.stringify({ uuid: userId })
+      });
       
-      if (data.success && data.payload.isLinked) {
+      if (response.status === 200) {
         setIsLinked(true);
         return true;
       } else {

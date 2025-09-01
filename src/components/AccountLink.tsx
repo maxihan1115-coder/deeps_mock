@@ -37,21 +37,28 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
     }
   }, [requestCode]);
 
-  // 플랫폼 연동 상태 확인
+  // 플랫폼 연동 상태 확인 (quest/start API 200 응답 기준)
   const checkLinkStatus = async () => {
     try {
-      console.log('🔍 플랫폼 연동 상태 확인 중...');
-      const response = await fetch(`/api/platform-link/status?gameUuid=${userUuid}`);
-      const data = await response.json();
+      console.log('🔍 플랫폼 연동 상태 확인 중 (quest/start API 기준)...');
       
-      console.log('📊 연동 상태 응답:', data);
+      const response = await fetch('/api/quest/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_BAPP_AUTH_TOKEN || '1300728b9eabc43c7b26fcd6507b9b59c75333bfc4e48784e9be0291ebc3615a'}`
+        },
+        body: JSON.stringify({ uuid: userUuid })
+      });
       
-      if (data.success) {
-        setIsLinked(data.payload.isLinked);
-        console.log('🔗 연동 상태:', data.payload.isLinked ? '연동됨' : '미연동');
+      console.log('📊 quest/start 응답 상태:', response.status);
+      
+      if (response.status === 200) {
+        setIsLinked(true);
+        console.log('🔗 연동 상태: 연동됨 (quest/start 성공)');
       } else {
-        console.error('❌ 연동 상태 확인 실패:', data.error);
         setIsLinked(false);
+        console.log('🔗 연동 상태: 미연동 (quest/start 실패)');
       }
     } catch (error) {
       console.error('❌ 연동 상태 확인 오류:', error);
