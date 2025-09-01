@@ -42,6 +42,7 @@ function GamePageContent() {
   const [currentLines, setCurrentLines] = useState(0);
   const [gameCount, setGameCount] = useState(0);
   const [showAccountLink, setShowAccountLink] = useState(false);
+  const [activeTab, setActiveTab] = useState("game");
 
   // URL 파라미터에서 사용자 정보 확인
   useEffect(() => {
@@ -138,7 +139,7 @@ function GamePageContent() {
 
       {/* 메인 컨텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="game" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8 bg-gray-100 p-1 rounded-xl">
             <TabsTrigger 
               value="game" 
@@ -179,7 +180,11 @@ function GamePageContent() {
               {/* 사이드바 */}
               <div className="flex flex-col gap-6">
                 {/* 출석체크 */}
-                <AttendanceCheck userId={currentUser.id} gameUuid={currentUser.uuid} />
+                <AttendanceCheck 
+                  userId={currentUser.id} 
+                  gameUuid={currentUser.uuid} 
+                  onNavigateToLinking={() => setActiveTab("platform")}
+                />
 
                 {/* 최고 점수 */}
                 <HighScoreDisplay

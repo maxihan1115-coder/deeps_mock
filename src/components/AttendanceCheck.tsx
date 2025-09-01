@@ -9,6 +9,7 @@ import { Calendar, Check, X } from 'lucide-react';
 interface AttendanceCheckProps {
   userId: string;
   gameUuid: number;  // 플랫폼 연동 상태 확인용
+  onNavigateToLinking?: () => void;  // 플랫폼 연동 탭으로 이동하는 함수
 }
 
 interface AttendanceRecord {
@@ -18,7 +19,7 @@ interface AttendanceRecord {
   createdAt: string;
 }
 
-export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckProps) {
+export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking }: AttendanceCheckProps) {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [todayAttended, setTodayAttended] = useState(false);
@@ -204,8 +205,8 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
               size="sm" 
               className="text-blue-600 border-blue-300 hover:bg-blue-50"
               onClick={() => {
-                // 플랫폼 연동 탭으로 이동하는 로직을 여기에 추가할 수 있습니다
                 console.log('플랫폼 연동 탭으로 이동');
+                onNavigateToLinking?.();
               }}
             >
               플랫폼 연동하기
