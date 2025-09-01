@@ -9,10 +9,9 @@ import AttendanceCheck from '@/components/AttendanceCheck';
 import HighScoreDisplay from '@/components/HighScoreDisplay';
 import HighScoreRanking from '@/components/HighScoreRanking';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, User, Calendar, Gamepad2, Trophy, Link } from 'lucide-react';
+import { LogOut, User, Gamepad2, Trophy, Link } from 'lucide-react';
 
 export default function GamePage() {
   return (
@@ -40,8 +39,6 @@ function GamePageContent() {
   const [currentScore, setCurrentScore] = useState(0);
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentLines, setCurrentLines] = useState(0);
-  const [gameCount, setGameCount] = useState(0);
-  const [showAccountLink, setShowAccountLink] = useState(false);
   const [activeTab, setActiveTab] = useState("game");
 
   // URL 파라미터에서 사용자 정보 확인
@@ -65,7 +62,6 @@ function GamePageContent() {
   const handleLogout = () => {
     setCurrentUser(null);
     setCurrentScore(0);
-    setGameCount(0);
     router.push('/');
   };
 
@@ -86,7 +82,7 @@ function GamePageContent() {
 
   // 게임 오버 처리
   const handleGameOver = useCallback(() => {
-    setGameCount(prev => prev + 1);
+    // 게임 오버 시 필요한 로직 추가 가능
   }, []);
 
   if (!currentUser) {

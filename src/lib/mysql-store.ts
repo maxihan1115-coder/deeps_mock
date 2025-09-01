@@ -397,7 +397,7 @@ class MySQLGameStore {
           userId,
           title,
           description: title, // 기본적으로 title을 description으로 사용
-          type: typeMapping[type] as any,
+          type: typeMapping[type] as QuestType,
           progress: 0,
           maxProgress,
           reward,

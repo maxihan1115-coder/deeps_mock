@@ -563,7 +563,6 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
   }, [isGameStarted, handleKeyDown]);
 
   // 반응형 셀 크기 계산
-  const getCellSizeClass = () => 'w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6';
   const getCellSizePx = () => {
     // CSS 미디어 쿼리와 일치하는 크기
     if (windowSize.width >= 1024) return 24; // lg: w-6 h-6

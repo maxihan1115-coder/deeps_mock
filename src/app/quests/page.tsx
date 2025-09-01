@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,6 @@ import {
   Target, 
   RefreshCw, 
   Award,
-  TrendingUp,
   CheckCircle,
   XCircle
 } from 'lucide-react';
@@ -104,53 +103,7 @@ export default function QuestsPage() {
     }
   };
 
-  // 퀘스트 타입별 아이콘
-  const getQuestIcon = (type: Quest['type']) => {
-    switch (type) {
-      case 'daily':
-        return <Calendar className="w-4 h-4" />;
-      case 'weekly':
-        return <Clock className="w-4 h-4" />;
-      case 'monthly':
-        return <Calendar className="w-4 h-4" />;
-      case 'single':
-        return <Target className="w-4 h-4" />;
-      default:
-        return <Trophy className="w-4 h-4" />;
-    }
-  };
 
-  // 퀘스트 타입별 배지 색상
-  const getQuestBadgeVariant = (type: Quest['type']) => {
-    switch (type) {
-      case 'daily':
-        return 'default';
-      case 'weekly':
-        return 'secondary';
-      case 'monthly':
-        return 'outline';
-      case 'single':
-        return 'destructive';
-      default:
-        return 'default';
-    }
-  };
-
-  // 퀘스트 타입별 한글 이름
-  const getQuestTypeName = (type: Quest['type']) => {
-    switch (type) {
-      case 'daily':
-        return '일일';
-      case 'weekly':
-        return '주간';
-      case 'monthly':
-        return '월간';
-      case 'single':
-        return '단일';
-      default:
-        return '기타';
-    }
-  };
 
   // 퀘스트 필터링
   const getQuestsByType = (type: Quest['type']) => {
