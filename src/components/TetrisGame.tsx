@@ -127,6 +127,8 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     if (!isLinked) return; // 플랫폼 연동이 안되어 있으면 퀘스트 업데이트 안함
     
     try {
+      console.log('퀘스트 업데이트 시도:', { userId: userStringId, questId, progress });
+      
       const response = await fetch('/api/quests/progress', {
         method: 'POST',
         headers: {
@@ -140,8 +142,17 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       });
       
       if (!response.ok) {
-        console.error('퀘스트 업데이트 실패:', response.status);
+        const errorText = await response.text();
+        console.error('퀘스트 업데이트 실패:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        return;
       }
+      
+      const result = await response.json();
+      console.log('퀘스트 업데이트 성공:', result);
     } catch (error) {
       console.error('퀘스트 업데이트 오류:', error);
     }
@@ -592,17 +603,18 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     }
 
     return (
-      <div 
-        className={`grid border-2 border-gray-300 bg-gray-100 ${
-          !isGameStarted ? 'opacity-50' : ''
-        }`}
-        style={{
-          gridTemplateColumns: `repeat(10, ${getCellSizePx()}px)`,
-          gridTemplateRows: `repeat(${BOARD_HEIGHT}, ${getCellSizePx()}px)`,
-          gap: 0,
-          lineHeight: 0,
-          fontSize: 0
-        }}>
+      <div className="inline-block border-2 border-gray-300 bg-gray-100">
+        <div 
+          className={`grid ${!isGameStarted ? 'opacity-50' : ''}`}
+          style={{
+            gridTemplateColumns: `repeat(10, ${getCellSizePx()}px)`,
+            gridTemplateRows: `repeat(${BOARD_HEIGHT}, ${getCellSizePx()}px)`,
+            gap: 0,
+            lineHeight: 0,
+            fontSize: 0,
+            width: `${10 * getCellSizePx()}px`,
+            height: `${BOARD_HEIGHT * getCellSizePx()}px`
+          }}>
         {displayBoard.map((row, y) =>
           row.map((cell, x) => {
             // 현재 블록의 색상 확인
@@ -663,6 +675,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             );
           })
         )}
+        </div>
       </div>
     );
   };
@@ -680,8 +693,6 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       <div 
         className="border border-gray-300 bg-gray-100 flex justify-center items-center"
         style={{
-          minWidth: `${maxCols * cellSize + padding * 2}px`,
-          minHeight: `${maxRows * cellSize + padding * 2}px`,
           padding: `${padding}px`
         }}
       >
@@ -692,7 +703,9 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             gridTemplateRows: `repeat(${maxRows}, ${cellSize}px)`,
             gap: 0,
             lineHeight: 0,
-            fontSize: 0
+            fontSize: 0,
+            width: `${maxCols * cellSize}px`,
+            height: `${maxRows * cellSize}px`
           }}
         >
           {gameState.nextBlock.shape.map((row, y) =>
