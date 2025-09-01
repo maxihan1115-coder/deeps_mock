@@ -89,6 +89,12 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
   const [hardDropsUsed, setHardDropsUsed] = useState(0);
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [hasCheckedFirstGame, setHasCheckedFirstGame] = useState(false);
+  const [windowSize, setWindowSize] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return { width: window.innerWidth, height: window.innerHeight };
+    }
+    return { width: 768, height: 1024 }; // 기본값
+  });
 
   // 플랫폼 연동 상태 확인 (quest/start API 200 응답 기준)
   const checkPlatformLinkStatus = useCallback(async () => {
@@ -545,6 +551,27 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     }
   }, [isGameStarted, handleKeyDown]);
 
+  // 반응형 셀 크기 계산
+  const getCellSizeClass = () => 'w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6';
+  const getCellSizePx = () => {
+    // CSS 미디어 쿼리와 일치하는 크기
+    if (windowSize.width >= 1024) return 24; // lg: w-6 h-6
+    if (windowSize.width >= 640) return 20;  // sm: w-5 h-5
+    return 16; // 기본: w-4 h-4
+  };
+
+  // 윈도우 크기 변경 감지
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, []);
+
   // 보드 렌더링
   const renderBoard = () => {
     const displayBoard = gameState.board.map(row => [...row]);
@@ -615,7 +642,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             return (
               <div
                 key={`${y}-${x}`}
-                className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 border border-gray-200"
+                className={`${getCellSizeClass()} border border-gray-200`}
                 style={{
                   backgroundColor: cellColor
                 }}
@@ -627,33 +654,36 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     );
   };
 
-  // 다음 블록 렌더링
-  const renderNextBlock = () => {
+  // 다음 블록 렌더링 (일관된 크기 사용)
+  const renderNextBlock = (isCompact = false) => {
     if (!gameState.nextBlock) return null;
 
     const maxCols = Math.max(...gameState.nextBlock.shape.map(row => row.length));
     const maxRows = gameState.nextBlock.shape.length;
+    const cellSize = getCellSizePx();
+    const padding = isCompact ? 8 : 16;
 
     return (
       <div 
-        className="border border-gray-300 bg-gray-100 p-4 flex justify-center items-center"
+        className="border border-gray-300 bg-gray-100 flex justify-center items-center"
         style={{
-          minWidth: `${maxCols * 24 + 32}px`,
-          minHeight: `${maxRows * 24 + 32}px`
+          minWidth: `${maxCols * cellSize + padding * 2}px`,
+          minHeight: `${maxRows * cellSize + padding * 2}px`,
+          padding: `${padding}px`
         }}
       >
         <div 
           className="grid gap-0"
           style={{
-            gridTemplateColumns: `repeat(${maxCols}, 24px)`,
-            gridTemplateRows: `repeat(${maxRows}, 24px)`
+            gridTemplateColumns: `repeat(${maxCols}, ${cellSize}px)`,
+            gridTemplateRows: `repeat(${maxRows}, ${cellSize}px)`
           }}
         >
           {gameState.nextBlock.shape.map((row, y) =>
             row.map((cell, x) => (
               <div
                 key={`next-${y}-${x}`}
-                className="w-6 h-6 border border-gray-200"
+                className={`${getCellSizeClass()} border border-gray-200`}
                 style={{
                   backgroundColor: cell && gameState.nextBlock ? gameState.nextBlock.color : 'transparent'
                 }}
@@ -673,6 +703,22 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
           <CardTitle className="text-center text-lg lg:text-xl">테트리스</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 lg:space-y-4 relative px-2 lg:px-6">
+          {/* 모바일 전용 다음 블록 미리보기 */}
+          {isGameStarted && (
+            <div className="block lg:hidden mb-2">
+              <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-gray-600">Next:</span>
+                  {renderNextBlock(true)}
+                </div>
+                <div className="text-right text-xs space-y-0.5">
+                  <div className="text-gray-600">점수: <span className="font-bold text-gray-900">{gameState.score.toLocaleString()}</span></div>
+                  <div className="text-gray-600">레벨: <span className="font-bold text-gray-900">{gameState.level}</span> | 라인: <span className="font-bold text-gray-900">{gameState.lines}</span></div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {renderBoard()}
           
           {/* 게임 시작 전 오버레이 */}
@@ -899,7 +945,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
           <div className="space-y-3">
             <h3 className="font-semibold text-center">다음 블록</h3>
             <div className="flex justify-center">
-              {renderNextBlock()}
+              {renderNextBlock(false)}
             </div>
           </div>
 
