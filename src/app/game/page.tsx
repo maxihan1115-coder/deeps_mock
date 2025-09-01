@@ -235,6 +235,7 @@ function GamePageContent() {
               <div className="w-full max-w-4xl">
                 <QuestPanel
                   userId={currentUser.id}
+                  gameUuid={currentUser.uuid}
                   currentScore={currentScore}
                 />
               </div>

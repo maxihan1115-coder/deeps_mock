@@ -10,10 +10,11 @@ import { Trophy, Calendar, Clock, Target } from 'lucide-react';
 
 interface QuestPanelProps {
   userId: string;
+  gameUuid: number;
   currentScore: number;
 }
 
-export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
+export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPanelProps) {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
@@ -29,7 +30,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${process.env.NEXT_PUBLIC_BAPP_AUTH_TOKEN || '1300728b9eabc43c7b26fcd6507b9b59c75333bfc4e48784e9be0291ebc3615a'}`
         },
-        body: JSON.stringify({ uuid: userId })
+        body: JSON.stringify({ uuid: gameUuid })
       });
       
       if (response.status === 200) {
@@ -335,7 +336,7 @@ export default function QuestPanel({ userId, currentScore }: QuestPanelProps) {
     };
     
     initializePanel();
-  }, [userId]);
+  }, [userId, gameUuid]);
 
   if (isLoading) {
     return (
