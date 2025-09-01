@@ -343,6 +343,48 @@ class MySQLGameStore {
     };
   }
 
+  async createQuest(
+    userId: string,
+    questId: string,
+    title: string,
+    maxProgress: number,
+    reward: number,
+    type: 'once' | 'daily' | 'weekly'
+  ): Promise<Quest | null> {
+    try {
+      const quest = await prisma.quest.create({
+        data: {
+          id: questId,
+          userId,
+          title,
+          description: title, // 기본적으로 title을 description으로 사용
+          type: type.toUpperCase() as any,
+          progress: 0,
+          maxProgress,
+          reward,
+          isCompleted: false,
+        },
+      });
+
+      return {
+        id: quest.id,
+        title: quest.title,
+        description: quest.description,
+        type: quest.type.toLowerCase() as Quest['type'],
+        progress: quest.progress,
+        maxProgress: quest.maxProgress,
+        reward: quest.reward,
+        isCompleted: quest.isCompleted,
+        expiresAt: quest.expiresAt || undefined,
+        createdAt: quest.createdAt,
+        lastResetTime: quest.lastResetTime || undefined,
+      };
+    } catch (error) {
+      console.error('Create quest error:', error);
+      return null;
+    }
+  }
+
   // 게임 상태 관련 메서드
   async saveGameState(userId: string, gameState: TetrisGameState): Promise<void> {
     await prisma.gameState.upsert({

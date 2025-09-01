@@ -24,17 +24,62 @@ export async function POST(request: NextRequest) {
     }
 
     // 현재 퀘스트 정보 조회
-    const currentQuest = await mysqlGameStore.getQuestById(userId, questId);
+    let currentQuest = await mysqlGameStore.getQuestById(userId, questId);
     
+    // 퀘스트가 존재하지 않으면 초기 퀘스트 생성
     if (!currentQuest) {
-      const errorResponse = createErrorResponse(
-        API_ERROR_CODES.INVALID_QUEST,
-        '존재하지 않는 퀘스트 ID'
+      console.log(`퀘스트가 존재하지 않아 생성합니다: userId=${userId}, questId=${questId}`);
+      
+      // 퀘스트 정의 (QUEST_IDS와 매칭)
+      const questDefinitions: Record<string, {title: string, maxProgress: number, reward: number, type: string}> = {
+        '1': { title: '첫 게임 플레이', maxProgress: 1, reward: 10, type: 'once' },
+        '2': { title: '1000점 달성', maxProgress: 1, reward: 20, type: 'once' },
+        '3': { title: '5000점 달성', maxProgress: 1, reward: 50, type: 'once' },
+        '4': { title: '10000점 달성', maxProgress: 1, reward: 100, type: 'once' },
+        '5': { title: '10줄 제거', maxProgress: 10, reward: 30, type: 'once' },
+        '6': { title: '50줄 제거', maxProgress: 50, reward: 100, type: 'once' },
+        '7': { title: '레벨 5 달성', maxProgress: 1, reward: 40, type: 'once' },
+        '8': { title: '레벨 10 달성', maxProgress: 1, reward: 80, type: 'once' },
+        '9': { title: '5게임 플레이', maxProgress: 5, reward: 25, type: 'once' },
+        '10': { title: '20게임 플레이', maxProgress: 20, reward: 100, type: 'once' },
+        '11': { title: '하드 드롭 10회', maxProgress: 10, reward: 20, type: 'once' },
+        '12': { title: '일일 로그인', maxProgress: 1, reward: 10, type: 'daily' }
+      };
+      
+      const questDef = questDefinitions[questId];
+      if (!questDef) {
+        const errorResponse = createErrorResponse(
+          API_ERROR_CODES.INVALID_QUEST,
+          '존재하지 않는 퀘스트 ID'
+        );
+        return NextResponse.json(
+          errorResponse,
+          { status: getErrorStatusCode(API_ERROR_CODES.INVALID_QUEST) }
+        );
+      }
+      
+      // 새 퀘스트 생성
+      currentQuest = await mysqlGameStore.createQuest(
+        userId,
+        questId,
+        questDef.title,
+        questDef.maxProgress,
+        questDef.reward,
+        questDef.type as 'once' | 'daily' | 'weekly'
       );
-      return NextResponse.json(
-        errorResponse,
-        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_QUEST) }
-      );
+      
+      if (!currentQuest) {
+        const errorResponse = createErrorResponse(
+          API_ERROR_CODES.SERVICE_UNAVAILABLE,
+          '퀘스트 생성 중 오류가 발생했습니다.'
+        );
+        return NextResponse.json(
+          errorResponse,
+          { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) }
+        );
+      }
+      
+      console.log(`퀘스트 생성 완료: ${questDef.title}`);
     }
 
     // 퀘스트 초기화 확인 (daily, weekly 퀘스트만)

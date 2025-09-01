@@ -753,7 +753,10 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             </div>
           )}
           
-          {renderBoard()}
+          {/* 게임 보드 중앙 정렬 컨테이너 */}
+          <div className="flex justify-center">
+            {renderBoard()}
+          </div>
           
           {/* 게임 시작 전 오버레이 */}
           {!isGameStarted && (
