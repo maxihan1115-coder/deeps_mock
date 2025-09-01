@@ -592,9 +592,17 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     }
 
     return (
-      <div className={`grid grid-cols-10 gap-0 border-2 border-gray-300 bg-gray-100 ${
-        !isGameStarted ? 'opacity-50' : ''
-      }`}>
+      <div 
+        className={`grid border-2 border-gray-300 bg-gray-100 ${
+          !isGameStarted ? 'opacity-50' : ''
+        }`}
+        style={{
+          gridTemplateColumns: `repeat(10, ${getCellSizePx()}px)`,
+          gridTemplateRows: `repeat(${BOARD_HEIGHT}, ${getCellSizePx()}px)`,
+          gap: 0,
+          lineHeight: 0,
+          fontSize: 0
+        }}>
         {displayBoard.map((row, y) =>
           row.map((cell, x) => {
             // 현재 블록의 색상 확인
@@ -642,11 +650,14 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             return (
               <div
                 key={`${y}-${x}`}
-                className={getCellSizeClass()}
                 style={{
                   backgroundColor: cellColor,
-                  outline: cell ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(0,0,0,0.1)',
-                  outlineOffset: '-1px'
+                  boxSizing: 'border-box',
+                  width: `${getCellSizePx()}px`,
+                  height: `${getCellSizePx()}px`,
+                  display: 'block',
+                  margin: 0,
+                  padding: 0
                 }}
               />
             );
@@ -675,21 +686,27 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
         }}
       >
         <div 
-          className="grid gap-0"
+          className="grid"
           style={{
             gridTemplateColumns: `repeat(${maxCols}, ${cellSize}px)`,
-            gridTemplateRows: `repeat(${maxRows}, ${cellSize}px)`
+            gridTemplateRows: `repeat(${maxRows}, ${cellSize}px)`,
+            gap: 0,
+            lineHeight: 0,
+            fontSize: 0
           }}
         >
           {gameState.nextBlock.shape.map((row, y) =>
             row.map((cell, x) => (
               <div
                 key={`next-${y}-${x}`}
-                className={getCellSizeClass()}
                 style={{
                   backgroundColor: cell && gameState.nextBlock ? gameState.nextBlock.color : 'transparent',
-                  outline: cell ? '1px solid rgba(255,255,255,0.2)' : 'none',
-                  outlineOffset: '-1px'
+                  boxSizing: 'border-box',
+                  width: `${cellSize}px`,
+                  height: `${cellSize}px`,
+                  display: 'block',
+                  margin: 0,
+                  padding: 0
                 }}
               />
             ))
