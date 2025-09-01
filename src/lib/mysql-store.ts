@@ -236,11 +236,19 @@ class MySQLGameStore {
       where: { userId },
     });
 
+    // 타입 매핑: Prisma enum -> 코드 타입
+    const typeMapping = {
+      'SINGLE': 'once',
+      'DAILY': 'daily',
+      'WEEKLY': 'weekly',
+      'MONTHLY': 'monthly'
+    };
+
     return quests.map(quest => ({
       id: quest.id,
       title: quest.title,
       description: quest.description,
-      type: quest.type.toLowerCase() as Quest['type'],
+      type: typeMapping[quest.type] as Quest['type'] || 'once',
       progress: quest.progress,
       maxProgress: quest.maxProgress,
       reward: quest.reward,
@@ -255,11 +263,19 @@ class MySQLGameStore {
       where: { userId },
     });
 
+    // 타입 매핑: Prisma enum -> 코드 타입
+    const typeMapping = {
+      'SINGLE': 'once',
+      'DAILY': 'daily',
+      'WEEKLY': 'weekly',
+      'MONTHLY': 'monthly'
+    };
+
     return quests.map(quest => ({
       id: quest.id,
       title: quest.title,
       description: quest.description,
-      type: quest.type.toLowerCase() as Quest['type'],
+      type: typeMapping[quest.type] as Quest['type'] || 'once',
       progress: quest.progress,
       maxProgress: quest.maxProgress,
       reward: quest.reward,
@@ -279,11 +295,19 @@ class MySQLGameStore {
 
     if (!quest) return null;
 
+    // 타입 매핑: Prisma enum -> 코드 타입
+    const typeMapping = {
+      'SINGLE': 'once',
+      'DAILY': 'daily',
+      'WEEKLY': 'weekly',
+      'MONTHLY': 'monthly'
+    };
+
     return {
       id: quest.id,
       title: quest.title,
       description: quest.description,
-      type: quest.type.toLowerCase() as Quest['type'],
+      type: typeMapping[quest.type] as Quest['type'] || 'once',
       progress: quest.progress,
       maxProgress: quest.maxProgress,
       reward: quest.reward,
@@ -328,11 +352,19 @@ class MySQLGameStore {
       data: updateData,
     });
 
+    // 타입 매핑: Prisma enum -> 코드 타입
+    const typeMapping = {
+      'SINGLE': 'once',
+      'DAILY': 'daily',
+      'WEEKLY': 'weekly',
+      'MONTHLY': 'monthly'
+    };
+
     return {
       id: updatedQuest.id,
       title: updatedQuest.title,
       description: updatedQuest.description,
-      type: updatedQuest.type.toLowerCase() as Quest['type'],
+      type: typeMapping[updatedQuest.type] as Quest['type'] || 'once',
       progress: updatedQuest.progress,
       maxProgress: updatedQuest.maxProgress,
       reward: updatedQuest.reward,
@@ -352,13 +384,20 @@ class MySQLGameStore {
     type: 'once' | 'daily' | 'weekly'
   ): Promise<Quest | null> {
     try {
+      // 타입 매핑: 코드 타입 -> Prisma enum
+      const typeMapping = {
+        'once': 'SINGLE',
+        'daily': 'DAILY', 
+        'weekly': 'WEEKLY'
+      };
+      
       const quest = await prisma.quest.create({
         data: {
           id: questId,
           userId,
           title,
           description: title, // 기본적으로 title을 description으로 사용
-          type: type.toUpperCase() as any,
+          type: typeMapping[type] as any,
           progress: 0,
           maxProgress,
           reward,
@@ -366,11 +405,19 @@ class MySQLGameStore {
         },
       });
 
+      // 타입 매핑: Prisma enum -> 코드 타입
+      const typeReverseMapping = {
+        'SINGLE': 'once',
+        'DAILY': 'daily',
+        'WEEKLY': 'weekly',
+        'MONTHLY': 'monthly'
+      };
+
       return {
         id: quest.id,
         title: quest.title,
         description: quest.description,
-        type: quest.type.toLowerCase() as Quest['type'],
+        type: typeReverseMapping[quest.type] as Quest['type'] || 'once',
         progress: quest.progress,
         maxProgress: quest.maxProgress,
         reward: quest.reward,
