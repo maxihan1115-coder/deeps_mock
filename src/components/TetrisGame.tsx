@@ -642,9 +642,11 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             return (
               <div
                 key={`${y}-${x}`}
-                className={`${getCellSizeClass()} border border-gray-200`}
+                className={getCellSizeClass()}
                 style={{
-                  backgroundColor: cellColor
+                  backgroundColor: cellColor,
+                  outline: cell ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(0,0,0,0.1)',
+                  outlineOffset: '-1px'
                 }}
               />
             );
@@ -683,9 +685,11 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             row.map((cell, x) => (
               <div
                 key={`next-${y}-${x}`}
-                className={`${getCellSizeClass()} border border-gray-200`}
+                className={getCellSizeClass()}
                 style={{
-                  backgroundColor: cell && gameState.nextBlock ? gameState.nextBlock.color : 'transparent'
+                  backgroundColor: cell && gameState.nextBlock ? gameState.nextBlock.color : 'transparent',
+                  outline: cell ? '1px solid rgba(255,255,255,0.2)' : 'none',
+                  outlineOffset: '-1px'
                 }}
               />
             ))
