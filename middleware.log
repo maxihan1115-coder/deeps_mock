@@ -344,3 +344,33 @@
 [2025-09-01T00:20:57.873Z] 🎉 Handler completed successfully
 [2025-09-01T00:20:57.874Z] 🎉 Handler completed successfully
 [2025-09-01T00:20:57.875Z] 🎉 Handler completed successfully
+[2025-09-01T00:23:40.813Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:23:40.815Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:23:40.815Z] ✅ Token validation result: VALID
+[2025-09-01T00:23:40.815Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:23:40.816Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:23:40.817Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:23:40.817Z] ✅ Token validation result: VALID
+[2025-09-01T00:23:40.817Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:23:40.936Z] 🎉 Handler completed successfully
+[2025-09-01T00:23:40.937Z] 🎉 Handler completed successfully
+[2025-09-01T00:23:51.770Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:23:51.771Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:23:51.774Z] ✅ Token validation result: VALID
+[2025-09-01T00:23:51.775Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:23:51.865Z] 🎉 Handler completed successfully
+[2025-09-01T00:23:52.173Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:23:52.174Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:23:52.174Z] ✅ Token validation result: VALID
+[2025-09-01T00:23:52.175Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:23:52.184Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:23:52.184Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:23:52.184Z] ✅ Token validation result: VALID
+[2025-09-01T00:23:52.185Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:23:52.185Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:23:52.185Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:23:52.186Z] ✅ Token validation result: VALID
+[2025-09-01T00:23:52.186Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:23:52.199Z] 🎉 Handler completed successfully
+[2025-09-01T00:23:52.570Z] 🎉 Handler completed successfully
+[2025-09-01T00:23:52.573Z] 🎉 Handler completed successfully

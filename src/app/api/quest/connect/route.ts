@@ -57,53 +57,23 @@ async function handleQuestConnect(request: NextRequest) {
     }
 
     // 연동 완료 처리 - 플랫폼에서 연동 완료를 알려주는 API
-    console.log('Processing platform link notification for user:', user.uuid);
+    console.log('Processing platform connect notification for user:', user.uuid);
     
-    // 기존 연동 정보 확인
-    const existingPlatformLink = await prisma.platformLink.findUnique({
-      where: { gameUuid: user.uuid },
-    });
-
-    let platformLink;
+    // connect API는 단순히 플랫폼에서 연동 요청이 있었음을 알리는 역할만 함
+    // 실제 연동 정보는 quest/start API에서만 생성됨
     
-    if (existingPlatformLink) {
-      // 이미 연동된 경우: 연동 정보 업데이트 (재연동 허용)
-      console.log('Updating existing platform link for user:', user.uuid);
-      platformLink = await prisma.platformLink.update({
-        where: { gameUuid: user.uuid },
-        data: {
-          platformUuid: `bapp_${parsedUuid}`,
-          platformType: 'BAPP',
-          linkedAt: new Date(),
-          isActive: true,
-        },
-      });
-    } else {
-      // 새로운 연동 생성
-      console.log('Creating new platform link for user:', user.uuid);
-      platformLink = await prisma.platformLink.create({
-        data: {
-          gameUuid: user.uuid,
-          platformUuid: `bapp_${parsedUuid}`,
-          platformType: 'BAPP',
-          linkedAt: new Date(),
-          isActive: true,
-        },
-      });
-    }
-
-    // 연동 이력에 기록 추가
+    // 연동 요청 이력만 기록 (실제 연동 정보는 생성하지 않음)
     await prisma.platformLinkHistory.create({
       data: {
         gameUuid: user.uuid,
         platformUuid: `bapp_${parsedUuid}`,
         platformType: 'BAPP',
-        action: existingPlatformLink ? 'RECONNECT' : 'CONNECT',
-        linkedAt: platformLink.linkedAt,
+        action: 'CONNECT_REQUEST',  // 연동 요청만 기록
+        linkedAt: new Date(),
       },
     });
 
-    console.log('Quest connection completed for user:', user.uuid, 'Platform link created:', platformLink.id);
+    console.log('Quest connect notification recorded for user:', user.uuid, '(실제 연동은 quest/start에서 처리)');
 
     // 성공 응답
     const successResponse = createSuccessResponse({

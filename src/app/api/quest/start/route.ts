@@ -25,8 +25,8 @@ async function handleQuestStart(request: NextRequest) {
       );
     }
 
-    // 병렬로 사용자 존재 여부와 플랫폼 연동 상태 확인
-    const [user, platformLink] = await Promise.all([
+    // 병렬로 사용자 존재 여부, 기존 연동 상태, 연동 요청 이력 확인
+    const [user, existingPlatformLink, connectRequest] = await Promise.all([
       prisma.user.findUnique({
         where: { uuid: parsedUuid },
         select: { id: true, uuid: true } // 필요한 필드만 선택
@@ -34,6 +34,14 @@ async function handleQuestStart(request: NextRequest) {
       prisma.platformLink.findUnique({
         where: { gameUuid: parsedUuid },
         select: { isActive: true } // 필요한 필드만 선택
+      }),
+      // 연동 요청 이력 확인 (quest/connect에서 생성된 CONNECT_REQUEST)
+      prisma.platformLinkHistory.findFirst({
+        where: { 
+          gameUuid: parsedUuid,
+          action: 'CONNECT_REQUEST'
+        },
+        orderBy: { createdAt: 'desc' }
       })
     ]);
 
@@ -48,10 +56,43 @@ async function handleQuestStart(request: NextRequest) {
       );
     }
 
-    if (!platformLink || !platformLink.isActive) {
+    // 이미 연동되어 있으면 그대로 진행
+    if (existingPlatformLink && existingPlatformLink.isActive) {
+      console.log('User already linked:', parsedUuid);
+    } 
+    // 연동 요청이 있었다면 실제 연동 정보 생성
+    else if (connectRequest) {
+      console.log('Creating platform link from connect request for user:', parsedUuid);
+      
+      // 실제 플랫폼 연동 정보 생성
+      await prisma.platformLink.create({
+        data: {
+          gameUuid: user.uuid,
+          platformUuid: `bapp_${parsedUuid}`,
+          platformType: 'BAPP',
+          linkedAt: new Date(),
+          isActive: true,
+        },
+      });
+
+      // 연동 완료 이력 추가
+      await prisma.platformLinkHistory.create({
+        data: {
+          gameUuid: user.uuid,
+          platformUuid: `bapp_${parsedUuid}`,
+          platformType: 'BAPP',
+          action: 'CONNECT_COMPLETED',
+          linkedAt: new Date(),
+        },
+      });
+      
+      console.log('Platform link created for user:', parsedUuid);
+    } 
+    // 연동 요청도 없고 기존 연동도 없으면 오류
+    else {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
-        '미연동 유저'
+        '미연동 유저 (플랫폼 연동 요청이 필요합니다)'
       );
       return NextResponse.json(
         errorResponse,
