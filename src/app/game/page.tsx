@@ -138,9 +138,9 @@ function GamePageContent() {
       </header>
 
       {/* 메인 컨텐츠 */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 lg:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 bg-gray-100 p-1 rounded-xl">
+          <TabsList className="grid w-full grid-cols-3 mb-4 lg:mb-8 bg-gray-100 p-1 rounded-xl">
             <TabsTrigger 
               value="game" 
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:scale-105 rounded-lg font-medium"
@@ -165,9 +165,10 @@ function GamePageContent() {
           </TabsList>
 
           <TabsContent value="game" className="space-y-0">
-            <div className="flex gap-8 justify-center items-start">
+            {/* 모바일 우선 반응형 레이아웃 */}
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 lg:justify-center lg:items-start">
               {/* 게임 영역 */}
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 w-full lg:w-auto flex justify-center">
                 <TetrisGame
                   userId={currentUser.uuid}
                   onScoreUpdate={handleScoreUpdate}
@@ -177,25 +178,57 @@ function GamePageContent() {
                 />
               </div>
 
-              {/* 사이드바 */}
-              <div className="flex flex-col gap-6">
-                {/* 출석체크 */}
-                <AttendanceCheck 
-                  userId={currentUser.id} 
-                  gameUuid={currentUser.uuid} 
-                  onNavigateToLinking={() => setActiveTab("platform")}
-                />
+              {/* 사이드바 - 모바일에서는 하단, 데스크톱에서는 우측 */}
+              <div className="flex flex-col gap-4 lg:gap-6 w-full lg:w-auto">
+                {/* 모바일에서는 가로 스크롤 카드 레이아웃 */}
+                <div className="block lg:hidden">
+                  <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+                    {/* 출석체크 */}
+                    <div className="flex-shrink-0 snap-start">
+                      <AttendanceCheck 
+                        userId={currentUser.id} 
+                        gameUuid={currentUser.uuid} 
+                        onNavigateToLinking={() => setActiveTab("platform")}
+                      />
+                    </div>
 
-                {/* 최고 점수 */}
-                <HighScoreDisplay
-                  userId={currentUser.id}
-                  currentScore={currentScore}
-                  currentLevel={currentLevel}
-                  currentLines={currentLines}
-                />
+                    {/* 최고 점수 */}
+                    <div className="flex-shrink-0 snap-start">
+                      <HighScoreDisplay
+                        userId={currentUser.id}
+                        currentScore={currentScore}
+                        currentLevel={currentLevel}
+                        currentLines={currentLines}
+                      />
+                    </div>
 
-                {/* 랭킹 */}
-                <HighScoreRanking currentUserId={currentUser.id} />
+                    {/* 랭킹 */}
+                    <div className="flex-shrink-0 snap-start">
+                      <HighScoreRanking currentUserId={currentUser.id} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 데스크톱에서는 세로 스택 레이아웃 */}
+                <div className="hidden lg:flex lg:flex-col lg:gap-6">
+                  {/* 출석체크 */}
+                  <AttendanceCheck 
+                    userId={currentUser.id} 
+                    gameUuid={currentUser.uuid} 
+                    onNavigateToLinking={() => setActiveTab("platform")}
+                  />
+
+                  {/* 최고 점수 */}
+                  <HighScoreDisplay
+                    userId={currentUser.id}
+                    currentScore={currentScore}
+                    currentLevel={currentLevel}
+                    currentLines={currentLines}
+                  />
+
+                  {/* 랭킹 */}
+                  <HighScoreRanking currentUserId={currentUser.id} />
+                </div>
               </div>
             </div>
           </TabsContent>

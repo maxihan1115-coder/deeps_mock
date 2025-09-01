@@ -181,7 +181,7 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
   // 플랫폼 미연동 상태 UI
   if (!platformCheckLoading && !isLinked) {
     return (
-      <Card className="w-80">
+      <Card className="w-80 lg:w-80 min-w-80">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
@@ -219,7 +219,7 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
 
   if (isLoading || platformCheckLoading) {
     return (
-      <Card className="w-80">
+      <Card className="w-80 lg:w-80 min-w-80">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
@@ -237,7 +237,7 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
   }
 
   return (
-    <Card className="w-80">
+    <Card className="w-80 lg:w-80 min-w-80">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="w-5 h-5" />

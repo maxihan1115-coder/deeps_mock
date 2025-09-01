@@ -94,7 +94,7 @@ export default function HighScoreRanking({ currentUserId }: HighScoreRankingProp
   }
 
   return (
-    <Card className="w-80">
+    <Card className="w-80 lg:w-80 min-w-80">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="w-5 h-5" />

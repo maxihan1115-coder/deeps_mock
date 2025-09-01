@@ -614,7 +614,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             return (
               <div
                 key={`${y}-${x}`}
-                className="w-6 h-6 border border-gray-200"
+                className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 border border-gray-200"
                 style={{
                   backgroundColor: cellColor
                 }}
@@ -665,25 +665,25 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   };
 
   return (
-    <div className="flex gap-8 justify-center items-start p-8">
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 justify-center items-start w-full max-w-6xl mx-auto p-2 lg:p-8">
       {/* 게임 보드 */}
-      <Card className="w-80">
-        <CardHeader>
-          <CardTitle className="text-center">테트리스</CardTitle>
+      <Card className="w-full max-w-sm lg:w-80 mx-auto lg:mx-0">
+        <CardHeader className="pb-2 lg:pb-6">
+          <CardTitle className="text-center text-lg lg:text-xl">테트리스</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 relative">
+        <CardContent className="space-y-2 lg:space-y-4 relative px-2 lg:px-6">
           {renderBoard()}
           
           {/* 게임 시작 전 오버레이 */}
           {!isGameStarted && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center rounded-lg">
-              <div className="text-center space-y-6">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+              <div className="text-center space-y-4 lg:space-y-6 px-4">
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
                   BORA TETRIS
                 </h2>
                 <Button
                   onClick={startGame}
-                  className="text-xl font-semibold px-8 py-3 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  className="text-lg lg:text-xl font-semibold px-6 py-2 lg:px-8 lg:py-3 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
                   START
                 </Button>
@@ -691,75 +691,157 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             </div>
           )}
           
-          {/* 컨트롤 버튼 */}
+          {/* 모바일 터치 컨트롤 버튼 */}
           {isGameStarted && (
-            <div className="flex justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (gameState.currentBlock) {
-                    const leftBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x - 1 };
-                    if (isValidPosition(leftBlock, gameState.board)) {
-                      setGameState(prev => ({ ...prev, currentBlock: leftBlock }));
+            <div className="mt-2 lg:mt-4">
+              {/* 데스크톱: 한 줄 레이아웃 */}
+              <div className="hidden lg:flex justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (gameState.currentBlock) {
+                      const leftBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x - 1 };
+                      if (isValidPosition(leftBlock, gameState.board)) {
+                        setGameState(prev => ({ ...prev, currentBlock: leftBlock }));
+                      }
                     }
-                  }
-                }}
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (gameState.currentBlock) {
-                    const rightBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x + 1 };
-                    if (isValidPosition(rightBlock, gameState.board)) {
-                      setGameState(prev => ({ ...prev, currentBlock: rightBlock }));
+                  }}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (gameState.currentBlock) {
+                      const rightBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x + 1 };
+                      if (isValidPosition(rightBlock, gameState.board)) {
+                        setGameState(prev => ({ ...prev, currentBlock: rightBlock }));
+                      }
                     }
-                  }
-                }}
-              >
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (gameState.currentBlock) {
-                    const downBlock = { ...gameState.currentBlock, y: gameState.currentBlock.y + 1 };
-                    if (isValidPosition(downBlock, gameState.board)) {
-                      setGameState(prev => ({ ...prev, currentBlock: downBlock }));
+                  }}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (gameState.currentBlock) {
+                      const downBlock = { ...gameState.currentBlock, y: gameState.currentBlock.y + 1 };
+                      if (isValidPosition(downBlock, gameState.board)) {
+                        setGameState(prev => ({ ...prev, currentBlock: downBlock }));
+                      }
                     }
-                  }
-                }}
-              >
-                <ArrowDown className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (gameState.currentBlock) {
-                    const rotatedShape = gameState.currentBlock.shape[0].map((_, i) =>
-                      gameState.currentBlock!.shape.map(row => row[row.length - 1 - i])
-                    );
-                    const rotatedBlock = { ...gameState.currentBlock, shape: rotatedShape };
-                    if (isValidPosition(rotatedBlock, gameState.board)) {
-                      setGameState(prev => ({ ...prev, currentBlock: rotatedBlock }));
+                  }}
+                >
+                  <ArrowDown className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (gameState.currentBlock) {
+                      const rotatedShape = gameState.currentBlock.shape[0].map((_, i) =>
+                        gameState.currentBlock!.shape.map(row => row[row.length - 1 - i])
+                      );
+                      const rotatedBlock = { ...gameState.currentBlock, shape: rotatedShape };
+                      if (isValidPosition(rotatedBlock, gameState.board)) {
+                        setGameState(prev => ({ ...prev, currentBlock: rotatedBlock }));
+                      }
                     }
-                  }
-                }}
-              >
-                <RotateCw className="w-4 h-4" />
-              </Button>
+                  }}
+                >
+                  <RotateCw className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* 모바일: 그리드 레이아웃 */}
+              <div className="block lg:hidden">
+                <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+                  {/* 빈 공간 */}
+                  <div></div>
+                  {/* 회전 버튼 */}
+                  <Button
+                    variant="outline"
+                    className="h-12 w-full"
+                    onClick={() => {
+                      if (gameState.currentBlock) {
+                        const rotatedShape = gameState.currentBlock.shape[0].map((_, i) =>
+                          gameState.currentBlock!.shape.map(row => row[row.length - 1 - i])
+                        );
+                        const rotatedBlock = { ...gameState.currentBlock, shape: rotatedShape };
+                        if (isValidPosition(rotatedBlock, gameState.board)) {
+                          setGameState(prev => ({ ...prev, currentBlock: rotatedBlock }));
+                        }
+                      }
+                    }}
+                  >
+                    <RotateCw className="w-6 h-6" />
+                  </Button>
+                  {/* 빈 공간 */}
+                  <div></div>
+                  
+                  {/* 좌측 버튼 */}
+                  <Button
+                    variant="outline"
+                    className="h-12 w-full"
+                    onClick={() => {
+                      if (gameState.currentBlock) {
+                        const leftBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x - 1 };
+                        if (isValidPosition(leftBlock, gameState.board)) {
+                          setGameState(prev => ({ ...prev, currentBlock: leftBlock }));
+                        }
+                      }
+                    }}
+                  >
+                    <ArrowLeft className="w-6 h-6" />
+                  </Button>
+                  
+                  {/* 하향 버튼 */}
+                  <Button
+                    variant="outline"
+                    className="h-12 w-full"
+                    onClick={() => {
+                      if (gameState.currentBlock) {
+                        const downBlock = { ...gameState.currentBlock, y: gameState.currentBlock.y + 1 };
+                        if (isValidPosition(downBlock, gameState.board)) {
+                          setGameState(prev => ({ ...prev, currentBlock: downBlock }));
+                        }
+                      }
+                    }}
+                  >
+                    <ArrowDown className="w-6 h-6" />
+                  </Button>
+                  
+                  {/* 우측 버튼 */}
+                  <Button
+                    variant="outline"
+                    className="h-12 w-full"
+                    onClick={() => {
+                      if (gameState.currentBlock) {
+                        const rightBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x + 1 };
+                        if (isValidPosition(rightBlock, gameState.board)) {
+                          setGameState(prev => ({ ...prev, currentBlock: rightBlock }));
+                        }
+                      }
+                    }}
+                  >
+                    <ArrowRight className="w-6 h-6" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
           
-          {/* 키보드 컨트롤 안내 */}
+          {/* 컨트롤 안내 */}
           {isGameStarted && (
-            <div className="text-xs text-gray-500 text-center space-y-1">
-              <p>← → : 이동 | ↑ : 회전 | ↓ : 빠른 하강 | 스페이스바 : 즉시 떨어뜨리기</p>
+            <div className="text-xs text-gray-500 text-center space-y-1 mt-2">
+              {/* 모바일: 터치 안내 */}
+              <p className="block lg:hidden">터치 버튼을 사용하여 게임을 조작하세요</p>
+              {/* 데스크톱: 키보드 안내 */}
+              <p className="hidden lg:block">← → : 이동 | ↑ : 회전 | ↓ : 빠른 하강 | 스페이스바 : 즉시 떨어뜨리기</p>
             </div>
           )}
         </CardContent>
