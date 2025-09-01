@@ -10,11 +10,7 @@ import {
 
 async function handleQuestStart(request: NextRequest) {
   try {
-    console.log('Quest start API called');
-    
     const { uuid } = await request.json();
-    console.log('Received UUID for quest start:', uuid);
-
     const parsedUuid = Number.parseInt(String(uuid), 10);
 
     // UUID 검증
@@ -29,12 +25,17 @@ async function handleQuestStart(request: NextRequest) {
       );
     }
 
-    // 사용자 존재 여부 확인
-    console.log('Looking for user with UUID:', parsedUuid);
-    const user = await prisma.user.findUnique({
-      where: { uuid: parsedUuid },
-    });
-    console.log('Found user:', user ? 'Yes' : 'No');
+    // 병렬로 사용자 존재 여부와 플랫폼 연동 상태 확인
+    const [user, platformLink] = await Promise.all([
+      prisma.user.findUnique({
+        where: { uuid: parsedUuid },
+        select: { id: true, uuid: true } // 필요한 필드만 선택
+      }),
+      prisma.platformLink.findUnique({
+        where: { gameUuid: parsedUuid },
+        select: { isActive: true } // 필요한 필드만 선택
+      })
+    ]);
 
     if (!user) {
       const errorResponse = createErrorResponse(
@@ -47,12 +48,7 @@ async function handleQuestStart(request: NextRequest) {
       );
     }
 
-    // 플랫폼 연동 상태 확인
-    const platformLink = await prisma.platformLink.findUnique({
-      where: { gameUuid: user.uuid },
-    });
-
-    if (!platformLink) {
+    if (!platformLink || !platformLink.isActive) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
         '미연동 유저'
@@ -63,48 +59,44 @@ async function handleQuestStart(request: NextRequest) {
       );
     }
 
-    // 현재 timestamp 생성
+    // 최적화된 참여 정보 처리 (인덱스 활용으로 빠른 조회)
     const startDate = new Date();
-    const timestamp = startDate.getTime();
-
-    // 기존 참여 정보 확인
+    
+    // 기존 참여 정보 확인 (인덱스로 빠른 조회)
     const existingParticipation = await prisma.questParticipation.findFirst({
-      where: { gameUuid: user.uuid },
+      where: { gameUuid: parsedUuid },
+      select: { id: true } // 필요한 필드만 선택
     });
 
+    let participation;
     if (existingParticipation) {
       // 기존 참여 정보 업데이트
-      await prisma.questParticipation.update({
+      participation = await prisma.questParticipation.update({
         where: { id: existingParticipation.id },
         data: {
           startDate,
           updatedAt: new Date(),
         },
       });
-      console.log('Updated existing quest participation for user:', user.uuid);
     } else {
       // 새로운 참여 정보 생성
-      await prisma.questParticipation.create({
+      participation = await prisma.questParticipation.create({
         data: {
-          gameUuid: user.uuid,
+          gameUuid: parsedUuid,
           startDate,
         },
       });
-      console.log('Created new quest participation for user:', user.uuid);
     }
-
-    console.log('Quest start completed for user:', user.uuid, 'Start date:', startDate);
 
     // 성공 응답
     const successResponse = createSuccessResponse({
       result: true,
-      startDate: timestamp,
+      startDate: startDate.getTime(),
     });
     return NextResponse.json(successResponse);
 
   } catch (error) {
-    console.error('Quest start error:', error);
-    console.error('Error details:', error instanceof Error ? error.message : error);
+    console.error('Quest start error:', error instanceof Error ? error.message : error);
     const errorResponse = createErrorResponse(
       API_ERROR_CODES.SERVICE_UNAVAILABLE,
       '퀘스트 참여 시작 처리 중 오류가 발생했습니다.'

@@ -74,3 +74,13 @@
 [2025-08-28T08:11:07.093Z] ✅ Token validation result: VALID
 [2025-08-28T08:11:07.094Z] ✅ Auth successful - calling handler...
 [2025-08-28T08:11:07.897Z] 🎉 Handler completed successfully
+[2025-09-01T00:03:24.176Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:03:24.177Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:03:24.177Z] ✅ Token validation result: VALID
+[2025-09-01T00:03:24.177Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:03:29.232Z] 🎉 Handler completed successfully
+[2025-09-01T00:03:38.651Z] 🔐 [withAuthToken] POST /api/quest/check
+[2025-09-01T00:03:38.652Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:03:38.653Z] ✅ Token validation result: VALID
+[2025-09-01T00:03:38.653Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:03:39.035Z] 🎉 Handler completed successfully

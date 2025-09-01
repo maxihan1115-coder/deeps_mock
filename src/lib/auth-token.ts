@@ -41,23 +41,27 @@ export function verifyApiKey(token: string): boolean {
 
 export function withAuthToken(handler: (req: NextRequest) => Promise<NextResponse>) {
   return async (req: NextRequest): Promise<NextResponse> => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
     try {
-      // 요청 정보 로깅
-      const logMessage = `🔐 [withAuthToken] ${req.method} ${new URL(req.url).pathname}`;
-      console.log(logMessage);
-      logToFile(logMessage);
-      console.log('📅 Time:', new Date().toISOString());
-      console.log('🌐 Method:', req.method);
-      console.log('🔗 URL:', req.url);
-      console.log('📍 Path:', new URL(req.url).pathname);
-      
-      // 헤더 정보 로깅 (민감한 정보는 마스킹)
-      const headers = Object.fromEntries(req.headers.entries());
-      const maskedHeaders = { ...headers };
-      if (maskedHeaders.authorization) maskedHeaders.authorization = maskedHeaders.authorization.substring(0, 20) + '...';
-      if (maskedHeaders['api-auth']) maskedHeaders['api-auth'] = maskedHeaders['api-auth'].substring(0, 20) + '...';
-      if (maskedHeaders['api_auth']) maskedHeaders['api_auth'] = maskedHeaders['api_auth'].substring(0, 20) + '...';
-      console.log('📋 Headers:', maskedHeaders);
+      // 프로덕션 환경에서는 최소한의 로깅만
+      if (!isProduction) {
+        const logMessage = `🔐 [withAuthToken] ${req.method} ${new URL(req.url).pathname}`;
+        console.log(logMessage);
+        logToFile(logMessage);
+        console.log('📅 Time:', new Date().toISOString());
+        console.log('🌐 Method:', req.method);
+        console.log('🔗 URL:', req.url);
+        console.log('📍 Path:', new URL(req.url).pathname);
+        
+        // 헤더 정보 로깅 (민감한 정보는 마스킹)
+        const headers = Object.fromEntries(req.headers.entries());
+        const maskedHeaders = { ...headers };
+        if (maskedHeaders.authorization) maskedHeaders.authorization = maskedHeaders.authorization.substring(0, 20) + '...';
+        if (maskedHeaders['api-auth']) maskedHeaders['api-auth'] = maskedHeaders['api-auth'].substring(0, 20) + '...';
+        if (maskedHeaders['api_auth']) maskedHeaders['api_auth'] = maskedHeaders['api_auth'].substring(0, 20) + '...';
+        console.log('📋 Headers:', maskedHeaders);
+      }
 
       const authHeader = req.headers.get('authorization');
       const apiAuthHeader = req.headers.get('api-auth');
@@ -67,23 +71,31 @@ export function withAuthToken(handler: (req: NextRequest) => Promise<NextRespons
       
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7); // 'Bearer ' 제거
-        const authMsg = '🔑 Auth type: Authorization Bearer';
-        console.log(authMsg);
-        logToFile(authMsg);
+        if (!isProduction) {
+          const authMsg = '🔑 Auth type: Authorization Bearer';
+          console.log(authMsg);
+          logToFile(authMsg);
+        }
       } else if (apiAuthHeader) {
         token = apiAuthHeader;
-        const authMsg = '🔑 Auth type: api-auth header';
-        console.log(authMsg);
-        logToFile(authMsg);
+        if (!isProduction) {
+          const authMsg = '🔑 Auth type: api-auth header';
+          console.log(authMsg);
+          logToFile(authMsg);
+        }
       } else if (apiAuthUnderscoreHeader) {
         token = apiAuthUnderscoreHeader;
-        const authMsg = '🔑 Auth type: api_auth header';
-        console.log(authMsg);
-        logToFile(authMsg);
+        if (!isProduction) {
+          const authMsg = '🔑 Auth type: api_auth header';
+          console.log(authMsg);
+          logToFile(authMsg);
+        }
       } else {
-        const errorMsg = '❌ No auth token found in headers';
-        console.log(errorMsg);
-        logToFile(errorMsg);
+        if (!isProduction) {
+          const errorMsg = '❌ No auth token found in headers';
+          console.log(errorMsg);
+          logToFile(errorMsg);
+        }
         const errorResponse = createErrorResponse(
           API_ERROR_CODES.UNAUTHORIZED,
           'Auth token이 필요합니다. (Authorization: Bearer, api-auth, 또는 api_auth 헤더)'
@@ -105,16 +117,21 @@ export function withAuthToken(handler: (req: NextRequest) => Promise<NextRespons
         );
       }
 
-      console.log('🔍 Token validation started...');
       const isValid = verifyApiKey(token);
-      const validationMsg = `✅ Token validation result: ${isValid ? 'VALID' : 'INVALID'}`;
-      console.log(validationMsg);
-      logToFile(validationMsg);
+      
+      if (!isProduction) {
+        console.log('🔍 Token validation started...');
+        const validationMsg = `✅ Token validation result: ${isValid ? 'VALID' : 'INVALID'}`;
+        console.log(validationMsg);
+        logToFile(validationMsg);
+      }
       
       if (!isValid) {
-        const failMsg = '❌ Auth failed - invalid token';
-        console.log(failMsg);
-        logToFile(failMsg);
+        if (!isProduction) {
+          const failMsg = '❌ Auth failed - invalid token';
+          console.log(failMsg);
+          logToFile(failMsg);
+        }
         const errorResponse = createErrorResponse(
           API_ERROR_CODES.UNAUTHORIZED,
           '유효하지 않은 API Key입니다.'
@@ -126,13 +143,20 @@ export function withAuthToken(handler: (req: NextRequest) => Promise<NextRespons
       }
 
       // 요청 객체를 그대로 전달
-      const successMsg = '✅ Auth successful - calling handler...';
-      console.log(successMsg);
-      logToFile(successMsg);
+      if (!isProduction) {
+        const successMsg = '✅ Auth successful - calling handler...';
+        console.log(successMsg);
+        logToFile(successMsg);
+      }
+      
       const response = await handler(req);
-      const completeMsg = '🎉 Handler completed successfully';
-      console.log(completeMsg);
-      logToFile(completeMsg);
+      
+      if (!isProduction) {
+        const completeMsg = '🎉 Handler completed successfully';
+        console.log(completeMsg);
+        logToFile(completeMsg);
+      }
+      
       return response;
     } catch (error) {
       const errorMsg = `🚨 [withAuthToken] 미들웨어 에러 발생! ${error instanceof Error ? error.message : error}`;

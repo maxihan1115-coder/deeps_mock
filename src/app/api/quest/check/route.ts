@@ -98,10 +98,7 @@ const QUEST_LIST = [
 
 async function handleQuestCheck(request: NextRequest) {
   try {
-    console.log('Quest check API called');
-    
     const { uuid, questIds } = await request.json();
-    console.log('Received UUID:', uuid, 'Quest IDs:', questIds);
 
     const parsedUuid = Number.parseInt(String(uuid), 10);
 
@@ -129,12 +126,17 @@ async function handleQuestCheck(request: NextRequest) {
       );
     }
 
-    // 사용자 존재 여부 확인
-    console.log('Looking for user with UUID:', parsedUuid);
-    const user = await prisma.user.findUnique({
-      where: { uuid: parsedUuid },
-    });
-    console.log('Found user:', user ? 'Yes' : 'No');
+    // 병렬로 사용자 존재 여부와 플랫폼 연동 상태 확인
+    const [user, platformLink] = await Promise.all([
+      prisma.user.findUnique({
+        where: { uuid: parsedUuid },
+        select: { id: true, uuid: true } // 필요한 필드만 선택
+      }),
+      prisma.platformLink.findUnique({
+        where: { gameUuid: parsedUuid },
+        select: { isActive: true } // 필요한 필드만 선택
+      })
+    ]);
 
     if (!user) {
       const errorResponse = createErrorResponse(
@@ -147,12 +149,7 @@ async function handleQuestCheck(request: NextRequest) {
       );
     }
 
-    // 플랫폼 연동 상태 확인
-    const platformLink = await prisma.platformLink.findUnique({
-      where: { gameUuid: user.uuid },
-    });
-
-    if (!platformLink) {
+    if (!platformLink || !platformLink.isActive) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
         '미연동 유저'
@@ -163,34 +160,36 @@ async function handleQuestCheck(request: NextRequest) {
       );
     }
 
-    // 사용자의 실제 게임 데이터 조회
-    console.log('🎮 사용자의 실제 게임 데이터를 조회합니다...');
-    
-    // 하이스코어 데이터에서 게임 통계 계산
-    const gameStats = await prisma.highScore.aggregate({
-      where: { userId: user.id },
-      _count: { id: true },  // 총 게임 횟수
-      _max: { 
-        score: true,  // 최고 점수
-        level: true   // 최고 레벨
-      },
-      _sum: { 
-        lines: true   // 총 라인 수
-      }
-    });
+    // 병렬로 게임 데이터 조회 (성능 최적화)
+    const [gameStats, attendanceCount] = await Promise.all([
+      // 하이스코어 데이터에서 게임 통계 계산
+      prisma.highScore.aggregate({
+        where: { userId: user.id },
+        _count: { id: true },  // 총 게임 횟수
+        _max: { 
+          score: true,  // 최고 점수
+          level: true   // 최고 레벨
+        },
+        _sum: { 
+          lines: true   // 총 라인 수
+        }
+      }),
+      // 출석 데이터 조회 (일일 로그인 퀘스트용)
+      prisma.attendanceRecord.count({
+        where: { userId: user.id }
+      })
+    ]);
 
-    // 출석 데이터 조회 (일일 로그인 퀘스트용)
-    const attendanceCount = await prisma.attendanceRecord.count({
-      where: { userId: user.id }
-    });
-
-    console.log('📊 게임 통계:', {
-      totalGames: gameStats._count.id,
-      maxScore: gameStats._max.score || 0,
-      maxLevel: gameStats._max.level || 0,
-      totalLines: gameStats._sum.lines || 0,
-      attendanceDays: attendanceCount
-    });
+    // 게임 통계 로그는 개발 환경에서만 출력
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📊 게임 통계:', {
+        totalGames: gameStats._count.id,
+        maxScore: gameStats._max.score || 0,
+        maxLevel: gameStats._max.level || 0,
+        totalLines: gameStats._sum.lines || 0,
+        attendanceDays: attendanceCount
+      });
+    }
 
     // 퀘스트 달성 여부 조회
     const questResults = [];
@@ -240,8 +239,6 @@ async function handleQuestCheck(request: NextRequest) {
       // 달성 여부 계산
       const complete = currentTimes >= questInfo.totalTimes;
 
-      console.log(`🎯 Quest ${questId} (${questInfo.title}): ${currentTimes}/${questInfo.totalTimes} - ${complete ? '✅' : '❌'}`);
-
       questResults.push({
         id: questId,
         totalTimes: questInfo.totalTimes,
@@ -250,7 +247,7 @@ async function handleQuestCheck(request: NextRequest) {
       });
     }
 
-    console.log('Quest check completed for user:', user.uuid, 'Results:', questResults);
+    // 프로덕션에서는 상세 로그 생략
 
     // 성공 응답
     const successResponse = createSuccessResponse(questResults);
