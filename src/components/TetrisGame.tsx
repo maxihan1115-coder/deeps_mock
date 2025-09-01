@@ -43,14 +43,15 @@ const QUEST_IDS = {
 };
 
 interface TetrisGameProps {
-  userId: number;  // gameUuid (숫자)
+  userId: number;  // gameUuid (숫자) - 플랫폼 연동용
+  userStringId: string;  // userId (문자열) - 퀘스트/DB용
   onScoreUpdate: (score: number) => void;
   onLevelUpdate: (level: number) => void;
   onLinesUpdate: (lines: number) => void;
   onGameOver: () => void;
 }
 
-export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver }: TetrisGameProps) {
+export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver }: TetrisGameProps) {
   const BOARD_WIDTH = 10;
   const BOARD_HEIGHT = 20;
   
@@ -126,7 +127,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: userId,
+          userId: userStringId,  // 문자열 사용자 ID 사용
           questId: questId,
           progress: progress
         })
@@ -138,7 +139,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
     } catch (error) {
       console.error('퀘스트 업데이트 오류:', error);
     }
-  }, [isLinked, userId]);
+  }, [isLinked, userStringId]);
 
   // 게임 시작 시 퀘스트 체크
   const checkFirstGameQuest = useCallback(() => {

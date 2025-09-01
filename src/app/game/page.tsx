@@ -171,6 +171,7 @@ function GamePageContent() {
               <div className="flex-shrink-0 w-full lg:w-auto flex justify-center">
                 <TetrisGame
                   userId={currentUser.uuid}
+                  userStringId={currentUser.id}
                   onScoreUpdate={handleScoreUpdate}
                   onLevelUpdate={handleLevelUpdate}
                   onLinesUpdate={handleLinesUpdate}

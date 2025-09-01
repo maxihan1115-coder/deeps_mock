@@ -374,3 +374,133 @@
 [2025-09-01T00:23:52.199Z] 🎉 Handler completed successfully
 [2025-09-01T00:23:52.570Z] 🎉 Handler completed successfully
 [2025-09-01T00:23:52.573Z] 🎉 Handler completed successfully
+[2025-09-01T00:55:22.990Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:55:22.993Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:55:22.993Z] ✅ Token validation result: VALID
+[2025-09-01T00:55:22.996Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:55:22.998Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:55:22.999Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:55:22.999Z] ✅ Token validation result: VALID
+[2025-09-01T00:55:22.999Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:55:23.000Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:55:23.000Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:55:23.001Z] ✅ Token validation result: VALID
+[2025-09-01T00:55:23.001Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:55:23.002Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:55:23.003Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:55:23.005Z] ✅ Token validation result: VALID
+[2025-09-01T00:55:23.006Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:55:23.022Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:55:23.033Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:55:23.033Z] ✅ Token validation result: VALID
+[2025-09-01T00:55:23.034Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:55:23.157Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:55:23.158Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:55:23.158Z] ✅ Token validation result: VALID
+[2025-09-01T00:55:23.158Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:55:23.385Z] 🎉 Handler completed successfully
+[2025-09-01T00:55:23.522Z] 🎉 Handler completed successfully
+[2025-09-01T00:55:23.689Z] 🎉 Handler completed successfully
+[2025-09-01T00:55:23.836Z] 🎉 Handler completed successfully
+[2025-09-01T00:55:23.984Z] 🎉 Handler completed successfully
+[2025-09-01T00:55:24.142Z] 🎉 Handler completed successfully
+[2025-09-01T00:56:19.173Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:56:19.201Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:56:19.209Z] ✅ Token validation result: VALID
+[2025-09-01T00:56:19.214Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:56:19.270Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:56:19.313Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:56:19.314Z] ✅ Token validation result: VALID
+[2025-09-01T00:56:19.315Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:56:19.422Z] 🎉 Handler completed successfully
+[2025-09-01T00:56:19.508Z] 🎉 Handler completed successfully
+[2025-09-01T00:56:20.259Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:56:20.264Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:56:20.269Z] ✅ Token validation result: VALID
+[2025-09-01T00:56:20.281Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:56:20.294Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:56:20.298Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:56:20.300Z] ✅ Token validation result: VALID
+[2025-09-01T00:56:20.300Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:56:20.565Z] 🎉 Handler completed successfully
+[2025-09-01T00:56:20.621Z] 🎉 Handler completed successfully
+[2025-09-01T00:56:21.764Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:56:21.776Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:56:21.782Z] ✅ Token validation result: VALID
+[2025-09-01T00:56:21.792Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:56:21.815Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:56:21.823Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:56:21.845Z] ✅ Token validation result: VALID
+[2025-09-01T00:56:21.849Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:56:21.851Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:56:21.851Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:56:21.851Z] ✅ Token validation result: VALID
+[2025-09-01T00:56:21.851Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:56:21.852Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:56:21.853Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:56:21.853Z] ✅ Token validation result: VALID
+[2025-09-01T00:56:21.853Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:56:21.934Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:56:21.937Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:56:21.948Z] ✅ Token validation result: VALID
+[2025-09-01T00:56:21.948Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:56:22.038Z] 🎉 Handler completed successfully
+[2025-09-01T00:56:22.050Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:56:22.051Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:56:22.051Z] ✅ Token validation result: VALID
+[2025-09-01T00:56:22.051Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:56:22.151Z] 🎉 Handler completed successfully
+[2025-09-01T00:56:22.298Z] 🎉 Handler completed successfully
+[2025-09-01T00:56:22.416Z] 🎉 Handler completed successfully
+[2025-09-01T00:56:22.492Z] 🎉 Handler completed successfully
+[2025-09-01T00:56:22.592Z] 🎉 Handler completed successfully
+[2025-09-01T00:57:37.047Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:57:37.048Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:57:37.049Z] ✅ Token validation result: VALID
+[2025-09-01T00:57:37.049Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:57:37.058Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:57:37.059Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:57:37.059Z] ✅ Token validation result: VALID
+[2025-09-01T00:57:37.059Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:57:37.061Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:57:37.061Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:57:37.065Z] ✅ Token validation result: VALID
+[2025-09-01T00:57:37.065Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:57:37.082Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:57:37.082Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:57:37.083Z] ✅ Token validation result: VALID
+[2025-09-01T00:57:37.083Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:57:37.179Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:57:37.181Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:57:37.182Z] ✅ Token validation result: VALID
+[2025-09-01T00:57:37.184Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:57:37.295Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:57:37.298Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:57:37.299Z] ✅ Token validation result: VALID
+[2025-09-01T00:57:37.304Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:57:37.444Z] 🎉 Handler completed successfully
+[2025-09-01T00:57:37.520Z] 🎉 Handler completed successfully
+[2025-09-01T00:57:37.524Z] 🎉 Handler completed successfully
+[2025-09-01T00:57:37.786Z] 🎉 Handler completed successfully
+[2025-09-01T00:57:37.803Z] 🎉 Handler completed successfully
+[2025-09-01T00:57:38.252Z] 🎉 Handler completed successfully
+[2025-09-01T00:58:49.560Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:58:49.561Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:58:49.562Z] ✅ Token validation result: VALID
+[2025-09-01T00:58:49.562Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:58:49.970Z] 🎉 Handler completed successfully
+[2025-09-01T00:58:53.604Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:58:53.609Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:58:53.610Z] ✅ Token validation result: VALID
+[2025-09-01T00:58:53.610Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:58:53.971Z] 🎉 Handler completed successfully
+[2025-09-01T00:59:02.529Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:59:02.529Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:59:02.530Z] ✅ Token validation result: VALID
+[2025-09-01T00:59:02.530Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:59:02.976Z] 🎉 Handler completed successfully
+[2025-09-01T00:59:09.034Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-01T00:59:09.034Z] 🔑 Auth type: Authorization Bearer
+[2025-09-01T00:59:09.035Z] ✅ Token validation result: VALID
+[2025-09-01T00:59:09.035Z] ✅ Auth successful - calling handler...
+[2025-09-01T00:59:09.522Z] 🎉 Handler completed successfully
