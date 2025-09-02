@@ -47,6 +47,7 @@ export interface Quest {
   expiresAt?: Date;
   createdAt?: Date;
   lastResetTime?: Date;
+  userId?: number; // 숫자 UUID (User.uuid)
 }
 
 // API 응답 타입

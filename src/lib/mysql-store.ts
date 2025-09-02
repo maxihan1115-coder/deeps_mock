@@ -148,11 +148,11 @@ class MySQLGameStore {
   }
 
   // 퀘스트 관련 메서드
-  async initializeQuests(userId: string): Promise<Quest[]> {
-    // 기존 퀘스트 삭제
-    await prisma.quest.deleteMany({
-      where: { userId },
-    });
+  async initializeQuests(gameUuid: number): Promise<Quest[]> {
+          // 기존 퀘스트 삭제
+      await prisma.quest.deleteMany({
+        where: { userId: gameUuid }, // 숫자 UUID 직접 사용
+      });
 
     const questsData = [
       // Daily 퀘스트
@@ -227,13 +227,13 @@ class MySQLGameStore {
     await prisma.quest.createMany({
       data: questsData.map(quest => ({
         ...quest,
-        userId,
+        userId: gameUuid, // 숫자 UUID 직접 사용
       })),
     });
 
     // 생성된 퀘스트 조회
     const quests = await prisma.quest.findMany({
-      where: { userId },
+      where: { userId: gameUuid }, // 숫자 UUID 직접 사용
     });
 
     // 타입 매핑: Prisma enum -> 코드 타입
@@ -258,9 +258,9 @@ class MySQLGameStore {
     }));
   }
 
-  async getQuests(userId: string): Promise<Quest[]> {
+  async getQuests(gameUuid: number): Promise<Quest[]> {
     const quests = await prisma.quest.findMany({
-      where: { userId },
+      where: { userId: gameUuid }, // 숫자 UUID 직접 사용
     });
 
     // 타입 매핑: Prisma enum -> 코드 타입
@@ -285,11 +285,11 @@ class MySQLGameStore {
     }));
   }
 
-  async getQuestById(userId: string, questId: string): Promise<Quest | null> {
+  async getQuestById(gameUuid: number, questId: string): Promise<Quest | null> {
     const quest = await prisma.quest.findFirst({
       where: {
         id: questId,
-        userId,
+        userId: gameUuid, // 숫자 UUID 직접 사용
       },
     });
 
@@ -319,7 +319,7 @@ class MySQLGameStore {
   }
 
   async updateQuestProgress(
-    userId: string, 
+    gameUuid: number, 
     questId: string, 
     progress: number, 
     lastResetTime?: Date
@@ -327,7 +327,7 @@ class MySQLGameStore {
     const quest = await prisma.quest.findFirst({
       where: {
         id: questId,
-        userId,
+        userId: gameUuid, // 숫자 UUID 직접 사용
       },
     });
 
@@ -376,7 +376,7 @@ class MySQLGameStore {
   }
 
   async createQuest(
-    userId: string,
+    gameUuid: number,
     questId: string,
     title: string,
     maxProgress: number,
@@ -394,7 +394,7 @@ class MySQLGameStore {
       const quest = await prisma.quest.create({
         data: {
           id: questId,
-          userId,
+          userId: gameUuid, // 숫자 UUID 직접 사용
           title,
           description: title, // 기본적으로 title을 description으로 사용
           type: typeMapping[type] as QuestType,
@@ -433,9 +433,9 @@ class MySQLGameStore {
   }
 
   // 게임 상태 관련 메서드
-  async saveGameState(userId: string, gameState: TetrisGameState): Promise<void> {
+  async saveGameState(gameUuid: number, gameState: TetrisGameState): Promise<void> {
     await prisma.gameState.upsert({
-      where: { userId },
+      where: { userId: gameUuid }, // 숫자 UUID 직접 사용
       update: {
         board: JSON.stringify(gameState.board),
         score: gameState.score,
@@ -445,7 +445,7 @@ class MySQLGameStore {
         isPaused: gameState.isPaused,
       },
       create: {
-        userId,
+        userId: gameUuid, // 숫자 UUID 직접 사용
         board: JSON.stringify(gameState.board),
         score: gameState.score,
         level: gameState.level,
@@ -456,9 +456,9 @@ class MySQLGameStore {
     });
   }
 
-  async getGameState(userId: string): Promise<TetrisGameState | undefined> {
+  async getGameState(gameUuid: number): Promise<TetrisGameState | undefined> {
     const gameState = await prisma.gameState.findUnique({
-      where: { userId },
+      where: { userId: gameUuid }, // 숫자 UUID 직접 사용
     });
 
     if (!gameState) return undefined;
@@ -476,8 +476,8 @@ class MySQLGameStore {
   }
 
   // 임시 코드 관련 메서드
-  async createTempCode(userId: string): Promise<{ code: string; expiresAt: Date }> {
-    console.log('🔐 Creating temp code for user:', userId);
+  async createTempCode(gameUuid: number): Promise<{ code: string; expiresAt: Date }> {
+    console.log('🔐 Creating temp code for user:', gameUuid);
     try {
       const code = uuidv4();
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15분 후 만료
@@ -487,7 +487,7 @@ class MySQLGameStore {
       await prisma.tempCode.create({
         data: {
           code,
-          userId,
+          userId: gameUuid, // 숫자 UUID 직접 사용
           expiresAt,
         },
       });
@@ -500,7 +500,7 @@ class MySQLGameStore {
     }
   }
 
-  async validateTempCode(code: string): Promise<{ isValid: boolean; userId?: string }> {
+  async validateTempCode(code: string): Promise<{ isValid: boolean; gameUuid?: number }> {
     const tempCode = await prisma.tempCode.findUnique({
       where: { code },
     });
@@ -517,7 +517,7 @@ class MySQLGameStore {
       return { isValid: false };
     }
 
-    return { isValid: true, userId: tempCode.userId };
+    return { isValid: true, gameUuid: tempCode.userId }; // 숫자 UUID 반환
   }
 
   async cleanupExpiredCodes(): Promise<void> {

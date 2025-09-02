@@ -31,19 +31,19 @@ model User {
 
 model AttendanceRecord {
   id        String   @id @default(uuid())
-  userId    String
+  userId    Int      // User.uuid (숫자) 참조
   date      String
   createdAt DateTime @default(now())
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
 
   @@map("attendance_records")
 }
 
 model Quest {
   id          String   @id @default(uuid())
-  userId      String
+  userId      Int      // User.uuid (숫자) 참조
   title       String
   description String
   type        QuestType
@@ -56,14 +56,14 @@ model Quest {
   createdAt   DateTime @default(now())
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
 
   @@map("quests")
 }
 
 model GameState {
   id        String   @id @default(uuid())
-  userId    String   @unique
+  userId    Int      @unique // User.uuid (숫자) 참조
   board     String   // JSON string
   score     Int      @default(0)
   level     Int      @default(1)
@@ -74,7 +74,7 @@ model GameState {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
 
   @@map("game_states")
 }
@@ -82,7 +82,7 @@ model GameState {
 model TempCode {
   id        String   @id @default(uuid())
   code      String   @unique
-  userId    String
+  userId    Int      // User.uuid (숫자) 참조
   expiresAt DateTime
   createdAt DateTime @default(now())
 
@@ -91,14 +91,14 @@ model TempCode {
 
 model HighScore {
   id        String   @id @default(uuid())
-  userId    String
+  userId    Int      // User.uuid (숫자) 참조
   score     Int
   level     Int
   lines     Int
   createdAt DateTime @default(now())
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
 
   @@map("high_scores")
 }
