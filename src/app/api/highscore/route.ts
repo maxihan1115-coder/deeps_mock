@@ -5,18 +5,27 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const gameUuid = searchParams.get('gameUuid') || searchParams.get('userId');
 
-    if (!userId) {
+    if (!gameUuid) {
       return NextResponse.json(
-        { success: false, error: '사용자 ID가 필요합니다.' },
+        { success: false, error: '게임 UUID가 필요합니다.' },
+        { status: 400 }
+      );
+    }
+
+    // gameUuid를 숫자로 파싱
+    const parsedGameUuid = parseInt(gameUuid, 10);
+    if (isNaN(parsedGameUuid)) {
+      return NextResponse.json(
+        { success: false, error: '게임 UUID는 숫자여야 합니다.' },
         { status: 400 }
       );
     }
 
     // 사용자의 최고 점수 조회
     const highScore = await prisma.highScore.findFirst({
-      where: { userId },
+      where: { userId: parsedGameUuid }, // 숫자 UUID 사용
       orderBy: { score: 'desc' },
     });
 
@@ -42,18 +51,26 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, score, level, lines } = body;
+    const { gameUuid, score, level, lines } = body; // userId → gameUuid
 
-    if (!userId || score === undefined || level === undefined || lines === undefined) {
+    if (!gameUuid || score === undefined || level === undefined || lines === undefined) {
       return NextResponse.json(
         { success: false, error: '필수 정보가 누락되었습니다.' },
         { status: 400 }
       );
     }
 
+    // gameUuid가 숫자인지 확인
+    if (typeof gameUuid !== 'number' || !Number.isFinite(gameUuid)) {
+      return NextResponse.json(
+        { success: false, error: '게임 UUID는 숫자여야 합니다.' },
+        { status: 400 }
+      );
+    }
+
     // 현재 최고 점수 조회 (인덱스 활용으로 최적화)
     const currentHighScore = await prisma.highScore.findFirst({
-      where: { userId },
+      where: { userId: gameUuid }, // 숫자 UUID 사용
       orderBy: { score: 'desc' },
       select: { score: true, level: true, lines: true, createdAt: true } // 필요한 필드만 선택
     });
@@ -62,7 +79,7 @@ export async function POST(request: NextRequest) {
     if (!currentHighScore || score >= currentHighScore.score) {
       const newHighScore = await prisma.highScore.create({
         data: {
-          userId,
+          userId: gameUuid, // 숫자 UUID 사용
           score,
           level,
           lines,

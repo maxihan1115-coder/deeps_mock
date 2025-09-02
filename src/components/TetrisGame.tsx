@@ -122,6 +122,43 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     }
   }, [userId]);
 
+  // 하이스코어 저장
+  const saveHighScore = useCallback(async (score: number, level: number, lines: number) => {
+    if (!isLinked) return; // 플랫폼 연동이 안되어 있으면 저장 안함
+    
+    try {
+      console.log('하이스코어 저장 시도:', { gameUuid: userId, score, level, lines });
+      
+      const response = await fetch('/api/highscore', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          gameUuid: userId, // 숫자 UUID 사용
+          score,
+          level,
+          lines
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('하이스코어 저장 실패:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        return;
+      }
+      
+      const result = await response.json();
+      console.log('하이스코어 저장 성공:', result);
+    } catch (error) {
+      console.error('하이스코어 저장 오류:', error);
+    }
+  }, [isLinked, userId, saveHighScore]);
+
   // 퀘스트 진행도 업데이트
   const updateQuestProgress = useCallback(async (questId: string, progress: number) => {
     if (!isLinked) return; // 플랫폼 연동이 안되어 있으면 퀘스트 업데이트 안함
@@ -359,10 +396,13 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
               onGameOverRef.current();
             }, 0);
             
-            // 게임 오버 시 게임 플레이 퀘스트 체크
+            // 게임 오버 시 게임 플레이 퀘스트 체크 및 하이스코어 저장
             const newGamesPlayed = gamesPlayed + 1;
             setGamesPlayed(newGamesPlayed);
             checkPlayGamesQuests(newGamesPlayed);
+            
+            // 하이스코어 저장 (게임 종료 시)
+            saveHighScore(newState.score, newState.level, newState.lines);
           }
         }
       } else {
