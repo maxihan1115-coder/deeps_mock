@@ -21,19 +21,12 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
   const [error, setError] = useState<string | null>(null);
   const [isLinked, setIsLinked] = useState<boolean | null>(null);
 
-  // 플랫폼 연동 상태 확인 (quest/start API 200 응답 기준)
+  // 플랫폼 연동 상태 확인 (platform-link/status 기준)
   const checkPlatformLinkStatus = async () => {
     try {
-      const response = await fetch('/api/quest/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_BAPP_AUTH_TOKEN || '1300728b9eabc43c7b26fcd6507b9b59c75333bfc4e48784e9be0291ebc3615a'}`
-        },
-        body: JSON.stringify({ uuid: gameUuid })
-      });
-      
-      if (response.status === 200) {
+      const response = await fetch(`/api/platform-link/status?gameUuid=${gameUuid}`);
+      const data = await response.json();
+      if (data.success && data.payload?.isLinked) {
         setIsLinked(true);
         return true;
       } else {

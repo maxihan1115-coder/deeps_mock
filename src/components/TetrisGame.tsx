@@ -97,29 +97,19 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     return { width: 768, height: 1024 }; // 기본값
   });
 
-  // 플랫폼 연동 상태 확인 (quest/start API 200 응답 기준)
+  // 플랫폼 연동 상태 확인 (platform-link/status로만 확인)
   const checkPlatformLinkStatus = useCallback(async () => {
     try {
-      console.log('플랫폼 연동 상태 확인 시작:', { userId });
-      
-      const response = await fetch('/api/quest/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_BAPP_AUTH_TOKEN || '1300728b9eabc43c7b26fcd6507b9b59c75333bfc4e48784e9be0291ebc3615a'}`
-        },
-        body: JSON.stringify({ uuid: userId })
-      });
-      
-      console.log('플랫폼 연동 상태 확인 응답:', { status: response.status, statusText: response.statusText });
-      
-      if (response.status === 200) {
+      console.log('플랫폼 연동 상태 확인 시작 (status API):', { userId });
+      const response = await fetch(`/api/platform-link/status?gameUuid=${userId}`);
+      const data = await response.json();
+      if (data.success && data.payload?.isLinked) {
         setIsLinked(true);
         console.log('플랫폼 연동 상태: TRUE');
         return true;
       } else {
         setIsLinked(false);
-        console.log('플랫폼 연동 상태: FALSE (API 응답 실패)');
+        console.log('플랫폼 연동 상태: FALSE (status 응답)');
         return false;
       }
     } catch (error) {
@@ -322,11 +312,11 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     updateQuestProgress(QUEST_IDS.HARD_DROP_10, Math.min(hardDropsCount, 10));
   }, [isLinked, updateQuestProgress]);
 
-  // 컴포넌트 마운트 시 플랫폼 연동 상태 확인
-  useEffect(() => {
-    console.log('TetrisGame 컴포넌트 마운트 - 플랫폼 연동 상태 확인 시작');
-    checkPlatformLinkStatus();
-  }, [checkPlatformLinkStatus]);
+  // 컴포넌트 마운트 시 플랫폼 연동 상태 확인 (중복 네트워크 방지를 위해 비활성화)
+  // useEffect(() => {
+  //   console.log('TetrisGame 컴포넌트 마운트 - 플랫폼 연동 상태 확인 시작');
+  //   checkPlatformLinkStatus();
+  // }, [checkPlatformLinkStatus]);
 
   // 게임 시작 시에도 플랫폼 연동 상태 재확인 (게임 중 호출 방지로 비활성화)
   // useEffect(() => {
