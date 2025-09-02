@@ -103,14 +103,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 퀘스트 초기화 (없는 경우만) - 백그라운드에서 처리
-    if (existingQuests.length === 0) {
-      if (!isProduction) console.log('Initializing quests for user:', user.uuid); // user.id → user.uuid (숫자)
-      // 퀘스트 초기화를 백그라운드에서 실행 (로그인 응답 속도 개선)
-      mysqlGameStore.initializeQuests(user.uuid).catch(error => { // user.id → user.uuid (숫자)
-        console.error('퀘스트 초기화 실패:', error);
-      });
-    }
+    // 공통 카탈로그 구조로 전환: 개별 유저 퀘스트 초기화 제거
 
     const response = NextResponse.json({
       success: true,

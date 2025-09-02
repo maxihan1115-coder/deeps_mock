@@ -7,6 +7,96 @@ import { QuestType } from '@prisma/client';
 
 // MySQL 기반 데이터 저장소
 class MySQLGameStore {
+  // 카탈로그 보장: 존재하지 않으면 기본 12개를 upsert
+  async ensureQuestCatalog(): Promise<void> {
+    const catalog = [
+      { id: '1', title: 'FIRST_GAME', description: '첫 번째 테트리스 게임', type: 'SINGLE', maxProgress: 1, reward: 5 },
+      { id: '2', title: 'SCORE_1000', description: '1000점 달성', type: 'SINGLE', maxProgress: 1000, reward: 5 },
+      { id: '3', title: 'SCORE_5000', description: '5000점 달성', type: 'SINGLE', maxProgress: 5000, reward: 5 },
+      { id: '4', title: 'SCORE_10000', description: '10000점 달성', type: 'SINGLE', maxProgress: 10000, reward: 5 },
+      { id: '5', title: 'CLEAR_LINES_10', description: '라인 10개 제거', type: 'SINGLE', maxProgress: 10, reward: 5 },
+      { id: '6', title: 'CLEAR_LINES_50', description: '라인 50개 제거', type: 'SINGLE', maxProgress: 50, reward: 5 },
+      { id: '7', title: 'REACH_LEVEL_5', description: '레벨 5 도달', type: 'SINGLE', maxProgress: 1, reward: 5 },
+      { id: '8', title: 'REACH_LEVEL_10', description: '레벨 10 도달', type: 'SINGLE', maxProgress: 1, reward: 5 },
+      { id: '9', title: 'PLAY_GAMES_5', description: '5게임 플레이', type: 'DAILY', maxProgress: 5, reward: 50 },
+      { id: '10', title: 'PLAY_GAMES_20', description: '20게임 플레이', type: 'WEEKLY', maxProgress: 20, reward: 100 },
+      { id: '11', title: 'HARD_DROP_10', description: '하드 드롭 10회', type: 'SINGLE', maxProgress: 10, reward: 5 },
+      { id: '12', title: 'DAILY_LOGIN', description: '연속 로그인 7일', type: 'DAILY', maxProgress: 7, reward: 10 },
+    ] as const;
+
+    for (const q of catalog) {
+      await prisma.questCatalog.upsert({
+        where: { id: q.id },
+        update: {},
+        create: {
+          id: q.id,
+          title: q.title,
+          description: q.description,
+          type: q.type as any,
+          maxProgress: q.maxProgress,
+          reward: q.reward,
+        },
+      });
+    }
+  }
+
+  async getCatalogWithProgress(gameUuid: number): Promise<Quest[]> {
+    await this.ensureQuestCatalog();
+    const [catalog, progresses] = await Promise.all([
+      prisma.questCatalog.findMany(),
+      prisma.questProgress.findMany({ where: { userId: gameUuid } }),
+    ]);
+    const progressByCatalog = new Map(progresses.map(p => [p.catalogId, p]));
+    const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    return catalog.map(c => {
+      const p = progressByCatalog.get(c.id);
+      return {
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        type: typeMapping[c.type] as Quest['type'],
+        progress: p?.progress ?? 0,
+        maxProgress: c.maxProgress,
+        reward: c.reward,
+        isCompleted: Boolean(p?.isCompleted),
+        expiresAt: undefined,
+        createdAt: new Date(),
+      };
+    });
+  }
+
+  async upsertQuestProgress(gameUuid: number, catalogId: string, progress: number): Promise<Quest | null> {
+    await this.ensureQuestCatalog();
+    const catalog = await prisma.questCatalog.findUnique({ where: { id: catalogId } });
+    if (!catalog) return null;
+    const nextProgress = Math.min(progress, catalog.maxProgress);
+    const updated = await prisma.questProgress.upsert({
+      where: { userId_catalogId: { userId: gameUuid, catalogId } },
+      update: {
+        progress: nextProgress,
+        isCompleted: nextProgress >= catalog.maxProgress,
+      },
+      create: {
+        userId: gameUuid,
+        catalogId,
+        progress: nextProgress,
+        isCompleted: nextProgress >= catalog.maxProgress,
+      },
+    });
+    const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    return {
+      id: catalog.id,
+      title: catalog.title,
+      description: catalog.description,
+      type: typeMapping[catalog.type] as Quest['type'],
+      progress: updated.progress,
+      maxProgress: catalog.maxProgress,
+      reward: catalog.reward,
+      isCompleted: updated.isCompleted,
+      expiresAt: undefined,
+      createdAt: new Date(),
+    };
+  }
   // 다음 UUID 번호를 가져오는 메서드
   private async getNextUuid(): Promise<number> {
     const lastUser = await prisma.user.findFirst({

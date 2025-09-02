@@ -71,7 +71,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const quests = await mysqlGameStore.getQuests(userId);
+    // 연동 상태 확인
+    const statusRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/platform-link/status?gameUuid=${userId}`, { cache: 'no-store' });
+    let isLinked = false; let startDate: number | null = null;
+    try {
+      const statusJson = await statusRes.json();
+      isLinked = !!statusJson?.payload?.isLinked;
+      startDate = statusJson?.payload?.startDate ?? null;
+    } catch {}
+
+    const quests = await mysqlGameStore.getCatalogWithProgress(userId);
+    // 미연동이면 빈 배열 반환 (정책에 따라 변경 가능)
+    if (!isLinked) {
+      return NextResponse.json({ success: true, error: null, payload: { quests: [] } });
+    }
     console.log('Retrieved quests for userId:', userId, 'count:', quests.length);
 
     // 퀘스트 참여 정보 조회
