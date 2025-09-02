@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 // 전체 랭킹 조회 (상위 10명)
 export async function GET(_request: NextRequest) {
   try {
-    // 각 사용자의 최고 점수만 조회하여 랭킹 생성 (호환성 우선)
+    // 각 사용자의 최고 점수만 조회하여 랭킹 생성 (숫자 UUID 사용)
     const rankings = await prisma.$queryRaw`
       SELECT 
         h.id,
@@ -16,7 +16,7 @@ export async function GET(_request: NextRequest) {
         u.username,
         u.uuid
       FROM high_scores h
-      INNER JOIN users u ON h.userId = u.id
+      INNER JOIN users u ON h.userId = u.uuid
       WHERE h.id = (
         SELECT h2.id 
         FROM high_scores h2 

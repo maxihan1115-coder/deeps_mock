@@ -52,7 +52,7 @@ interface TetrisGameProps {
   onHighScoreUpdate?: (highScore: any) => void; // 하이스코어 업데이트 콜백
 }
 
-export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver }: TetrisGameProps) {
+export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver, onHighScoreUpdate }: TetrisGameProps) {
   const BOARD_WIDTH = 10;
   const BOARD_HEIGHT = 20;
   
@@ -446,6 +446,13 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             checkPlayGamesQuests(newGamesPlayed);
             
             // 하이스코어 저장 (게임 종료 시)
+            console.log('게임 오버 - 하이스코어 저장 시도:', {
+              score: newState.score,
+              level: newState.level,
+              lines: newState.lines,
+              isLinked,
+              userId
+            });
             saveHighScore(newState.score, newState.level, newState.lines);
           }
         }
