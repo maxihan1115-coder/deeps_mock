@@ -1739,3 +1739,33 @@
 [2025-09-02T05:02:17.916Z] ✅ Auth successful - calling handler...
 [2025-09-02T05:02:17.924Z] 🎉 Handler completed successfully
 [2025-09-02T05:02:17.939Z] 🎉 Handler completed successfully
+[2025-09-02T05:09:42.948Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:09:42.951Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:09:42.951Z] ✅ Token validation result: VALID
+[2025-09-02T05:09:42.951Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:09:42.952Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:09:42.956Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:09:42.957Z] ✅ Token validation result: VALID
+[2025-09-02T05:09:42.957Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:09:42.958Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:09:42.958Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:09:42.958Z] ✅ Token validation result: VALID
+[2025-09-02T05:09:42.958Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:09:42.959Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:09:42.960Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:09:42.960Z] ✅ Token validation result: VALID
+[2025-09-02T05:09:42.960Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:09:43.717Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:09:43.734Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:09:43.735Z] ✅ Token validation result: VALID
+[2025-09-02T05:09:43.735Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:09:43.780Z] 🎉 Handler completed successfully
+[2025-09-02T05:09:43.781Z] 🎉 Handler completed successfully
+[2025-09-02T05:09:43.781Z] 🎉 Handler completed successfully
+[2025-09-02T05:09:43.781Z] 🎉 Handler completed successfully
+[2025-09-02T05:09:43.833Z] 🎉 Handler completed successfully
+[2025-09-02T05:09:43.931Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:09:43.932Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:09:43.933Z] ✅ Token validation result: VALID
+[2025-09-02T05:09:43.933Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:09:44.032Z] 🎉 Handler completed successfully

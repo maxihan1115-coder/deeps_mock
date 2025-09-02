@@ -157,7 +157,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     } catch (error) {
       console.error('하이스코어 저장 오류:', error);
     }
-  }, [isLinked, userId, saveHighScore]);
+  }, [isLinked, userId]);
 
   // 퀘스트 진행도 업데이트
   const updateQuestProgress = useCallback(async (questId: string, progress: number) => {
