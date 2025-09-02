@@ -73,3 +73,31 @@ export function resetQuestProgress(_questType: string): { progress: number, last
     lastResetTime: getCurrentKST()
   };
 }
+
+// 출석 연속일 계산
+import type { AttendanceRecord } from '@/types';
+export function calculateConsecutiveDays(records: AttendanceRecord[]): number {
+  // records: 최신 날짜부터 정렬되어 있다고 가정하지 않고 정렬
+  const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+  let consecutive = 0;
+  let lastDate: string | null = null;
+  for (const r of sorted) {
+    if (!lastDate) {
+      lastDate = r.date;
+      consecutive = 1;
+      continue;
+    }
+    // YYYY-MM-DD 또는 YYYYMMDD 둘 다 허용할 수 있으나 현재는 YYYY-MM-DD/문자열 비교 간단 처리
+    const prev = new Date(lastDate.replaceAll('-', ''));
+    const cur = new Date(r.date.replaceAll('-', ''));
+    const diff = (cur.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+    if (diff === 1) {
+      consecutive += 1;
+      lastDate = r.date;
+    } else if (diff > 1) {
+      consecutive = 1;
+      lastDate = r.date;
+    }
+  }
+  return consecutive;
+}

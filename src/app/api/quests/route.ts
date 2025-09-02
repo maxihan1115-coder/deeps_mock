@@ -72,15 +72,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 연동 상태 확인
-    const statusRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/platform-link/status?gameUuid=${userId}`, { cache: 'no-store' });
-    let isLinked = false; let startDate: number | null = null;
+    const statusRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/platform-link/status?gameUuid=${user.uuid}`, { cache: 'no-store' });
+    let isLinked = false;
     try {
       const statusJson = await statusRes.json();
       isLinked = !!statusJson?.payload?.isLinked;
-      startDate = statusJson?.payload?.startDate ?? null;
     } catch {}
 
-    const quests = await mysqlGameStore.getCatalogWithProgress(userId);
+    const quests = await mysqlGameStore.getCatalogWithProgress(user.uuid);
     // 미연동이면 빈 배열 반환 (정책에 따라 변경 가능)
     if (!isLinked) {
       return NextResponse.json({ success: true, error: null, payload: { quests: [] } });

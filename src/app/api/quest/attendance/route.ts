@@ -86,7 +86,7 @@ async function handleAttendanceCheck(request: NextRequest) {
     // 출석 기록 조회
     const attendanceRecord = await prisma.attendanceRecord.findFirst({
       where: {
-        userId: user.id,
+        userId: user.uuid,
         date: attendanceDate,
       },
     });

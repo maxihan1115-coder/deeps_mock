@@ -86,7 +86,8 @@ function GamePageContent() {
   }, []);
 
   // 하이스코어 업데이트 핸들러
-  const handleHighScoreUpdate = useCallback((highScore: any) => {
+  type HighScoreRecord = { id?: string; score: number; level: number; lines: number; createdAt?: string };
+  const handleHighScoreUpdate = useCallback((highScore: HighScoreRecord) => {
     console.log('하이스코어 업데이트:', highScore);
     // HighScoreDisplay 컴포넌트를 강제로 리렌더링하기 위해
     // 상태를 업데이트하거나 다른 방법을 사용할 수 있습니다

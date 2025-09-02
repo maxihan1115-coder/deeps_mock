@@ -75,8 +75,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 게임 내부에도 임시 코드 저장 (검증용)
-    console.log('🔐 Creating local temp code for user:', user.id);
-    const localRequestCode = await mysqlGameStore.createTempCode(user.id);
+    console.log('🔐 Creating local temp code for user (uuid):', user.uuid);
+    const localRequestCode = await mysqlGameStore.createTempCode(user.uuid);
     console.log('✅ Local temp code created:', localRequestCode.code);
 
     // 플랫폼에서 받은 코드 반환

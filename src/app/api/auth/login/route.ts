@@ -1,50 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlGameStore } from '@/lib/mysql-store';
+import { calculateConsecutiveDays } from '@/lib/quest-utils';
 
-// 출석 기록 타입 정의
-interface AttendanceRecord {
-  id: string;
-  userId: string;
-  date: string;
-  createdAt: Date;
-}
-
-// 연속 출석일 계산 함수
-function calculateConsecutiveDays(attendanceRecords: AttendanceRecord[]): number {
-  if (attendanceRecords.length === 0) return 0;
-  
-  // 날짜를 내림차순으로 정렬 (최신 날짜가 먼저)
-  const sortedDates = attendanceRecords
-    .map(record => new Date(record.date))
-    .sort((a, b) => b.getTime() - a.getTime());
-  
-  let consecutiveDays = 1;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  // 오늘 날짜가 없으면 0 반환
-  if (sortedDates[0].getTime() !== today.getTime()) {
-    return 0;
-  }
-  
-  // 연속된 날짜 계산
-  for (let i = 0; i < sortedDates.length - 1; i++) {
-    const currentDate = sortedDates[i];
-    const nextDate = sortedDates[i + 1];
-    
-    // 하루 차이인지 확인 (밀리초 단위로 계산)
-    const diffTime = currentDate.getTime() - nextDate.getTime();
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    
-    if (diffDays === 1) {
-      consecutiveDays++;
-    } else {
-      break; // 연속이 끊어지면 중단
-    }
-  }
-  
-  return consecutiveDays;
-}
+// 출석 연속일 계산은 quest-utils의 calculateConsecutiveDays 사용
 
 export async function POST(request: NextRequest) {
   const isProduction = process.env.NODE_ENV === 'production';

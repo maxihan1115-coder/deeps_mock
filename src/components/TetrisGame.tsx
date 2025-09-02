@@ -42,6 +42,7 @@ const QUEST_IDS = {
   DAILY_LOGIN: '12'
 };
 
+type HighScoreRecord = { id?: string; score: number; level: number; lines: number; createdAt?: string };
 interface TetrisGameProps {
   userId: number;  // gameUuid (숫자) - 플랫폼 연동용
   userStringId: string;  // userId (문자열) - 퀘스트/DB용
@@ -49,7 +50,7 @@ interface TetrisGameProps {
   onLevelUpdate: (level: number) => void;
   onLinesUpdate: (lines: number) => void;
   onGameOver: () => void;
-  onHighScoreUpdate?: (highScore: any) => void; // 하이스코어 업데이트 콜백
+  onHighScoreUpdate?: (highScore: HighScoreRecord) => void; // 하이스코어 업데이트 콜백
 }
 
 export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver, onHighScoreUpdate }: TetrisGameProps) {
@@ -194,9 +195,10 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       console.log('🎉 하이스코어 저장 완료! 새로운 점수:', result.highScore?.score);
     } catch (error) {
       console.error('하이스코어 저장 오류:', error);
+      const err = error as Error;
       console.error('에러 상세 정보:', {
-        message: error.message,
-        stack: error.stack,
+        message: err?.message,
+        stack: err?.stack,
         userId,
         score,
         level,

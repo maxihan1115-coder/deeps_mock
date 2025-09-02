@@ -168,24 +168,7 @@ export default function QuestsPage() {
           </Card>
         </div>
 
-        {/* 초기화 버튼 */}
-        {quests.length === 0 && (
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="text-center space-y-3">
-                <div className="text-gray-500">퀘스트가 없습니다.</div>
-                <Button
-                  onClick={initializeQuests}
-                  disabled={isInitializing}
-                  className="w-full md:w-auto"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isInitializing ? 'animate-spin' : ''}`} />
-                  {isInitializing ? '초기화 중...' : '퀘스트 초기화'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* 카탈로그 방식: 초기화 버튼 제거 */}
       </div>
 
       {/* 퀘스트 탭 */}

@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 // 인메모리 데이터 저장소
 class GameStore {
   private users: Map<string, User> = new Map();
-  private attendanceRecords: Map<string, AttendanceRecord[]> = new Map();
+  private attendanceRecords: Map<number, AttendanceRecord[]> = new Map();
   private quests: Map<string, Quest[]> = new Map();
   private gameStates: Map<string, TetrisGameState> = new Map();
 
@@ -38,7 +38,7 @@ class GameStore {
   }
 
   // 출석체크 관련 메서드
-  addAttendanceRecord(userId: string, date: string): AttendanceRecord {
+  addAttendanceRecord(userId: number, date: string): AttendanceRecord {
     const record: AttendanceRecord = {
       id: uuidv4(),
       userId,
@@ -54,7 +54,7 @@ class GameStore {
     return record;
   }
 
-  hasAttendanceToday(userId: string): boolean {
+  hasAttendanceToday(userId: number): boolean {
     const today = new Date().toISOString().split('T')[0];
     const userRecords = this.attendanceRecords.get(userId) || [];
     return userRecords.some(record => record.date === today);

@@ -32,7 +32,7 @@ class MySQLGameStore {
           id: q.id,
           title: q.title,
           description: q.description,
-          type: q.type as any,
+          type: q.type as unknown as QuestType,
           maxProgress: q.maxProgress,
           reward: q.reward,
         },

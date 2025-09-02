@@ -29,10 +29,8 @@ export async function POST(request: NextRequest) {
     // 여기서 실제 소셜 로그인 검증 로직이 들어가야 함
     // 현재는 목업이므로 항상 성공으로 처리
 
-    // 사용자 정보 조회하여 UUID 가져오기
-    const user = await prisma.user.findUnique({
-      where: { id: validation.userId },
-    });
+    // 사용자 정보 조회하여 UUID 가져오기 (temp code에는 gameUuid가 담김)
+    const user = validation.gameUuid ? await prisma.user.findUnique({ where: { uuid: validation.gameUuid } }) : null;
 
     if (!user) {
       return NextResponse.json(
@@ -60,7 +58,7 @@ export async function POST(request: NextRequest) {
       error: null,
       payload: {
         message: '계정 연동이 완료되었습니다.',
-        userId: validation.userId,
+        userId: validation.gameUuid,
         socialProvider,
         gameUuid: user.uuid,
       },

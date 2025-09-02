@@ -29,7 +29,7 @@ export interface TetrisGameState {
 // 출석체크 관련 타입
 export interface AttendanceRecord {
   id: string;
-  userId: string;
+  userId: number;
   date: string;
   createdAt: Date;
 }

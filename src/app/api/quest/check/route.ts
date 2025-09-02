@@ -164,7 +164,7 @@ async function handleQuestCheck(request: NextRequest) {
     const [gameStats, attendanceCount] = await Promise.all([
       // 하이스코어 데이터에서 게임 통계 계산
       prisma.highScore.aggregate({
-        where: { userId: user.id },
+        where: { userId: user.uuid },
         _count: { id: true },  // 총 게임 횟수
         _max: { 
           score: true,  // 최고 점수
@@ -176,7 +176,7 @@ async function handleQuestCheck(request: NextRequest) {
       }),
       // 출석 데이터 조회 (일일 로그인 퀘스트용)
       prisma.attendanceRecord.count({
-        where: { userId: user.id }
+        where: { userId: user.uuid }
       })
     ]);
 
