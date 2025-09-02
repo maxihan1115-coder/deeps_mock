@@ -28,6 +28,7 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
       const data = await response.json();
       if (data.success && data.payload?.isLinked) {
         setIsLinked(true);
+        // 필요 시 startDate를 로컬 상태/스토리지에 저장 가능
         return true;
       } else {
         setIsLinked(false);

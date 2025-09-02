@@ -1,5 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createSuccessResponse, createErrorResponse, getErrorStatusCode, API_ERROR_CODES } from '@/lib/api-errors';
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const gameUuidParam = searchParams.get('gameUuid');
+
+    const parsedGameUuid = Number.parseInt(String(gameUuidParam), 10);
+    if (!Number.isFinite(parsedGameUuid)) {
+      const errorResponse = createErrorResponse(API_ERROR_CODES.INVALID_USER, '게임 내 유저 고유 ID가 필요합니다.');
+      return NextResponse.json(errorResponse, { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) });
+    }
+
+    // 병렬 조회: platform_links 활성 여부, quest_participation startDate
+    const [platformLink, participation] = await Promise.all([
+      prisma.platformLink.findUnique({
+        where: { gameUuid: parsedGameUuid },
+        select: { isActive: true, linkedAt: true },
+      }),
+      prisma.questParticipation.findFirst({
+        where: { gameUuid: parsedGameUuid },
+        select: { startDate: true },
+      }),
+    ]);
+
+    const isLinked = Boolean(platformLink?.isActive) && Boolean(participation?.startDate);
+    const startDate = participation?.startDate ? participation.startDate.getTime() : null;
+
+    const payload = {
+      isLinked,
+      startDate,
+    };
+
+    return NextResponse.json(createSuccessResponse(payload));
+  } catch (error) {
+    console.error('platform-link/status error:', error);
+    const errorResponse = createErrorResponse(
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+      '플랫폼 연동 상태 조회 중 오류가 발생했습니다.'
+    );
+    return NextResponse.json(errorResponse, { status: getErrorStatusCode(API_ERROR_CODES.SERVICE_UNAVAILABLE) });
+  }
+}
+
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { 
   createSuccessResponse, 
   createErrorResponse, 

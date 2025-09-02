@@ -33,20 +33,20 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
   const checkPlatformLinkStatus = async () => {
     try {
       setPlatformCheckLoading(true);
-      // platform-link/status로 연동 여부와 날짜 확인
+      // platform-link/status로 연동 여부와 startDate 확인
       const statusResponse = await fetch(`/api/platform-link/status?gameUuid=${gameUuid}`);
       const statusData = await statusResponse.json();
 
       if (statusData.success && statusData.payload?.isLinked) {
         setIsLinked(true);
-        if (statusData.payload.linkedAt) {
-          const linkDate = new Date(statusData.payload.linkedAt).toISOString().split('T')[0];
+        if (statusData.payload.startDate) {
+          const linkDate = new Date(statusData.payload.startDate).toISOString().split('T')[0];
           setLinkedDate(linkDate);
-          console.log('📅 플랫폼 연동 날짜:', linkDate);
+          console.log('📅 플랫폼 연동 시작 날짜(startDate):', linkDate);
         } else {
           const today = new Date().toISOString().split('T')[0];
           setLinkedDate(today);
-          console.log('📅 연동 날짜 정보 없음, 오늘로 설정:', today);
+          console.log('📅 startDate 없음, 오늘로 설정:', today);
         }
       } else {
         setIsLinked(false);

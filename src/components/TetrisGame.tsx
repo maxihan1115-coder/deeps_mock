@@ -105,7 +105,8 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       const data = await response.json();
       if (data.success && data.payload?.isLinked) {
         setIsLinked(true);
-        console.log('플랫폼 연동 상태: TRUE');
+        // 필요 시 data.payload.startDate를 저장하여 클라이언트 기준으로도 활용 가능
+        console.log('플랫폼 연동 상태: TRUE, startDate:', data.payload?.startDate);
         return true;
       } else {
         setIsLinked(false);
