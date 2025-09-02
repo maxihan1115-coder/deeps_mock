@@ -50,8 +50,8 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
   // 퀘스트 조회
   const fetchQuests = async () => {
     try {
-      console.log('Fetching quests for userId:', userId);
-      const response = await fetch(`/api/quests?userId=${userId}`);
+      console.log('Fetching quests for gameUuid:', gameUuid);
+      const response = await fetch(`/api/quests?gameUuid=${gameUuid}`);
       const data = await response.json();
       
       console.log('Quest API response:', data);
@@ -208,7 +208,7 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId, questId, progress }),
+        body: JSON.stringify({ gameUuid, questId, progress }),
       });
 
       const data = await response.json();
@@ -235,7 +235,7 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ uuid: gameUuid }),
       });
 
       const data = await response.json();

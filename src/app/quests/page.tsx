@@ -22,7 +22,8 @@ export default function QuestsPage() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null); // string id (미사용 지향)
+  const [gameUuid, setGameUuid] = useState<number | null>(null); // numeric uuid 사용
   const [totalRewards, setTotalRewards] = useState(0);
   const [completedQuests, setCompletedQuests] = useState(0);
 
@@ -33,16 +34,17 @@ export default function QuestsPage() {
     if (userInfo) {
       const user = JSON.parse(userInfo);
       setUserId(user.id);
+      setGameUuid(user.uuid);
     }
   }, []);
 
   // 퀘스트 조회
   const fetchQuests = async () => {
-    if (!userId) return;
+    if (gameUuid == null) return;
     
     try {
-      console.log('Fetching quests for userId:', userId);
-      const response = await fetch(`/api/quests?userId=${userId}`);
+      console.log('Fetching quests for gameUuid:', gameUuid);
+      const response = await fetch(`/api/quests?gameUuid=${gameUuid}`);
       const data = await response.json();
       
       console.log('Quest API response:', data);
@@ -75,7 +77,7 @@ export default function QuestsPage() {
 
   // 퀘스트 초기화
   const initializeQuests = async () => {
-    if (!userId) return;
+    if (gameUuid == null) return;
     
     setIsInitializing(true);
     try {
@@ -84,7 +86,7 @@ export default function QuestsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ uuid: gameUuid }),
       });
 
       const data = await response.json();
@@ -112,10 +114,10 @@ export default function QuestsPage() {
 
   // 초기 퀘스트 로드
   useEffect(() => {
-    if (userId) {
+    if (gameUuid != null) {
       fetchQuests();
     }
-  }, [userId]);
+  }, [gameUuid]);
 
   if (!userId) {
     return (
