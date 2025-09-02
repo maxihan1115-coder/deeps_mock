@@ -473,13 +473,8 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
               userId
             });
             
-            // saveHighScore를 즉시 호출
-            try {
-              await saveHighScore(newState.score, newState.level, newState.lines);
-              console.log('하이스코어 저장 완료');
-            } catch (error) {
-              console.error('하이스코어 저장 중 에러:', error);
-            }
+            // saveHighScore를 즉시 호출 (await 제거)
+            saveHighScore(newState.score, newState.level, newState.lines);
           }
         }
       } else {

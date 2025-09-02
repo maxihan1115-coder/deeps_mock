@@ -2524,3 +2524,33 @@
 [2025-09-02T05:32:14.509Z] ✅ Token validation result: VALID
 [2025-09-02T05:32:14.510Z] ✅ Auth successful - calling handler...
 [2025-09-02T05:32:14.575Z] 🎉 Handler completed successfully
+[2025-09-02T05:34:49.910Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:34:49.919Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:34:49.940Z] ✅ Token validation result: VALID
+[2025-09-02T05:34:49.942Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:34:49.943Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:34:49.944Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:34:49.945Z] ✅ Token validation result: VALID
+[2025-09-02T05:34:49.946Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:34:49.946Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:34:49.947Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:34:49.947Z] ✅ Token validation result: VALID
+[2025-09-02T05:34:49.948Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:34:49.948Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:34:49.948Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:34:49.949Z] ✅ Token validation result: VALID
+[2025-09-02T05:34:49.949Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:34:50.454Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:34:50.455Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:34:50.456Z] ✅ Token validation result: VALID
+[2025-09-02T05:34:50.456Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:34:50.519Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:34:50.519Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:34:50.519Z] ✅ Token validation result: VALID
+[2025-09-02T05:34:50.520Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:34:50.540Z] 🎉 Handler completed successfully
+[2025-09-02T05:34:50.540Z] 🎉 Handler completed successfully
+[2025-09-02T05:34:50.541Z] 🎉 Handler completed successfully
+[2025-09-02T05:34:50.541Z] 🎉 Handler completed successfully
+[2025-09-02T05:34:50.572Z] 🎉 Handler completed successfully
+[2025-09-02T05:34:50.621Z] 🎉 Handler completed successfully
