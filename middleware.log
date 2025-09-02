@@ -2624,3 +2624,18 @@
 [2025-09-02T05:42:33.871Z] ✅ Token validation result: VALID
 [2025-09-02T05:42:33.872Z] ✅ Auth successful - calling handler...
 [2025-09-02T05:42:33.987Z] 🎉 Handler completed successfully
+[2025-09-02T05:45:13.152Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:45:13.180Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:45:13.180Z] ✅ Token validation result: VALID
+[2025-09-02T05:45:13.181Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:45:13.297Z] 🎉 Handler completed successfully
+[2025-09-02T05:45:41.641Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:45:41.643Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:45:41.643Z] ✅ Token validation result: VALID
+[2025-09-02T05:45:41.644Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:45:42.339Z] 🎉 Handler completed successfully
+[2025-09-02T05:46:01.862Z] 🔐 [withAuthToken] POST /api/quest/start
+[2025-09-02T05:46:01.865Z] 🔑 Auth type: Authorization Bearer
+[2025-09-02T05:46:01.866Z] ✅ Token validation result: VALID
+[2025-09-02T05:46:01.866Z] ✅ Auth successful - calling handler...
+[2025-09-02T05:46:02.018Z] 🎉 Handler completed successfully

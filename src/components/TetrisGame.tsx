@@ -166,6 +166,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
         lines: typeof lines
       });
       
+      console.log('🌐 API 호출 시작: /api/highscore');
       const response = await fetch('/api/highscore', {
         method: 'POST',
         headers: {
@@ -174,7 +175,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
         body: JSON.stringify(requestBody)
       });
       
-      console.log('하이스코어 API 응답 상태:', response.status, response.statusText);
+      console.log('📡 하이스코어 API 응답 상태:', response.status, response.statusText);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -1127,6 +1128,19 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
                 >
                   <RotateCw className="w-4 h-4 mr-2" />
                   재시작
+                </Button>
+                
+                {/* 테스트용: 강제 게임 오버 버튼 */}
+                <Button
+                  onClick={() => {
+                    console.log('강제 게임 오버 테스트');
+                    setGameState(prev => ({ ...prev, isGameOver: true }));
+                    saveHighScore(prev.score, prev.level, prev.lines);
+                  }}
+                  className="w-full"
+                  variant="destructive"
+                >
+                  강제 게임오버
                 </Button>
               </>
             )}
