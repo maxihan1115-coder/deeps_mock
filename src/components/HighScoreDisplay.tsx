@@ -26,7 +26,6 @@ export default function HighScoreDisplay({
   currentLines 
 }: HighScoreDisplayProps) {
   const [highScore, setHighScore] = useState<HighScore | null>(null);
-  const [isNewRecord, setIsNewRecord] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // 최고 점수 조회
@@ -45,51 +44,19 @@ export default function HighScoreDisplay({
     }
   };
 
-  // 최고 점수 저장
-  const saveHighScore = async () => {
-    try {
-      const response = await fetch('/api/highscore', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          gameUuid, // userId → gameUuid
-          score: currentScore,
-          level: currentLevel,
-          lines: currentLines,
-        }),
-      });
 
-      const data = await response.json();
-
-      if (data.success) {
-        setHighScore(data.highScore);
-        setIsNewRecord(data.isNewRecord);
-        
-        // 새 기록 달성 시 축하 메시지
-        if (data.isNewRecord) {
-          setTimeout(() => {
-            setIsNewRecord(false);
-          }, 3000);
-        }
-      }
-    } catch (error) {
-      console.error('최고 점수 저장 오류:', error);
-    }
-  };
 
   // 컴포넌트 마운트 시 최고 점수 조회
   useEffect(() => {
     fetchHighScore();
   }, [gameUuid]);
 
-  // 현재 점수가 변경될 때마다 최고 점수 저장 시도
-  useEffect(() => {
-    if (currentScore > 0) {
-      saveHighScore();
-    }
-  }, [currentScore, currentLevel, currentLines]);
+  // 게임 종료 시에만 최고 점수 저장 (실시간 저장 제거)
+  // useEffect(() => {
+  //   if (currentScore > 0) {
+  //     saveHighScore();
+  //   }
+  // }, [currentScore, currentLevel, currentLines]);
 
   if (isLoading) {
     return (

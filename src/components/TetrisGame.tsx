@@ -49,6 +49,7 @@ interface TetrisGameProps {
   onLevelUpdate: (level: number) => void;
   onLinesUpdate: (lines: number) => void;
   onGameOver: () => void;
+  onHighScoreUpdate?: (highScore: any) => void; // 하이스코어 업데이트 콜백
 }
 
 export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver }: TetrisGameProps) {
@@ -184,6 +185,11 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       
       const result = await response.json();
       console.log('하이스코어 저장 성공:', result);
+      
+      // 하이스코어 업데이트 콜백 호출 (HighScoreDisplay 업데이트용)
+      if (onHighScoreUpdate && result.highScore) {
+        onHighScoreUpdate(result.highScore);
+      }
     } catch (error) {
       console.error('하이스코어 저장 오류:', error);
       console.error('에러 상세 정보:', {
