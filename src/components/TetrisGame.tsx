@@ -214,6 +214,20 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     }
   }, [isLinked, userId]);
 
+  // 게임 오버 시 하이스코어 저장을 위한 useEffect
+  useEffect(() => {
+    if (gameState.isGameOver && gameState.score > 0) {
+      console.log('🎮 useEffect에서 게임 오버 감지 - 하이스코어 저장 시도');
+      console.log('저장할 데이터:', {
+        score: gameState.score,
+        level: gameState.level,
+        lines: gameState.lines,
+        userId
+      });
+      saveHighScore(gameState.score, gameState.level, gameState.lines);
+    }
+  }, [gameState.isGameOver, gameState.score, gameState.level, gameState.lines, saveHighScore]);
+
   // 퀘스트 진행도 업데이트
   const updateQuestProgress = useCallback(async (questId: string, progress: number) => {
     if (!isLinked) return; // 플랫폼 연동이 안되어 있으면 퀘스트 업데이트 안함
@@ -452,8 +466,14 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
           newState.nextBlock = createNewBlock();
           
           // 게임 오버 체크
+          console.log('게임 오버 체크 중...', {
+            currentBlock: newState.currentBlock,
+            boardHeight: newState.board.length,
+            isValid: isValidPosition(newState.currentBlock, newState.board)
+          });
+          
           if (!isValidPosition(newState.currentBlock, newState.board)) {
-            console.log('게임 오버 조건 만족 - 블록을 놓을 수 없음');
+            console.log('🎯 게임 오버 조건 만족 - 블록을 놓을 수 없음');
             newState.isGameOver = true;
             
             // 게임 오버 핸들러를 다음 렌더 사이클로 지연
@@ -466,18 +486,18 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             setGamesPlayed(newGamesPlayed);
             checkPlayGamesQuests(newGamesPlayed);
             
-                  // 하이스코어 저장 (게임 종료 시) - 플랫폼 연동과 무관하게 항상 저장
-      console.log('게임 오버 - 하이스코어 저장 시도:', {
-        score: newState.score,
-        level: newState.level,
-        lines: newState.lines,
-        userId
-      });
-      
-      // saveHighScore를 즉시 호출 (플랫폼 연동 상태와 무관)
-      console.log('saveHighScore 함수 호출 시작...');
-      saveHighScore(newState.score, newState.level, newState.lines);
-      console.log('saveHighScore 함수 호출 완료');
+            // 하이스코어 저장 (게임 종료 시) - 플랫폼 연동과 무관하게 항상 저장
+            console.log('게임 오버 - 하이스코어 저장 시도:', {
+              score: newState.score,
+              level: newState.level,
+              lines: newState.lines,
+              userId
+            });
+            
+            // saveHighScore를 즉시 호출 (플랫폼 연동 상태와 무관)
+            console.log('saveHighScore 함수 호출 시작...');
+            saveHighScore(newState.score, newState.level, newState.lines);
+            console.log('saveHighScore 함수 호출 완료');
           }
         }
       } else {
@@ -1134,8 +1154,15 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
                 <Button
                   onClick={() => {
                     console.log('강제 게임 오버 테스트');
-                    setGameState(prev => ({ ...prev, isGameOver: true }));
-                    saveHighScore(prev.score, prev.level, prev.lines);
+                    setGameState(prev => {
+                      // 게임 오버 상태로 변경하고 하이스코어 저장
+                      const newState = { ...prev, isGameOver: true };
+                      // setState 콜백 내에서 saveHighScore 호출
+                      setTimeout(() => {
+                        saveHighScore(prev.score, prev.level, prev.lines);
+                      }, 0);
+                      return newState;
+                    });
                   }}
                   className="w-full"
                   variant="destructive"
