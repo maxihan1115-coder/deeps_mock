@@ -124,30 +124,60 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
 
   // 하이스코어 저장
   const saveHighScore = useCallback(async (score: number, level: number, lines: number) => {
-    if (!isLinked) return; // 플랫폼 연동이 안되어 있으면 저장 안함
+    if (!isLinked) {
+      console.log('하이스코어 저장 스킵: 플랫폼 미연동 상태');
+      return; // 플랫폼 연동이 안되어 있으면 저장 안함
+    }
+    
+    // 데이터 유효성 검사
+    if (typeof score !== 'number' || typeof level !== 'number' || typeof lines !== 'number') {
+      console.error('하이스코어 저장 실패: 잘못된 데이터 타입', { score, level, lines, types: { score: typeof score, level: typeof level, lines: typeof lines } });
+      return;
+    }
+    
+    if (!Number.isFinite(score) || !Number.isFinite(level) || !Number.isFinite(lines)) {
+      console.error('하이스코어 저장 실패: 무한값 또는 NaN', { score, level, lines });
+      return;
+    }
+    
+    if (score < 0 || level < 0 || lines < 0) {
+      console.error('하이스코어 저장 실패: 음수 값', { score, level, lines });
+      return;
+    }
     
     try {
-      console.log('하이스코어 저장 시도:', { gameUuid: userId, score, level, lines });
+      const requestBody = {
+        gameUuid: userId, // 숫자 UUID 사용
+        score,
+        level,
+        lines
+      };
+      
+      console.log('하이스코어 저장 시도:', requestBody);
+      console.log('요청 데이터 타입 확인:', {
+        gameUuid: typeof userId,
+        score: typeof score,
+        level: typeof level,
+        lines: typeof lines
+      });
       
       const response = await fetch('/api/highscore', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          gameUuid: userId, // 숫자 UUID 사용
-          score,
-          level,
-          lines
-        })
+        body: JSON.stringify(requestBody)
       });
+      
+      console.log('하이스코어 API 응답 상태:', response.status, response.statusText);
       
       if (!response.ok) {
         const errorText = await response.text();
         console.error('하이스코어 저장 실패:', {
           status: response.status,
           statusText: response.statusText,
-          error: errorText
+          error: errorText,
+          requestBody
         });
         return;
       }
@@ -156,6 +186,14 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       console.log('하이스코어 저장 성공:', result);
     } catch (error) {
       console.error('하이스코어 저장 오류:', error);
+      console.error('에러 상세 정보:', {
+        message: error.message,
+        stack: error.stack,
+        userId,
+        score,
+        level,
+        lines
+      });
     }
   }, [isLinked, userId]);
 

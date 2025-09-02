@@ -51,9 +51,18 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('하이스코어 API 요청 받음:', body);
+    console.log('요청 데이터 타입:', {
+      gameUuid: typeof body.gameUuid,
+      score: typeof body.score,
+      level: typeof body.level,
+      lines: typeof body.lines
+    });
+    
     const { gameUuid, score, level, lines } = body; // userId → gameUuid
 
     if (!gameUuid || score === undefined || level === undefined || lines === undefined) {
+      console.error('하이스코어 API 400 에러: 필수 정보 누락', { gameUuid, score, level, lines });
       return NextResponse.json(
         { success: false, error: '필수 정보가 누락되었습니다.' },
         { status: 400 }
@@ -62,6 +71,7 @@ export async function POST(request: NextRequest) {
 
     // gameUuid가 숫자인지 확인
     if (typeof gameUuid !== 'number' || !Number.isFinite(gameUuid)) {
+      console.error('하이스코어 API 400 에러: gameUuid 타입 오류', { gameUuid, type: typeof gameUuid });
       return NextResponse.json(
         { success: false, error: '게임 UUID는 숫자여야 합니다.' },
         { status: 400 }
