@@ -17,7 +17,7 @@ interface QuestPanelProps {
 export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPanelProps) {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitializing, setIsInitializing] = useState(false);
+  // 카탈로그 방식: 별도 초기화 불필요
   const [error, setError] = useState<string | null>(null);
   const [isLinked, setIsLinked] = useState<boolean | null>(null);
 
@@ -220,32 +220,7 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
     }
   };
 
-  // 퀘스트 초기화
-  const initializeQuests = async () => {
-    setIsInitializing(true);
-    try {
-      const response = await fetch('/api/quests/initialize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ uuid: gameUuid }),
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setQuests(data.payload.quests);
-        console.log('Quests initialized successfully:', data.payload.quests);
-      } else {
-        console.error('Failed to initialize quests:', data.error);
-      }
-    } catch (error) {
-      console.error('Failed to initialize quests:', error);
-    } finally {
-      setIsInitializing(false);
-    }
-  };
+  // 초기화 로직 제거
 
   // 퀘스트 타입별 아이콘
   const getQuestIcon = (type: Quest['type']) => {
@@ -404,14 +379,6 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
         {quests.length === 0 ? (
           <div className="text-center space-y-3">
             <div className="text-gray-500">퀘스트가 없습니다.</div>
-            <Button
-              onClick={initializeQuests}
-              disabled={isInitializing}
-              size="sm"
-              className="w-full"
-            >
-              {isInitializing ? '초기화 중...' : '퀘스트 초기화'}
-            </Button>
           </div>
         ) : (
           quests.map((quest) => (

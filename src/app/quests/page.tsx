@@ -75,35 +75,7 @@ export default function QuestsPage() {
     }
   };
 
-  // 퀘스트 초기화
-  const initializeQuests = async () => {
-    if (gameUuid == null) return;
-    
-    setIsInitializing(true);
-    try {
-      const response = await fetch('/api/quests/initialize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ uuid: gameUuid }),
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setQuests(data.payload.quests);
-        console.log('Quests initialized successfully:', data.payload.quests);
-        fetchQuests(); // 통계 업데이트를 위해 다시 조회
-      } else {
-        console.error('Failed to initialize quests:', data.error);
-      }
-    } catch (error) {
-      console.error('Failed to initialize quests:', error);
-    } finally {
-      setIsInitializing(false);
-    }
-  };
+  // 카탈로그 방식: 초기화 로직 제거
 
 
 
