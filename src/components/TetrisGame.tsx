@@ -127,7 +127,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     if (!isLinked) return; // 플랫폼 연동이 안되어 있으면 퀘스트 업데이트 안함
     
     try {
-      console.log('퀘스트 업데이트 시도:', { userId: userStringId, questId, progress });
+      console.log('퀘스트 업데이트 시도:', { gameUuid: userId, questId, progress });
       
       const response = await fetch('/api/quests/progress', {
         method: 'POST',
@@ -135,7 +135,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: userStringId,  // 문자열 사용자 ID 사용
+          gameUuid: userId,  // 숫자 UUID 사용
           questId: questId,
           progress: progress
         })

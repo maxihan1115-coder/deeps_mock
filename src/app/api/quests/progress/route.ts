@@ -10,12 +10,24 @@ import { shouldResetQuest, resetQuestProgress } from '@/lib/quest-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, questId, progress } = await request.json();
+    const { gameUuid, questId, progress } = await request.json(); // userId → gameUuid
 
-    if (!userId || !questId || progress === undefined) {
+    if (!gameUuid || !questId || progress === undefined) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
-        '사용자 ID, 퀘스트 ID, 진행도가 필요합니다.'
+        '게임 UUID, 퀘스트 ID, 진행도가 필요합니다.'
+      );
+      return NextResponse.json(
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
+      );
+    }
+
+    // gameUuid가 숫자인지 확인
+    if (typeof gameUuid !== 'number' || !Number.isFinite(gameUuid)) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '게임 UUID는 숫자여야 합니다.'
       );
       return NextResponse.json(
         errorResponse,
@@ -24,11 +36,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 현재 퀘스트 정보 조회
-    let currentQuest = await mysqlGameStore.getQuestById(userId, questId);
+    let currentQuest = await mysqlGameStore.getQuestById(gameUuid, questId);
     
     // 퀘스트가 존재하지 않으면 초기 퀘스트 생성
     if (!currentQuest) {
-      console.log(`퀘스트가 존재하지 않아 생성합니다: userId=${userId}, questId=${questId}`);
+      console.log(`퀘스트가 존재하지 않아 생성합니다: gameUuid=${gameUuid}, questId=${questId}`);
       
       // 퀘스트 정의 (QUEST_IDS와 매칭)
       const questDefinitions: Record<string, {title: string, maxProgress: number, reward: number, type: string}> = {
@@ -60,7 +72,7 @@ export async function POST(request: NextRequest) {
       
       // 새 퀘스트 생성
       currentQuest = await mysqlGameStore.createQuest(
-        userId,
+        gameUuid, // userId → gameUuid
         questId,
         questDef.title,
         questDef.maxProgress,
@@ -93,7 +105,7 @@ export async function POST(request: NextRequest) {
         // 퀘스트 초기화
         const resetData = resetQuestProgress(currentQuest.type.toLowerCase());
         const resetQuest = await mysqlGameStore.updateQuestProgress(
-          userId, 
+          gameUuid, // userId → gameUuid
           questId, 
           resetData.progress,
           resetData.lastResetTime
@@ -106,7 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 퀘스트 진행도 업데이트
-    const updatedQuest = await mysqlGameStore.updateQuestProgress(userId, questId, progress);
+    const updatedQuest = await mysqlGameStore.updateQuestProgress(gameUuid, questId, progress);
 
     if (!updatedQuest) {
       const errorResponse = createErrorResponse(
