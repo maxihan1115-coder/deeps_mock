@@ -100,6 +100,8 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
   // 플랫폼 연동 상태 확인 (quest/start API 200 응답 기준)
   const checkPlatformLinkStatus = useCallback(async () => {
     try {
+      console.log('플랫폼 연동 상태 확인 시작:', { userId });
+      
       const response = await fetch('/api/quest/start', {
         method: 'POST',
         headers: {
@@ -109,11 +111,15 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
         body: JSON.stringify({ uuid: userId })
       });
       
+      console.log('플랫폼 연동 상태 확인 응답:', { status: response.status, statusText: response.statusText });
+      
       if (response.status === 200) {
         setIsLinked(true);
+        console.log('플랫폼 연동 상태: TRUE');
         return true;
       } else {
         setIsLinked(false);
+        console.log('플랫폼 연동 상태: FALSE (API 응답 실패)');
         return false;
       }
     } catch (error) {
@@ -125,9 +131,12 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
 
   // 하이스코어 저장
   const saveHighScore = useCallback(async (score: number, level: number, lines: number) => {
+    console.log('saveHighScore 함수 호출됨:', { score, level, lines, isLinked, userId });
+    
+    // 임시로 플랫폼 연동 상태 체크를 건너뛰고 저장 시도
     if (!isLinked) {
-      console.log('하이스코어 저장 스킵: 플랫폼 미연동 상태');
-      return; // 플랫폼 연동이 안되어 있으면 저장 안함
+      console.log('하이스코어 저장 시도 (플랫폼 미연동 상태이지만 임시로 저장)');
+      // return; // 임시로 주석 처리
     }
     
     // 데이터 유효성 검사
@@ -299,8 +308,17 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
 
   // 컴포넌트 마운트 시 플랫폼 연동 상태 확인
   useEffect(() => {
+    console.log('TetrisGame 컴포넌트 마운트 - 플랫폼 연동 상태 확인 시작');
     checkPlatformLinkStatus();
   }, [checkPlatformLinkStatus]);
+
+  // 게임 시작 시에도 플랫폼 연동 상태 재확인
+  useEffect(() => {
+    if (isGameStarted && !isLinked) {
+      console.log('게임 시작 시 플랫폼 연동 상태 재확인');
+      checkPlatformLinkStatus();
+    }
+  }, [isGameStarted, isLinked, checkPlatformLinkStatus]);
 
   // 새로운 블록 생성
   const createNewBlock = useCallback((): TetrisBlock => {
@@ -433,6 +451,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
           
           // 게임 오버 체크
           if (!isValidPosition(newState.currentBlock, newState.board)) {
+            console.log('게임 오버 조건 만족 - 블록을 놓을 수 없음');
             newState.isGameOver = true;
             
             // 게임 오버 핸들러를 다음 렌더 사이클로 지연
@@ -445,7 +464,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             setGamesPlayed(newGamesPlayed);
             checkPlayGamesQuests(newGamesPlayed);
             
-            // 하이스코어 저장 (게임 종료 시)
+            // 하이스코어 저장 (게임 종료 시) - 즉시 실행
             console.log('게임 오버 - 하이스코어 저장 시도:', {
               score: newState.score,
               level: newState.level,
@@ -453,7 +472,14 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
               isLinked,
               userId
             });
-            saveHighScore(newState.score, newState.level, newState.lines);
+            
+            // saveHighScore를 즉시 호출
+            try {
+              await saveHighScore(newState.score, newState.level, newState.lines);
+              console.log('하이스코어 저장 완료');
+            } catch (error) {
+              console.error('하이스코어 저장 중 에러:', error);
+            }
           }
         }
       } else {
