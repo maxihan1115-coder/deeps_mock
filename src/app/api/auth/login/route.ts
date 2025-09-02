@@ -81,22 +81,22 @@ export async function POST(request: NextRequest) {
 
     // 병렬로 출석체크와 퀘스트 확인 처리
     const [hasAttendanceToday, existingQuests] = await Promise.all([
-      mysqlGameStore.hasAttendanceToday(user.id),
-      mysqlGameStore.getQuests(user.id)
+      mysqlGameStore.hasAttendanceToday(user.uuid), // user.id → user.uuid (숫자)
+      mysqlGameStore.getQuests(user.uuid) // user.id → user.uuid (숫자)
     ]);
 
     // 출석체크 추가 (필요한 경우만)
     if (!hasAttendanceToday) {
       const today = new Date().toISOString().split('T')[0];
-      await mysqlGameStore.addAttendanceRecord(user.id, today);
+      await mysqlGameStore.addAttendanceRecord(user.uuid, today); // user.id → user.uuid (숫자)
       
       // DAILY_LOGIN 퀘스트 업데이트 (7일 연속 로그인) - 비동기로 처리
       try {
-        const attendanceRecords = await mysqlGameStore.getAttendanceRecords(user.id);
+        const attendanceRecords = await mysqlGameStore.getAttendanceRecords(user.uuid); // user.id → user.uuid (숫자)
         const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
         
         // DAILY_LOGIN 퀘스트 ID: '12'
-        await mysqlGameStore.updateQuestProgress(user.id, '12', Math.min(consecutiveDays, 7));
+        await mysqlGameStore.updateQuestProgress(user.uuid, '12', Math.min(consecutiveDays, 7)); // user.id → user.uuid (숫자)
         if (!isProduction) console.log('✅ DAILY_LOGIN 퀘스트 업데이트:', consecutiveDays, '일 연속');
       } catch (error) {
         console.error('❌ DAILY_LOGIN 퀘스트 업데이트 실패:', error);
@@ -105,9 +105,9 @@ export async function POST(request: NextRequest) {
 
     // 퀘스트 초기화 (없는 경우만) - 백그라운드에서 처리
     if (existingQuests.length === 0) {
-      if (!isProduction) console.log('Initializing quests for user:', user.id);
+      if (!isProduction) console.log('Initializing quests for user:', user.uuid); // user.id → user.uuid (숫자)
       // 퀘스트 초기화를 백그라운드에서 실행 (로그인 응답 속도 개선)
-      mysqlGameStore.initializeQuests(user.id).catch(error => {
+      mysqlGameStore.initializeQuests(user.uuid).catch(error => { // user.id → user.uuid (숫자)
         console.error('퀘스트 초기화 실패:', error);
       });
     }

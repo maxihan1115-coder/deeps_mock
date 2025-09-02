@@ -99,10 +99,10 @@ class MySQLGameStore {
   }
 
   // 출석체크 관련 메서드
-  async addAttendanceRecord(userId: string, date: string): Promise<AttendanceRecord> {
+  async addAttendanceRecord(gameUuid: number, date: string): Promise<AttendanceRecord> {
     const record = await prisma.attendanceRecord.create({
       data: {
-        userId,
+        userId: gameUuid, // 숫자 UUID 사용
         date,
       },
     });
@@ -115,12 +115,12 @@ class MySQLGameStore {
     };
   }
 
-  async hasAttendanceToday(userId: string): Promise<boolean> {
+  async hasAttendanceToday(gameUuid: number): Promise<boolean> {
     const today = new Date().toISOString().split('T')[0];
     
     const record = await prisma.attendanceRecord.findFirst({
       where: {
-        userId,
+        userId: gameUuid, // 숫자 UUID 사용
         date: today,
       },
     });
@@ -128,10 +128,10 @@ class MySQLGameStore {
     return !!record;
   }
 
-  async getAttendanceRecords(userId: string): Promise<AttendanceRecord[]> {
+  async getAttendanceRecords(gameUuid: number): Promise<AttendanceRecord[]> {
     const records = await prisma.attendanceRecord.findMany({
       where: {
-        userId,
+        userId: gameUuid, // 숫자 UUID 사용
       },
       orderBy: {
         date: 'desc',
