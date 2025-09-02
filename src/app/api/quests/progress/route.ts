@@ -118,17 +118,34 @@ export async function POST(request: NextRequest) {
     }
 
     // 퀘스트 진행도 업데이트
-    const updatedQuest = await mysqlGameStore.updateQuestProgress(gameUuid, questId, progress);
-
-    if (!updatedQuest) {
-      const errorResponse = createErrorResponse(
-        API_ERROR_CODES.INVALID_QUEST,
-        '존재하지 않는 퀘스트 ID'
-      );
-      return NextResponse.json(
-        errorResponse,
-        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_QUEST) }
-      );
+    console.log(`퀘스트 진행도 업데이트 시도: gameUuid=${gameUuid}, questId=${questId}, progress=${progress}`);
+    
+    try {
+      const updatedQuest = await mysqlGameStore.updateQuestProgress(gameUuid, questId, progress);
+      
+      if (!updatedQuest) {
+        console.log(`퀘스트 업데이트 실패: updatedQuest이 null`);
+        const errorResponse = createErrorResponse(
+          API_ERROR_CODES.INVALID_QUEST,
+          '존재하지 않는 퀘스트 ID'
+        );
+        return NextResponse.json(
+          errorResponse,
+          { status: getErrorStatusCode(API_ERROR_CODES.INVALID_QUEST) }
+        );
+      }
+      
+      console.log(`퀘스트 업데이트 성공:`, updatedQuest);
+    } catch (updateError) {
+      console.error(`퀘스트 업데이트 중 오류 발생:`, updateError);
+      console.error(`오류 상세:`, {
+        gameUuid,
+        questId,
+        progress,
+        error: updateError instanceof Error ? updateError.message : updateError,
+        stack: updateError instanceof Error ? updateError.stack : undefined
+      });
+      throw updateError; // 상위 catch 블록으로 전파
     }
 
     const successResponse = createSuccessResponse(updatedQuest);

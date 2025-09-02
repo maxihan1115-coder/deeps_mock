@@ -324,14 +324,22 @@ class MySQLGameStore {
     progress: number, 
     lastResetTime?: Date
   ): Promise<Quest | null> {
-    const quest = await prisma.quest.findFirst({
-      where: {
-        id: questId,
-        userId: gameUuid, // 숫자 UUID 직접 사용
-      },
-    });
+    console.log(`🔍 updateQuestProgress 호출: gameUuid=${gameUuid}, questId=${questId}, progress=${progress}`);
+    
+    try {
+      const quest = await prisma.quest.findFirst({
+        where: {
+          id: questId,
+          userId: gameUuid, // 숫자 UUID 직접 사용
+        },
+      });
 
-    if (!quest) return null;
+      console.log(`🔍 퀘스트 조회 결과:`, quest);
+
+      if (!quest) {
+        console.log(`❌ 퀘스트를 찾을 수 없음: gameUuid=${gameUuid}, questId=${questId}`);
+        return null;
+      }
 
     const updateData: {
       progress: number;
@@ -347,10 +355,14 @@ class MySQLGameStore {
       updateData.lastResetTime = lastResetTime;
     }
 
-    const updatedQuest = await prisma.quest.update({
-      where: { id: questId },
-      data: updateData,
-    });
+      console.log(`🔧 업데이트 데이터:`, updateData);
+      
+      const updatedQuest = await prisma.quest.update({
+        where: { id: questId },
+        data: updateData,
+      });
+      
+      console.log(`✅ 퀘스트 업데이트 성공:`, updatedQuest);
 
     // 타입 매핑: Prisma enum -> 코드 타입
     const typeMapping = {
@@ -360,20 +372,30 @@ class MySQLGameStore {
       'MONTHLY': 'monthly'
     };
 
-    return {
-      id: updatedQuest.id,
-      title: updatedQuest.title,
-      description: updatedQuest.description,
-      type: typeMapping[updatedQuest.type] as Quest['type'] || 'once',
-      progress: updatedQuest.progress,
-      maxProgress: updatedQuest.maxProgress,
-      reward: updatedQuest.reward,
-      isCompleted: updatedQuest.isCompleted,
-      expiresAt: updatedQuest.expiresAt || undefined,
-      createdAt: updatedQuest.createdAt,
-      lastResetTime: updatedQuest.lastResetTime || undefined,
-    };
-  }
+          return {
+        id: updatedQuest.id,
+        title: updatedQuest.title,
+        description: updatedQuest.description,
+        type: typeMapping[updatedQuest.type] as Quest['type'] || 'once',
+        progress: updatedQuest.progress,
+        maxProgress: updatedQuest.maxProgress,
+        reward: updatedQuest.reward,
+        isCompleted: updatedQuest.isCompleted,
+        expiresAt: updatedQuest.expiresAt || undefined,
+        createdAt: updatedQuest.createdAt,
+        lastResetTime: updatedQuest.lastResetTime || undefined,
+      };
+    } catch (error) {
+      console.error(`❌ updateQuestProgress 오류 발생:`, error);
+      console.error(`오류 상세:`, {
+        gameUuid,
+        questId,
+        progress,
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw error; // 상위로 전파
+    }
 
   async createQuest(
     gameUuid: number,
