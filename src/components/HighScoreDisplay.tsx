@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Trophy, Calendar } from 'lucide-react';
 
 interface HighScore {
@@ -82,11 +81,6 @@ export default function HighScoreDisplay({
         <CardTitle className="flex items-center gap-2">
           <Trophy className="w-5 h-5" />
           최고 점수
-          {isNewRecord && (
-            <Badge variant="destructive" className="ml-2">
-              NEW!
-            </Badge>
-          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
