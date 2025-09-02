@@ -396,6 +396,7 @@ class MySQLGameStore {
       });
       throw error; // 상위로 전파
     }
+  }
 
   async createQuest(
     gameUuid: number,
