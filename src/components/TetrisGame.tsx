@@ -129,15 +129,10 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     }
   }, [userId]);
 
-  // 하이스코어 저장
+  // 하이스코어 저장 (플랫폼 연동과 무관하게 항상 저장)
   const saveHighScore = useCallback(async (score: number, level: number, lines: number) => {
-    console.log('saveHighScore 함수 호출됨:', { score, level, lines, isLinked, userId });
-    
-    // 임시로 플랫폼 연동 상태 체크를 건너뛰고 저장 시도
-    if (!isLinked) {
-      console.log('하이스코어 저장 시도 (플랫폼 미연동 상태이지만 임시로 저장)');
-      // return; // 임시로 주석 처리
-    }
+    console.log('saveHighScore 함수 호출됨:', { score, level, lines, userId });
+    console.log('하이스코어 저장 진행 중... (플랫폼 연동 상태와 무관)');
     
     // 데이터 유효성 검사
     if (typeof score !== 'number' || typeof level !== 'number' || typeof lines !== 'number') {
@@ -197,8 +192,14 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       
       // 하이스코어 업데이트 콜백 호출 (HighScoreDisplay 업데이트용)
       if (onHighScoreUpdate && result.highScore) {
+        console.log('onHighScoreUpdate 콜백 호출:', result.highScore);
         onHighScoreUpdate(result.highScore);
+      } else {
+        console.log('onHighScoreUpdate 콜백 호출 실패:', { onHighScoreUpdate: !!onHighScoreUpdate, result });
       }
+      
+      // 하이스코어 저장 성공 로그
+      console.log('🎉 하이스코어 저장 완료! 새로운 점수:', result.highScore?.score);
     } catch (error) {
       console.error('하이스코어 저장 오류:', error);
       console.error('에러 상세 정보:', {
@@ -464,17 +465,18 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             setGamesPlayed(newGamesPlayed);
             checkPlayGamesQuests(newGamesPlayed);
             
-            // 하이스코어 저장 (게임 종료 시) - 즉시 실행
-            console.log('게임 오버 - 하이스코어 저장 시도:', {
-              score: newState.score,
-              level: newState.level,
-              lines: newState.lines,
-              isLinked,
-              userId
-            });
-            
-            // saveHighScore를 즉시 호출 (await 제거)
-            saveHighScore(newState.score, newState.level, newState.lines);
+                  // 하이스코어 저장 (게임 종료 시) - 플랫폼 연동과 무관하게 항상 저장
+      console.log('게임 오버 - 하이스코어 저장 시도:', {
+        score: newState.score,
+        level: newState.level,
+        lines: newState.lines,
+        userId
+      });
+      
+      // saveHighScore를 즉시 호출 (플랫폼 연동 상태와 무관)
+      console.log('saveHighScore 함수 호출 시작...');
+      saveHighScore(newState.score, newState.level, newState.lines);
+      console.log('saveHighScore 함수 호출 완료');
           }
         }
       } else {
