@@ -328,13 +328,13 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     checkPlatformLinkStatus();
   }, [checkPlatformLinkStatus]);
 
-  // 게임 시작 시에도 플랫폼 연동 상태 재확인
-  useEffect(() => {
-    if (isGameStarted && !isLinked) {
-      console.log('게임 시작 시 플랫폼 연동 상태 재확인');
-      checkPlatformLinkStatus();
-    }
-  }, [isGameStarted, isLinked, checkPlatformLinkStatus]);
+  // 게임 시작 시에도 플랫폼 연동 상태 재확인 (게임 중 호출 방지로 비활성화)
+  // useEffect(() => {
+  //   if (isGameStarted && !isLinked) {
+  //     console.log('게임 시작 시 플랫폼 연동 상태 재확인');
+  //     checkPlatformLinkStatus();
+  //   }
+  // }, [isGameStarted, isLinked, checkPlatformLinkStatus]);
 
   // 새로운 블록 생성
   const createNewBlock = useCallback((): TetrisBlock => {
@@ -1150,25 +1150,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
                   재시작
                 </Button>
                 
-                {/* 테스트용: 강제 게임 오버 버튼 */}
-                <Button
-                  onClick={() => {
-                    console.log('강제 게임 오버 테스트');
-                    setGameState(prev => {
-                      // 게임 오버 상태로 변경하고 하이스코어 저장
-                      const newState = { ...prev, isGameOver: true };
-                      // setState 콜백 내에서 saveHighScore 호출
-                      setTimeout(() => {
-                        saveHighScore(prev.score, prev.level, prev.lines);
-                      }, 0);
-                      return newState;
-                    });
-                  }}
-                  className="w-full"
-                  variant="destructive"
-                >
-                  강제 게임오버
-                </Button>
+                {/* 테스트용 강제 게임 오버 버튼 제거 */}
               </>
             )}
           </div>
