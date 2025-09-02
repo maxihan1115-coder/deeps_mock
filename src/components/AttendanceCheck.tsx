@@ -29,49 +29,29 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
   const [linkedDate, setLinkedDate] = useState<string | null>(null);
   const [platformCheckLoading, setPlatformCheckLoading] = useState(true);
 
-  // 플랫폼 연동 상태 확인 (quest/start API 200 응답 기준)
+  // 플랫폼 연동 상태 확인 (platform-link/status로만 확인)
   const checkPlatformLinkStatus = async () => {
     try {
       setPlatformCheckLoading(true);
-      
-      // quest/start API로 연동 상태 확인
-      const questStartResponse = await fetch('/api/quest/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_BAPP_AUTH_TOKEN || '1300728b9eabc43c7b26fcd6507b9b59c75333bfc4e48784e9be0291ebc3615a'}`
-        },
-        body: JSON.stringify({ uuid: gameUuid })
-      });
-      
-      if (questStartResponse.status === 200) {
+      // platform-link/status로 연동 여부와 날짜 확인
+      const statusResponse = await fetch(`/api/platform-link/status?gameUuid=${gameUuid}`);
+      const statusData = await statusResponse.json();
+
+      if (statusData.success && statusData.payload?.isLinked) {
         setIsLinked(true);
-        
-        // 연동 날짜 정보를 위해 platform-link/status도 확인
-        try {
-          const statusResponse = await fetch(`/api/platform-link/status?gameUuid=${gameUuid}`);
-          const statusData = await statusResponse.json();
-          
-          if (statusData.success && statusData.payload.linkedAt) {
-            const linkDate = new Date(statusData.payload.linkedAt).toISOString().split('T')[0];
-            setLinkedDate(linkDate);
-            console.log('📅 플랫폼 연동 날짜:', linkDate);
-          } else {
-            // 연동은 되었지만 날짜 정보가 없으면 오늘로 설정
-            const today = new Date().toISOString().split('T')[0];
-            setLinkedDate(today);
-            console.log('📅 연동 날짜 정보 없음, 오늘로 설정:', today);
-          }
-        } catch (error) {
-          // 연동 날짜 조회 실패해도 오늘로 설정
+        if (statusData.payload.linkedAt) {
+          const linkDate = new Date(statusData.payload.linkedAt).toISOString().split('T')[0];
+          setLinkedDate(linkDate);
+          console.log('📅 플랫폼 연동 날짜:', linkDate);
+        } else {
           const today = new Date().toISOString().split('T')[0];
           setLinkedDate(today);
-          console.log('📅 연동 날짜 조회 실패, 오늘로 설정:', today);
+          console.log('📅 연동 날짜 정보 없음, 오늘로 설정:', today);
         }
       } else {
         setIsLinked(false);
         setLinkedDate(null);
-        console.log('❌ 플랫폼 미연동 상태 (quest/start 실패)');
+        console.log('❌ 플랫폼 미연동 상태 (status 기준)');
       }
     } catch (error) {
       console.error('플랫폼 연동 상태 확인 실패:', error);
@@ -108,7 +88,7 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
   // 출석 기록 조회
   const fetchAttendanceRecords = async () => {
     try {
-      const response = await fetch(`/api/attendance?userId=${userId}`);
+      const response = await fetch(`/api/attendance?gameUuid=${gameUuid}`);
       const data = await response.json();
       
       if (data.success) {
@@ -134,7 +114,7 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ gameUuid }),
       });
 
       const data = await response.json();
