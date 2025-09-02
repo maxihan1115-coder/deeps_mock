@@ -192,7 +192,7 @@ function GamePageContent() {
                     {/* 최고 점수 */}
                     <div className="flex-shrink-0 snap-start">
                       <HighScoreDisplay
-                        userId={currentUser.id}
+                        gameUuid={currentUser.uuid}
                         currentScore={currentScore}
                         currentLevel={currentLevel}
                         currentLines={currentLines}
@@ -217,7 +217,7 @@ function GamePageContent() {
 
                   {/* 최고 점수 */}
                   <HighScoreDisplay
-                    userId={currentUser.id}
+                    gameUuid={currentUser.uuid}
                     currentScore={currentScore}
                     currentLevel={currentLevel}
                     currentLines={currentLines}

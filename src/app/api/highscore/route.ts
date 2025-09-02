@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('하이스코어 조회 요청:', { gameUuid, parsedGameUuid, type: typeof parsedGameUuid });
+
     // 사용자의 최고 점수 조회
     const highScore = await prisma.highScore.findFirst({
       where: { userId: parsedGameUuid }, // 숫자 UUID 사용

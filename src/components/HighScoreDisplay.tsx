@@ -13,14 +13,14 @@ interface HighScore {
 }
 
 interface HighScoreDisplayProps {
-  userId: string;
+  gameUuid: number; // userId → gameUuid (숫자)
   currentScore: number;
   currentLevel: number;
   currentLines: number;
 }
 
 export default function HighScoreDisplay({ 
-  userId, 
+  gameUuid, // userId → gameUuid (숫자)
   currentScore, 
   currentLevel, 
   currentLines 
@@ -32,7 +32,7 @@ export default function HighScoreDisplay({
   // 최고 점수 조회
   const fetchHighScore = async () => {
     try {
-      const response = await fetch(`/api/highscore?userId=${userId}`);
+      const response = await fetch(`/api/highscore?gameUuid=${gameUuid}`);
       const data = await response.json();
 
       if (data.success) {
@@ -54,7 +54,7 @@ export default function HighScoreDisplay({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId,
+          gameUuid, // userId → gameUuid
           score: currentScore,
           level: currentLevel,
           lines: currentLines,
@@ -82,7 +82,7 @@ export default function HighScoreDisplay({
   // 컴포넌트 마운트 시 최고 점수 조회
   useEffect(() => {
     fetchHighScore();
-  }, [userId]);
+  }, [gameUuid]);
 
   // 현재 점수가 변경될 때마다 최고 점수 저장 시도
   useEffect(() => {
