@@ -237,7 +237,7 @@ async function handleQuestCheck(request: NextRequest) {
       const complete = currentTimes >= questInfo.totalTimes;
 
       questResults.push({
-        id: questId,
+        id: String(parsedQuestId),
         totalTimes: questInfo.totalTimes,
         currentTimes: currentTimes,
         complete: complete
