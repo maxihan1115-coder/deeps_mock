@@ -81,13 +81,6 @@ const QUEST_LIST = [
     type: "game_count"
   },
   {
-    id: 11,
-    title: "HARD_DROP_10",
-    koreanTitle: "하드드롭 10회",
-    totalTimes: 10,
-    type: "hard_drop"  // TODO: 하드드롭 데이터 추가 필요
-  },
-  {
     id: 12,
     title: "DAILY_LOGIN",
     koreanTitle: "일일 로그인 7일",
@@ -195,8 +188,16 @@ async function handleQuestCheck(request: NextRequest) {
     const questResults = [];
     
     for (const questId of questIds) {
+      // questId를 number로 변환
+      const parsedQuestId = Number.parseInt(String(questId), 10);
+      
+      if (!Number.isFinite(parsedQuestId)) {
+        console.warn(`유효하지 않은 퀘스트 ID: ${questId}`);
+        continue;
+      }
+      
       // 퀘스트 정보 확인
-      const questInfo = QUEST_LIST.find(q => q.id === questId);
+      const questInfo = QUEST_LIST.find(q => q.id === parsedQuestId);
       
       if (!questInfo) {
         const errorResponse = createErrorResponse(
@@ -227,10 +228,6 @@ async function handleQuestCheck(request: NextRequest) {
           break;
         case 'daily_login':
           currentTimes = attendanceCount;
-          break;
-        case 'hard_drop':
-          // TODO: 하드드롭 데이터가 추가되면 구현
-          currentTimes = 0;
           break;
         default:
           currentTimes = 0;
