@@ -8,12 +8,21 @@ import AccountLink from '@/components/AccountLink';
 import AttendanceCheck from '@/components/AttendanceCheck';
 import HighScoreDisplay from '@/components/HighScoreDisplay';
 import HighScoreRanking from '@/components/HighScoreRanking';
+import PlatformLinkStatus from '@/components/PlatformLinkStatus'; // Added import
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, User, Gamepad2, Trophy, Link } from 'lucide-react';
+import { User as UserType } from '@/types';
 
 export default function GamePage() {
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const [currentScore, setCurrentScore] = useState(0);
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [currentLines, setCurrentLines] = useState(0);
+  const [activeTab, setActiveTab] = useState("game");
+  const [platformLinkStatus, setPlatformLinkStatus] = useState<boolean | null>(null);
+
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
@@ -40,6 +49,7 @@ function GamePageContent() {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentLines, setCurrentLines] = useState(0);
   const [activeTab, setActiveTab] = useState("game");
+  const [platformLinkStatus, setPlatformLinkStatus] = useState<boolean | null>(null);
 
   // URL 파라미터에서 사용자 정보 확인
   useEffect(() => {
@@ -86,9 +96,8 @@ function GamePageContent() {
   }, []);
 
   // 하이스코어 업데이트 핸들러
-  type HighScoreRecord = { id?: string; score: number; level: number; lines: number; createdAt?: string };
-  const handleHighScoreUpdate = useCallback((highScore: HighScoreRecord) => {
-    console.log('하이스코어 업데이트:', highScore);
+  const handleHighScoreUpdate = useCallback((score: number, level: number, lines: number) => {
+    console.log('하이스코어 업데이트:', { score, level, lines });
     // HighScoreDisplay 컴포넌트를 강제로 리렌더링하기 위해
     // 상태를 업데이트하거나 다른 방법을 사용할 수 있습니다
   }, []);
@@ -169,7 +178,7 @@ function GamePageContent() {
           </TabsList>
 
           <TabsContent value="game" className="space-y-0">
-            {/* 모바일 우선 반응형 레이아웃 */}
+            {/* 게임 영역 바로 시작 */}
             <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 lg:justify-center lg:items-start">
               {/* 게임 영역 */}
               <div className="flex-shrink-0 w-full lg:w-auto flex justify-center">
@@ -181,6 +190,7 @@ function GamePageContent() {
                   onLinesUpdate={handleLinesUpdate}
                   onGameOver={handleGameOver}
                   onHighScoreUpdate={handleHighScoreUpdate}
+                  onPlatformLinkStatusChange={setPlatformLinkStatus}
                 />
               </div>
 

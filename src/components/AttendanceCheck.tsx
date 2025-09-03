@@ -169,28 +169,14 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center justify-center gap-2 text-yellow-700 mb-2">
-              <X className="w-4 h-4" />
-              <span className="text-sm font-medium">출석체크 비활성화</span>
+          <div className="text-center p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
+              <Calendar className="w-4 h-4" />
+              <span className="text-sm font-medium">출석체크</span>
             </div>
-            <p className="text-xs text-yellow-600">
-              출석체크를 하려면 먼저<br />
-              플랫폼 연동을 완료해주세요.
+            <p className="text-xs text-gray-500">
+              플랫폼 연동 후 출석체크가 활성화됩니다.
             </p>
-          </div>
-          <div className="text-center">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-blue-600 border-blue-300 hover:bg-blue-50"
-              onClick={() => {
-                console.log('플랫폼 연동 탭으로 이동');
-                onNavigateToLinking?.();
-              }}
-            >
-              플랫폼 연동하기
-            </Button>
           </div>
         </CardContent>
       </Card>

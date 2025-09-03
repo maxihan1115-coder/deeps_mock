@@ -21,49 +21,60 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
   const [error, setError] = useState<string | null>(null);
   const [isLinked, setIsLinked] = useState<boolean | null>(null);
 
-  // 플랫폼 연동 상태 확인 (platform-link/status 기준)
+  // 플랫폼 연동 상태 확인
   const checkPlatformLinkStatus = async () => {
     try {
+      console.log('🔍 QuestPanel에서 플랫폼 연동 상태 확인 시작:', { gameUuid, userId });
+      
       const response = await fetch(`/api/platform-link/status?gameUuid=${gameUuid}`);
       const data = await response.json();
+      
+      console.log('📡 QuestPanel 플랫폼 연동 상태 API 응답:', data);
+      
       if (data.success && data.payload?.isLinked) {
+        console.log('✅ QuestPanel 플랫폼 연동 상태: TRUE');
         setIsLinked(true);
-        // 필요 시 startDate를 로컬 상태/스토리지에 저장 가능
-        return true;
       } else {
+        console.log('❌ QuestPanel 플랫폼 연동 상태: FALSE');
         setIsLinked(false);
-        return false;
       }
     } catch (error) {
-      console.error('플랫폼 연동 상태 확인 실패:', error);
+      console.error('❌ QuestPanel 플랫폼 연동 상태 확인 실패:', error);
       setIsLinked(false);
-      return false;
     }
   };
 
-  // 퀘스트 조회
+  // 퀘스트 목록 가져오기
   const fetchQuests = async () => {
     try {
-      console.log('Fetching quests for gameUuid:', gameUuid);
+      console.log('🔄 퀘스트 목록 가져오기 시작:', { gameUuid, userId });
+      
       const response = await fetch(`/api/quests?gameUuid=${gameUuid}`);
       const data = await response.json();
       
-      console.log('Quest API response:', data);
+      console.log('📡 퀘스트 목록 API 응답:', data);
       
       if (data.success) {
-        setQuests(data.payload.quests || data.payload);
+        console.log('✅ 퀘스트 목록 가져오기 성공:', data.payload);
+        setQuests(data.payload.quests || []);
         setIsLinked(data.payload.isLinked || false);
         setError(null);
-        console.log('Quests set:', data.payload.quests || data.payload);
+        console.log('📊 퀘스트 데이터 상태:', {
+          questsCount: data.payload.quests?.length || 0,
+          isLinked: data.payload.isLinked,
+          quests: data.payload.quests
+        });
       } else {
-        console.error('Quest API error:', data.error);
-        setError('퀘스트 조회에 실패했습니다.');
+        console.error('❌ 퀘스트 목록 가져오기 실패:', data.error);
         setQuests([]);
+        setIsLinked(false);
+        setError(data.error || '퀘스트 조회에 실패했습니다.');
       }
     } catch (error) {
-      console.error('퀘스트 조회 실패:', error);
-      setError('퀘스트 조회 중 오류가 발생했습니다.');
+      console.error('❌ 퀘스트 목록 가져오기 중 오류:', error);
       setQuests([]);
+      setIsLinked(false);
+      setError('퀘스트 조회 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -72,6 +83,8 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
   // 퀘스트 진행도 업데이트
   const updateQuestProgress = async (questId: string, progress: number) => {
     try {
+      console.log('🔄 퀘스트 진행도 업데이트 시작:', { questId, progress, gameUuid });
+      
       const response = await fetch('/api/quests/progress', {
         method: 'POST',
         headers: {
@@ -81,17 +94,19 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
       });
 
       const data = await response.json();
+      console.log('📡 퀘스트 진행도 업데이트 응답:', data);
       
       if (data.success) {
-        // 퀘스트 목록 업데이트
-        setQuests(prevQuests => 
-          prevQuests.map(quest => 
-            quest.id === questId ? data.payload : quest
-          )
-        );
+        // 퀘스트 목록 새로고침 (진행도 반영)
+        console.log('✅ 퀘스트 진행도 업데이트 성공, 목록 새로고침 중...');
+        await fetchQuests();
+        console.log('✅ 퀘스트 진행도 업데이트 완료:', questId, progress);
+      } else {
+        console.error('❌ 퀘스트 진행도 업데이트 실패:', data.error);
+        // 실패 시에도 현재 상태 유지
       }
     } catch (error) {
-      console.error('Failed to update quest progress:', error);
+      console.error('❌ 퀘스트 진행도 업데이트 중 오류:', error);
     }
   };
 
@@ -145,42 +160,63 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
     }
   };
 
-  // 점수 기반 퀘스트 자동 업데이트
-  useEffect(() => {
-    if (currentScore > 0) {
-      quests.forEach(quest => {
-        if (!quest.isCompleted) {
-          let newProgress = quest.progress;
-          
-          // 점수 관련 퀘스트 업데이트
-          if (quest.title.includes('점수')) {
-            newProgress = Math.min(currentScore, quest.maxProgress);
-          }
-          
-          // 게임 플레이 관련 퀘스트 업데이트
-          if (quest.title.includes('게임 플레이') && quest.progress === 0) {
-            newProgress = 1;
-          }
-          
-          if (newProgress !== quest.progress) {
-            updateQuestProgress(quest.id, newProgress);
-          }
-        }
-      });
-    }
-  }, [currentScore, quests]);
+  // 점수 기반 퀘스트 자동 업데이트 제거 (무한 루프 방지)
+  // useEffect(() => {
+  //   if (currentScore > 0) {
+  //     quests.forEach(quest => {
+  //       if (!quest.isCompleted) {
+  //         let newProgress = quest.progress;
+  //         
+  //         // 점수 관련 퀘스트 업데이트
+  //         if (quest.title.includes('점수')) {
+  //           newProgress = Math.min(currentScore, quest.maxProgress);
+  //         }
+  //         
+  //         // 게임 플레이 관련 퀘스트 업데이트
+  //         if (quest.title.includes('게임 플레이') && quest.progress === 0) {
+  //           newProgress = 1;
+  //         }
+  //         
+  //         if (newProgress !== quest.progress) {
+  //           updateQuestProgress(quest.id, newProgress);
+  //         }
+  //       }
+  //     });
+  //   }
+  // }, [currentScore, quests]);
 
   // 초기 연동 상태 확인 및 퀘스트 로드
   useEffect(() => {
     const initializePanel = async () => {
+      console.log('🚀 QuestPanel 초기화 시작');
       // 먼저 플랫폼 연동 상태 확인
       await checkPlatformLinkStatus();
       // 그 다음 퀘스트 로드
       await fetchQuests();
+      console.log('✅ QuestPanel 초기화 완료');
     };
     
-    initializePanel();
-  }, [userId, gameUuid]);
+    if (gameUuid) {
+      initializePanel();
+    }
+  }, [gameUuid]); // userId 제거하여 무한 루프 방지
+
+  // 주기적으로 퀘스트 상태 새로고침 (연동된 유저만)
+  useEffect(() => {
+    if (!isLinked || !gameUuid) return;
+    
+    console.log('🔄 QuestPanel 주기적 새로고침 시작 (30초 간격)');
+    
+    const refreshInterval = setInterval(() => {
+      console.log('🔄 퀘스트 상태 자동 새로고침...');
+      fetchQuests();
+    }, 30000); // 30초마다 새로고침
+    
+    return () => {
+      console.log('🔄 QuestPanel 주기적 새로고침 정리');
+      clearInterval(refreshInterval);
+    };
+  }, [isLinked, gameUuid]); // fetchQuests 의존성 제거
 
   if (isLoading) {
     return (

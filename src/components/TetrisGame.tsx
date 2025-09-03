@@ -38,7 +38,6 @@ const QUEST_IDS = {
   REACH_LEVEL_10: '8',
   PLAY_GAMES_5: '9',
   PLAY_GAMES_20: '10',
-  HARD_DROP_10: '11',
   DAILY_LOGIN: '12'
 };
 
@@ -50,10 +49,11 @@ interface TetrisGameProps {
   onLevelUpdate: (level: number) => void;
   onLinesUpdate: (lines: number) => void;
   onGameOver: () => void;
-  onHighScoreUpdate?: (highScore: HighScoreRecord) => void; // 하이스코어 업데이트 콜백
+  onHighScoreUpdate: (score: number, level: number, lines: number) => void;
+  onPlatformLinkStatusChange?: (isLinked: boolean) => void;
 }
 
-export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver, onHighScoreUpdate }: TetrisGameProps) {
+export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver, onHighScoreUpdate, onPlatformLinkStatusChange }: TetrisGameProps) {
   const BOARD_WIDTH = 10;
   const BOARD_HEIGHT = 20;
   
@@ -106,20 +106,26 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       const data = await response.json();
       if (data.success && data.payload?.isLinked) {
         setIsLinked(true);
+        // 부모 컴포넌트에 연동 상태 변경 알림
+        onPlatformLinkStatusChange?.(true);
         // 필요 시 data.payload.startDate를 저장하여 클라이언트 기준으로도 활용 가능
         console.log('플랫폼 연동 상태: TRUE, startDate:', data.payload?.startDate);
         return true;
       } else {
         setIsLinked(false);
+        // 부모 컴포넌트에 연동 상태 변경 알림
+        onPlatformLinkStatusChange?.(false);
         console.log('플랫폼 연동 상태: FALSE (status 응답)');
         return false;
       }
     } catch (error) {
       console.error('플랫폼 연동 상태 확인 실패:', error);
       setIsLinked(false);
+      // 부모 컴포넌트에 연동 상태 변경 알림
+      onPlatformLinkStatusChange?.(false);
       return false;
     }
-  }, [userId]);
+  }, [userId, onPlatformLinkStatusChange]);
 
   // 하이스코어 저장 (플랫폼 연동과 무관하게 항상 저장)
   const saveHighScore = useCallback(async (score: number, level: number, lines: number) => {
@@ -186,7 +192,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       // 하이스코어 업데이트 콜백 호출 (HighScoreDisplay 업데이트용)
       if (onHighScoreUpdate && result.highScore) {
         console.log('onHighScoreUpdate 콜백 호출:', result.highScore);
-        onHighScoreUpdate(result.highScore);
+        onHighScoreUpdate(result.highScore.score, result.highScore.level, result.highScore.lines);
       } else {
         console.log('onHighScoreUpdate 콜백 호출 실패:', { onHighScoreUpdate: !!onHighScoreUpdate, result });
       }
@@ -205,7 +211,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
         lines
       });
     }
-  }, [isLinked, userId]);
+  }, [isLinked, userId, onHighScoreUpdate]);
 
   // 게임 오버 시 하이스코어 저장을 위한 useEffect
   useEffect(() => {
@@ -255,7 +261,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     } catch (error) {
       console.error('퀘스트 업데이트 오류:', error);
     }
-  }, [isLinked, userStringId]);
+  }, [isLinked, userStringId, userId]);
 
   // 게임 시작 시 퀘스트 체크
   const checkFirstGameQuest = useCallback(() => {
@@ -308,18 +314,11 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, Math.min(gamesCount, 20));
   }, [isLinked, updateQuestProgress]);
 
-  // 하드 드롭 관련 퀘스트 체크
-  const checkHardDropQuests = useCallback((hardDropsCount: number) => {
-    if (!isLinked) return;
-    
-    updateQuestProgress(QUEST_IDS.HARD_DROP_10, Math.min(hardDropsCount, 10));
-  }, [isLinked, updateQuestProgress]);
-
-  // 컴포넌트 마운트 시 플랫폼 연동 상태 확인 (중복 네트워크 방지를 위해 비활성화)
-  // useEffect(() => {
-  //   console.log('TetrisGame 컴포넌트 마운트 - 플랫폼 연동 상태 확인 시작');
-  //   checkPlatformLinkStatus();
-  // }, [checkPlatformLinkStatus]);
+  // 컴포넌트 마운트 시 플랫폼 연동 상태 확인
+  useEffect(() => {
+    console.log('TetrisGame 컴포넌트 마운트 - 플랫폼 연동 상태 확인 시작');
+    checkPlatformLinkStatus();
+  }, [checkPlatformLinkStatus]);
 
   // 게임 시작 시에도 플랫폼 연동 상태 재확인 (게임 중 호출 방지로 비활성화)
   // useEffect(() => {
@@ -600,7 +599,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
               // 하드 드롭 퀘스트 체크
               const newHardDropsCount = hardDropsUsed + 1;
               setHardDropsUsed(newHardDropsCount);
-              checkHardDropQuests(newHardDropsCount);
+              // checkHardDropQuests(newHardDropsCount); // 하드드롭 퀘스트 제거
             }
             
             // 다음 블록 생성
@@ -627,7 +626,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       
       return newState;
     });
-  }, [gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests, checkHardDropQuests, checkPlayGamesQuests, hardDropsUsed, gamesPlayed]);
+  }, [gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests, checkPlayGamesQuests, hardDropsUsed, gamesPlayed]);
 
   // 게임 시작
   const startGame = () => {
