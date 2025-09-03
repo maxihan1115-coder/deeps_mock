@@ -58,7 +58,12 @@ async function handleQuestStart(request: NextRequest) {
       })
     ]);
 
+    console.log('🔍 [quest/start] User lookup result:', user);
+    console.log('🔍 [quest/start] Existing platform link:', existingPlatformLink);
+    console.log('🔍 [quest/start] Connect request history:', connectRequest);
+
     if (!user) {
+      console.log('❌ [quest/start] User not found:', parsedUuid);
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
         '존재하지 않는 유저'
@@ -69,52 +74,63 @@ async function handleQuestStart(request: NextRequest) {
       );
     }
 
-    // 이미 연동되어 있으면 그대로 진행
+    // 연동 상태 확인 및 처리 로직 개선
+    let shouldCreatePlatformLink = false;
+    
     if (existingPlatformLink && existingPlatformLink.isActive) {
-      console.log('User already linked:', parsedUuid);
+      console.log('✅ [quest/start] User already linked:', parsedUuid);
     } 
     // 연동 요청이 있었다면 실제 연동 정보 생성
     else if (connectRequest) {
-      console.log('Creating platform link from connect request for user:', parsedUuid);
-      
-      // 실제 플랫폼 연동 정보 생성
-      await prisma.platformLink.create({
-        data: {
-          gameUuid: user.uuid,
-          platformUuid: `bapp_${parsedUuid}`,
-          platformType: 'BAPP',
-          linkedAt: new Date(),
-          isActive: true,
-        },
-      });
-
-      // 연동 완료 이력 추가
-      await prisma.platformLinkHistory.create({
-        data: {
-          gameUuid: user.uuid,
-          platformUuid: `bapp_${parsedUuid}`,
-          platformType: 'BAPP',
-          action: 'CONNECT_COMPLETED',
-          linkedAt: new Date(),
-        },
-      });
-      
-      console.log('Platform link created for user:', parsedUuid);
+      console.log('🔗 [quest/start] Creating platform link from connect request for user:', parsedUuid);
+      shouldCreatePlatformLink = true;
     } 
-    // 연동 요청도 없고 기존 연동도 없으면 오류
+    // 연동 요청도 없고 기존 연동도 없으면 자동으로 연동 생성 (테스트용)
     else {
-      const errorResponse = createErrorResponse(
-        API_ERROR_CODES.INVALID_USER,
-        '미연동 유저 (플랫폼 연동 요청이 필요합니다)'
-      );
-      return NextResponse.json(
-        errorResponse,
-        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
-      );
+      console.log('⚠️ [quest/start] No existing link or request found, creating auto-link for user:', parsedUuid);
+      shouldCreatePlatformLink = true;
+    }
+
+    // 플랫폼 연동 정보 생성 (필요한 경우)
+    if (shouldCreatePlatformLink) {
+      try {
+        // 실제 플랫폼 연동 정보 생성
+        await prisma.platformLink.upsert({
+          where: { gameUuid: parsedUuid },
+          update: { 
+            isActive: true,
+            updatedAt: new Date()
+          },
+          create: {
+            gameUuid: user.uuid,
+            platformUuid: `bapp_${parsedUuid}`,
+            platformType: 'BAPP',
+            linkedAt: new Date(),
+            isActive: true,
+          },
+        });
+
+        // 연동 완료 이력 추가
+        await prisma.platformLinkHistory.create({
+          data: {
+            gameUuid: user.uuid,
+            platformUuid: `bapp_${parsedUuid}`,
+            platformType: 'BAPP',
+            action: 'CONNECT_COMPLETED',
+            linkedAt: new Date(),
+          },
+        });
+        
+        console.log('✅ [quest/start] Platform link created/updated for user:', parsedUuid);
+      } catch (error) {
+        console.error('❌ [quest/start] Failed to create platform link:', error);
+        // 연동 생성 실패해도 퀘스트 시작은 진행
+      }
     }
 
     // 최적화된 참여 정보 처리 (인덱스 활용으로 빠른 조회)
     const startDate = new Date();
+    console.log('🔍 [quest/start] Setting startDate:', startDate);
     
     // User 테이블과 QuestParticipation 테이블 모두 업데이트
     const [updatedUser, participation] = await Promise.all([
@@ -135,8 +151,8 @@ async function handleQuestStart(request: NextRequest) {
       })
     ]);
 
-    console.log('✅ User startDate 업데이트 완료:', updatedUser.startDate);
-    console.log('✅ QuestParticipation 업데이트 완료:', participation.startDate);
+    console.log('✅ [quest/start] User startDate 업데이트 완료:', updatedUser.startDate);
+    console.log('✅ [quest/start] QuestParticipation 업데이트 완료:', participation.startDate);
 
     // 성공 응답
     const successResponse = createSuccessResponse({
