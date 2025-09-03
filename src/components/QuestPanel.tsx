@@ -52,143 +52,18 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
       
       if (data.success) {
         setQuests(data.payload.quests || data.payload);
+        setIsLinked(data.payload.isLinked || false);
         setError(null);
         console.log('Quests set:', data.payload.quests || data.payload);
       } else {
         console.error('Quest API error:', data.error);
-        // 미연동 유저인 경우에도 기본 퀘스트 목록을 보여줌
-        if (data.error === 'INVALID_USER' && data.payload === '미연동 유저') {
-          setError('미연동 상태: 플랫폼 연동을 완료하면 퀘스트 진행도가 저장됩니다.');
-          // 테트리스 게임에 맞는 기본 퀘스트 목록 설정
-          setQuests([
-            {
-              id: '1',
-              title: 'FIRST_GAME',
-              description: '첫 번째 테트리스 게임을 플레이하세요',
-              type: 'single',
-              progress: 0,
-              maxProgress: 1,
-              reward: '5 BORA',
-              isCompleted: false,
-            },
-            {
-              id: '2',
-              title: 'SCORE_1000',
-              description: '1000점 이상을 달성하세요',
-              type: 'single',
-              progress: 0,
-              maxProgress: 1,
-              reward: '5 BORA',
-              isCompleted: false,
-            },
-            {
-              id: '3',
-              title: 'SCORE_5000',
-              description: '5000점 이상을 달성하세요',
-              type: 'single',
-              progress: 0,
-              maxProgress: 1,
-              reward: '5 BORA',
-              isCompleted: false,
-            },
-            {
-              id: '4',
-              title: 'SCORE_10000',
-              description: '10000점 이상을 달성하세요',
-              type: 'single',
-              progress: 0,
-              maxProgress: 1,
-              reward: '5 BORA',
-              isCompleted: false,
-            },
-            {
-              id: '5',
-              title: 'CLEAR_LINES_10',
-              description: '총 10줄을 제거하세요',
-              type: 'single',
-              progress: 0,
-              maxProgress: 10,
-              reward: '5 BORA',
-              isCompleted: false,
-            },
-            {
-              id: '6',
-              title: 'CLEAR_LINES_50',
-              description: '총 50줄을 제거하세요',
-              type: 'single',
-              progress: 0,
-              maxProgress: 50,
-              reward: '5 BORA',
-              isCompleted: false,
-            },
-            {
-              id: '7',
-              title: 'REACH_LEVEL_5',
-              description: '레벨 5에 도달하세요',
-              type: 'single',
-              progress: 0,
-              maxProgress: 1,
-              reward: '5 BORA',
-              isCompleted: false,
-            },
-            {
-              id: '8',
-              title: 'REACH_LEVEL_10',
-              description: '레벨 10에 도달하세요',
-              type: 'single',
-              progress: 0,
-              maxProgress: 1,
-              reward: '5 BORA',
-              isCompleted: false,
-            },
-            {
-              id: '9',
-              title: 'PLAY_GAMES_5',
-              description: '5게임을 플레이하세요',
-              type: 'daily',
-              progress: 0,
-              maxProgress: 5,
-              reward: '50 ~ 0 BORA 렌덤 보상',
-              isCompleted: false,
-            },
-            {
-              id: '10',
-              title: 'PLAY_GAMES_20',
-              description: '20게임을 플레이하세요',
-              type: 'weekly',
-              progress: 0,
-              maxProgress: 20,
-              reward: '100 ~ 0 BORA 렌덤 보상',
-              isCompleted: false,
-            },
-            {
-              id: '11',
-              title: 'HARD_DROP_10',
-              description: '하드 드롭을 10번 사용하세요',
-              type: 'single',
-              progress: 0,
-              maxProgress: 10,
-              reward: '5 BORA',
-              isCompleted: false,
-            },
-            {
-              id: '12',
-              title: 'DAILY_LOGIN',
-              description: '7일 연속 로그인하세요',
-              type: 'single',
-              progress: 0,
-              maxProgress: 7,
-              reward: '10 BORA',
-              isCompleted: false,
-            },
-          ]);
-        } else {
-          setError('퀘스트 조회 중 오류가 발생했습니다.');
-        }
+        setError('퀘스트 조회에 실패했습니다.');
+        setQuests([]);
       }
     } catch (error) {
-      console.error('Failed to fetch quests:', error);
+      console.error('퀘스트 조회 실패:', error);
       setError('퀘스트 조회 중 오류가 발생했습니다.');
+      setQuests([]);
     } finally {
       setIsLoading(false);
     }

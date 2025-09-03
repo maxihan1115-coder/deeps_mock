@@ -17,6 +17,7 @@ model User {
   id        String   @id @default(uuid())
   username  String   @unique
   uuid      Int      @unique
+  startDate DateTime? // 퀘스트 시작 시간 추가
   createdAt DateTime @default(now())
   lastLoginAt DateTime @default(now())
 
@@ -26,6 +27,7 @@ model User {
   gameStates       GameState[]
   highScores       HighScore[]
   questProgresses  QuestProgress[]
+  questParticipations QuestParticipation[] // 추가
 
   @@map("users")
 }
@@ -166,7 +168,11 @@ model QuestParticipation {
   startDate DateTime // 퀘스트 참여 시작 시간
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  
+  // User 테이블과의 관계 추가
+  user User @relation(fields: [gameUuid], references: [uuid], onDelete: Cascade)
+  
+  @@unique([gameUuid]) // gameUuid에 대한 고유 인덱스 추가
   @@map("quest_participation")
 }
 

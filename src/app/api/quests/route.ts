@@ -24,14 +24,38 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const gameUuid = searchParams.get('gameUuid');
+    const userId = searchParams.get('userId'); // fallback
 
-    console.log('Quest API called with userId:', userId);
+    console.log('Quest API called with gameUuid:', gameUuid, 'userId:', userId);
 
-    if (!userId) {
+    let parsedGameUuid: number;
+
+    if (gameUuid) {
+      // gameUuid가 있으면 우선 사용
+      parsedGameUuid = Number.parseInt(gameUuid, 10);
+    } else if (userId) {
+      // userId가 있으면 사용자 정보에서 uuid 추출
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { uuid: true }
+      });
+      
+      if (!user) {
+        const errorResponse = createErrorResponse(
+          API_ERROR_CODES.INVALID_USER,
+          '존재하지 않는 유저'
+        );
+        return NextResponse.json(
+          errorResponse,
+          { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
+        );
+      }
+      parsedGameUuid = user.uuid;
+    } else {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
-        '사용자 ID가 필요합니다.'
+        'gameUuid 또는 userId가 필요합니다.'
       );
       return NextResponse.json(
         errorResponse,
@@ -39,15 +63,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 사용자 정보 조회하여 UUID 가져오기
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
+    if (!Number.isFinite(parsedGameUuid)) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
-        '존재하지 않는 유저'
+        '유효하지 않은 gameUuid입니다.'
       );
       return NextResponse.json(
         errorResponse,
@@ -55,44 +74,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 플랫폼 연동 완료 여부 확인
-    const platformLink = await prisma.platformLink.findUnique({
-      where: { gameUuid: user.uuid },
-    });
+    // 카탈로그 방식: 연동 상태와 무관하게 퀘스트 목록 제공
+    const quests = await mysqlGameStore.getCatalogWithProgress(parsedGameUuid);
+    console.log('Retrieved quests for gameUuid:', parsedGameUuid, 'count:', quests.length);
 
-    if (!platformLink) {
-      const errorResponse = createErrorResponse(
-        API_ERROR_CODES.INVALID_USER,
-        '미연동 유저'
-      );
-      return NextResponse.json(
-        errorResponse,
-        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
-      );
-    }
+    // 퀘스트 참여 정보 조회 (연동된 유저만)
+    const [platformLink, participation] = await Promise.all([
+      prisma.platformLink.findUnique({
+        where: { gameUuid: parsedGameUuid },
+        select: { isActive: true }
+      }),
+      prisma.questParticipation.findFirst({
+        where: { gameUuid: parsedGameUuid },
+        select: { startDate: true }
+      })
+    ]);
 
-    // 연동 상태 확인
-    const statusRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/platform-link/status?gameUuid=${user.uuid}`, { cache: 'no-store' });
-    let isLinked = false;
-    try {
-      const statusJson = await statusRes.json();
-      isLinked = !!statusJson?.payload?.isLinked;
-    } catch {}
-
-    const quests = await mysqlGameStore.getCatalogWithProgress(user.uuid);
-    // 미연동이면 빈 배열 반환 (정책에 따라 변경 가능)
-    if (!isLinked) {
-      return NextResponse.json({ success: true, error: null, payload: { quests: [] } });
-    }
-    console.log('Retrieved quests for userId:', userId, 'count:', quests.length);
-
-    // 퀘스트 참여 정보 조회
-    const participation = await prisma.questParticipation.findFirst({
-      where: { gameUuid: user.uuid },
-    });
-
+    const isLinked = Boolean(platformLink?.isActive);
+    
     const result = {
       quests,
+      isLinked,
       participation: participation ? {
         isParticipating: true,
         startDate: participation.startDate.getTime(),
