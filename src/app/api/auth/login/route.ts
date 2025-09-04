@@ -38,10 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 병렬로 출석체크와 퀘스트 확인 처리
-    const [hasAttendanceToday, existingQuests] = await Promise.all([
-      mysqlGameStore.hasAttendanceToday(user.uuid), // user.id → user.uuid (숫자)
-      mysqlGameStore.getQuests(user.uuid) // user.id → user.uuid (숫자)
-    ]);
+    const hasAttendanceToday = await mysqlGameStore.hasAttendanceToday(user.uuid);
 
     // 출석체크 추가 (필요한 경우만)
     if (!hasAttendanceToday) {

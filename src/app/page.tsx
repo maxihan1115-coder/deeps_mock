@@ -25,8 +25,9 @@ export default function HomePage() {
   }, [router]);
 
   const handleLogin = (user: { id: string; username: string; uuid: number }) => {
-    // 로그인 성공 시 게임 페이지로 리다이렉트
-    router.push(`/game?userId=${user.id}&username=${user.username}&uuid=${user.uuid}`);
+    // LoginForm에서 이미 페이지 이동을 처리하므로 여기서는 추가 처리만
+    console.log('로그인 성공:', user);
+    // 필요한 경우 추가 로직을 여기에 구현
   };
 
   if (isLoading) {

@@ -89,7 +89,6 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
   // 퀘스트 관련 상태
   const [isLinked, setIsLinked] = useState(false);
   const [hardDropsUsed, setHardDropsUsed] = useState(0);
-  const [gamesPlayed, setGamesPlayed] = useState(0);
   const [hasCheckedFirstGame, setHasCheckedFirstGame] = useState(false);
   const [windowSize, setWindowSize] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -306,13 +305,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     }
   }, [isLinked, updateQuestProgress]);
 
-  // 게임 플레이 관련 퀘스트 체크
-  const checkPlayGamesQuests = useCallback((gamesCount: number) => {
-    if (!isLinked) return;
-    
-    updateQuestProgress(QUEST_IDS.PLAY_GAMES_5, Math.min(gamesCount, 5));
-    updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, Math.min(gamesCount, 20));
-  }, [isLinked, updateQuestProgress]);
+
 
   // 컴포넌트 마운트 시 플랫폼 연동 상태 확인
   useEffect(() => {
@@ -474,9 +467,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             }, 0);
             
             // 게임 오버 시 게임 플레이 퀘스트 체크 및 하이스코어 저장
-            const newGamesPlayed = gamesPlayed + 1;
-            setGamesPlayed(newGamesPlayed);
-            checkPlayGamesQuests(newGamesPlayed);
+            updateGamePlayQuests();
             
             // 하이스코어 저장 (게임 종료 시) - 플랫폼 연동과 무관하게 항상 저장
             console.log('게임 오버 - 하이스코어 저장 시도:', {
@@ -616,9 +607,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
               }, 0);
               
               // 게임 오버 시 게임 플레이 퀘스트 체크
-              const newGamesPlayed = gamesPlayed + 1;
-              setGamesPlayed(newGamesPlayed);
-              checkPlayGamesQuests(newGamesPlayed);
+              updateGamePlayQuests();
             }
           }
           break;
@@ -626,7 +615,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       
       return newState;
     });
-  }, [gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests, checkPlayGamesQuests, hardDropsUsed, gamesPlayed]);
+  }, [gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests, hardDropsUsed]);
 
   // 게임 시작
   const startGame = () => {
@@ -666,6 +655,30 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       isPaused: false,
     });
   };
+
+  // 게임 종료 시 퀘스트 업데이트를 위한 함수
+  const updateGamePlayQuests = useCallback(async () => {
+    if (!isLinked) return;
+    
+    try {
+      // 현재 사용자의 총 게임 수를 가져와서 퀘스트 업데이트
+      const response = await fetch(`/api/highscore?gameUuid=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.payload && data.payload.length > 0) {
+          // 총 게임 수 계산 (하이스코어 레코드 수)
+          const totalGames = data.payload.length;
+          console.log('게임 종료 - 총 게임 수:', totalGames);
+          
+          // 게임회수 퀘스트 업데이트
+          updateQuestProgress(QUEST_IDS.PLAY_GAMES_5, Math.min(totalGames, 5));
+          updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, Math.min(totalGames, 20));
+        }
+      }
+    } catch (error) {
+      console.error('게임회수 퀘스트 업데이트 오류:', error);
+    }
+  }, [isLinked, userId, updateQuestProgress]);
 
   // 게임 루프 설정
   useEffect(() => {
@@ -1101,7 +1114,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             </div>
             <div className="flex justify-between">
               <span>게임 수:</span>
-              <span className="font-bold">{gamesPlayed}</span>
+              <span className="font-bold">-</span>
             </div>
           </div>
 

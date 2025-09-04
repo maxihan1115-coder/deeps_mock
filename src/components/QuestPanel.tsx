@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -22,7 +22,7 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
   const [isLinked, setIsLinked] = useState<boolean | null>(null);
 
   // 플랫폼 연동 상태 확인
-  const checkPlatformLinkStatus = async () => {
+  const checkPlatformLinkStatus = useCallback(async () => {
     try {
       console.log('🔍 QuestPanel에서 플랫폼 연동 상태 확인 시작:', { gameUuid, userId });
       
@@ -42,10 +42,10 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
       console.error('❌ QuestPanel 플랫폼 연동 상태 확인 실패:', error);
       setIsLinked(false);
     }
-  };
+  }, [gameUuid, userId]);
 
   // 퀘스트 목록 가져오기
-  const fetchQuests = async () => {
+  const fetchQuests = useCallback(async () => {
     try {
       console.log('🔄 퀘스트 목록 가져오기 시작:', { gameUuid, userId });
       
@@ -56,13 +56,34 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
       
       if (data.success) {
         console.log('✅ 퀘스트 목록 가져오기 성공:', data.payload);
-        setQuests(data.payload.quests || []);
+        const questsData = data.payload.quests || [];
         setIsLinked(data.payload.isLinked || false);
         setError(null);
+        
+        // 백엔드에서 이미 플랫폼 보상 정보를 포함하여 제공
+        setQuests(questsData);
         console.log('📊 퀘스트 데이터 상태:', {
-          questsCount: data.payload.quests?.length || 0,
+          questsCount: questsData.length || 0,
           isLinked: data.payload.isLinked,
-          quests: data.payload.quests
+          quests: questsData
+        });
+        
+        // 플랫폼 보상 정보 상세 로깅
+        questsData.forEach((quest: Quest) => {
+          if (quest.claimValue && quest.claimSymbol) {
+            console.log(`🎁 퀘스트 ${quest.id} 플랫폼 보상 확인:`, {
+              title: quest.title,
+              claimValue: quest.claimValue,
+              claimSymbol: quest.claimSymbol
+            });
+          } else {
+            console.log(`📝 퀘스트 ${quest.id} 기본 보상 확인:`, {
+              title: quest.title,
+              reward: quest.reward,
+              hasClaimValue: !!quest.claimValue,
+              hasClaimSymbol: !!quest.claimSymbol
+            });
+          }
         });
       } else {
         console.error('❌ 퀘스트 목록 가져오기 실패:', data.error);
@@ -78,39 +99,32 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [gameUuid, userId]);
 
-  // 퀘스트 진행도 업데이트
-  const updateQuestProgress = async (questId: string, progress: number) => {
-    try {
-      console.log('🔄 퀘스트 진행도 업데이트 시작:', { questId, progress, gameUuid });
-      
-      const response = await fetch('/api/quests/progress', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ gameUuid, questId, progress }),
-      });
 
-      const data = await response.json();
-      console.log('📡 퀘스트 진행도 업데이트 응답:', data);
-      
-      if (data.success) {
-        // 퀘스트 목록 새로고침 (진행도 반영)
-        console.log('✅ 퀘스트 진행도 업데이트 성공, 목록 새로고침 중...');
-        await fetchQuests();
-        console.log('✅ 퀘스트 진행도 업데이트 완료:', questId, progress);
-      } else {
-        console.error('❌ 퀘스트 진행도 업데이트 실패:', data.error);
-        // 실패 시에도 현재 상태 유지
+  // claimValue 포맷팅 함수
+  const formatClaimValue = (claimValue: string | number | object): string => {
+    if (typeof claimValue === 'string') {
+      // JSON 문자열인 경우 파싱 시도
+      try {
+        const parsed = JSON.parse(claimValue);
+        if (typeof parsed === 'object') {
+          // 복잡한 보상 구조인 경우 (예: {"1":"100.00","2":"20.00"})
+          const values = Object.values(parsed).filter(v => v !== "0.00" && v !== "0");
+          if (values.length > 0) {
+            return String(values[0]);
+          }
+        }
+        return claimValue;
+      } catch {
+        // JSON 파싱 실패 시 원본 값 반환
+        return claimValue;
       }
-    } catch (error) {
-      console.error('❌ 퀘스트 진행도 업데이트 중 오류:', error);
     }
+    
+    // 숫자인 경우 그대로 반환
+    return claimValue.toString();
   };
-
-  // 초기화 로직 제거
 
   // 퀘스트 타입별 아이콘
   const getQuestIcon = (type: Quest['type']) => {
@@ -199,7 +213,7 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
     if (gameUuid) {
       initializePanel();
     }
-  }, [gameUuid]); // userId 제거하여 무한 루프 방지
+  }, [gameUuid, fetchQuests, checkPlatformLinkStatus]); // fetchQuests와 checkPlatformLinkStatus를 의존성 배열에 추가
 
   // 주기적으로 퀘스트 상태 새로고침 (연동된 유저만)
   useEffect(() => {
@@ -216,7 +230,7 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
       console.log('🔄 QuestPanel 주기적 새로고침 정리');
       clearInterval(refreshInterval);
     };
-  }, [isLinked, gameUuid]); // fetchQuests 의존성 제거
+  }, [isLinked, gameUuid, fetchQuests]); // fetchQuests를 의존성 배열에 추가
 
   if (isLoading) {
     return (
@@ -318,9 +332,22 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
               </div>
               
               <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">
-                  보상: {quest.reward}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">보상:</span>
+                  {quest.claimValue && quest.claimSymbol ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-medium text-blue-600">
+                        {formatClaimValue(quest.claimValue)}
+                      </span>
+                      <span className="text-xs font-medium text-blue-500">
+                        {quest.claimSymbol}
+                      </span>
+                      <span className="text-xs text-gray-400">(플랫폼)</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-600">{quest.reward}</span>
+                  )}
+                </div>
                 {quest.isCompleted && (
                   <Badge variant="default" className="text-xs bg-green-500">
                     완료

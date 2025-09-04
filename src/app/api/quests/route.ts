@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mysqlGameStore } from '@/lib/mysql-store';
 import { prisma } from '@/lib/prisma';
 import { 
   createSuccessResponse, 
@@ -7,6 +6,33 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
+
+// 플랫폼에서 퀘스트 보상 정보 가져오기
+async function fetchPlatformRewards() {
+  try {
+    const requestHeaders = {
+      'Accept': 'application/json',
+      'Accept-Language': 'en'
+    };
+    
+    const platformResponse = await fetch('https://papi.boradeeps.cc/v1/quest/10006', {
+      method: 'GET',
+      headers: requestHeaders,
+    });
+
+    if (platformResponse.ok) {
+      const platformData = await platformResponse.json();
+      
+      if (platformData.success && platformData.payload) {
+        return platformData.payload;
+      }
+    }
+    
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 // 실시간 퀘스트 진행도 계산 함수
 async function getRealTimeQuestProgress(gameUuid: number) {
@@ -18,7 +44,8 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '첫 번째 게임을 플레이하세요',
       type: 'single' as const,
       maxProgress: 1,
-      reward: '경험치 100'
+      reward: '경험치 100',
+      platformTitle: 'FIRST_GAME'
     },
     {
       id: '2',
@@ -26,7 +53,8 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '1000점을 달성하세요',
       type: 'single' as const,
       maxProgress: 1000,
-      reward: '경험치 200'
+      reward: '경험치 200',
+      platformTitle: 'SCORE_1000'
     },
     {
       id: '3',
@@ -34,7 +62,8 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '5000점을 달성하세요',
       type: 'single' as const,
       maxProgress: 5000,
-      reward: '경험치 300'
+      reward: '경험치 300',
+      platformTitle: 'SCORE_5000'
     },
     {
       id: '4',
@@ -42,7 +71,8 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '10000점을 달성하세요',
       type: 'single' as const,
       maxProgress: 10000,
-      reward: '경험치 500'
+      reward: '경험치 500',
+      platformTitle: 'SCORE_10000'
     },
     {
       id: '5',
@@ -50,7 +80,8 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '총 10라인을 클리어하세요',
       type: 'single' as const,
       maxProgress: 10,
-      reward: '경험치 150'
+      reward: '경험치 150',
+      platformTitle: 'CLEAR_LINES_10'
     },
     {
       id: '6',
@@ -58,7 +89,8 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '총 50라인을 클리어하세요',
       type: 'single' as const,
       maxProgress: 50,
-      reward: '경험치 300'
+      reward: '경험치 300',
+      platformTitle: 'CLEAR_LINES_50'
     },
     {
       id: '7',
@@ -66,7 +98,8 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '5레벨에 도달하세요',
       type: 'single' as const,
       maxProgress: 5,
-      reward: '경험치 200'
+      reward: '경험치 200',
+      platformTitle: 'REACH_LEVEL_5'
     },
     {
       id: '8',
@@ -74,7 +107,8 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '10레벨에 도달하세요',
       type: 'single' as const,
       maxProgress: 10,
-      reward: '경험치 400'
+      reward: '경험치 400',
+      platformTitle: 'REACH_LEVEL_10'
     },
     {
       id: '9',
@@ -82,7 +116,8 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '총 5회 게임을 플레이하세요',
       type: 'single' as const,
       maxProgress: 5,
-      reward: '경험치 200'
+      reward: '경험치 200',
+      platformTitle: 'PLAY_GAMES_5'
     },
     {
       id: '10',
@@ -90,7 +125,8 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '총 20회 게임을 플레이하세요',
       type: 'single' as const,
       maxProgress: 20,
-      reward: '경험치 500'
+      reward: '경험치 500',
+      platformTitle: 'PLAY_GAMES_20'
     },
     {
       id: '12',
@@ -98,71 +134,78 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       description: '7일 연속으로 로그인하세요',
       type: 'daily' as const,
       maxProgress: 7,
-      reward: '경험치 300'
+      reward: '경험치 100',
+      platformTitle: 'DAILY_LOGIN'
     }
   ];
 
   try {
-    // 병렬로 게임 데이터 조회 (quest/check와 동일한 로직)
-    const [gameStats, attendanceCount] = await Promise.all([
-      // 하이스코어 데이터에서 게임 통계 계산
+    // 플랫폼 보상 정보 가져오기
+    const platformRewards = await fetchPlatformRewards();
+    
+    // 실시간 데이터로 진행도 계산
+    const [highScoreResult, attendanceCount] = await Promise.all([
       prisma.highScore.aggregate({
         where: { userId: gameUuid },
-        _count: { id: true },  // 총 게임 횟수
-        _max: { 
-          score: true,  // 최고 점수
-          level: true   // 최고 레벨
-        },
-        _sum: { 
-          lines: true   // 총 라인 수
-        }
+        _sum: { score: true, level: true, lines: true },
+        _count: true
       }),
-      // 출석 데이터 조회 (일일 로그인 퀘스트용)
       prisma.attendanceRecord.count({
         where: { userId: gameUuid }
       })
     ]);
 
-    // 퀘스트 진행도 계산
     const quests = QUEST_CATALOG.map(quest => {
       let progress = 0;
-      
+
       switch (quest.id) {
         case '1': // 첫 게임 플레이
-          progress = gameStats._count.id > 0 ? 1 : 0;
+          progress = highScoreResult._count > 0 ? 1 : 0;
           break;
         case '2': // 1000점 달성
-          progress = Math.min(gameStats._max.score || 0, 1000);
+          progress = Math.min(highScoreResult._sum.score || 0, 1000);
           break;
         case '3': // 5000점 달성
-          progress = Math.min(gameStats._max.score || 0, 5000);
+          progress = Math.min(highScoreResult._sum.score || 0, 5000);
           break;
         case '4': // 10000점 달성
-          progress = Math.min(gameStats._max.score || 0, 10000);
+          progress = Math.min(highScoreResult._sum.score || 0, 10000);
           break;
         case '5': // 10라인 클리어
-          progress = Math.min(gameStats._sum.lines || 0, 10);
+          progress = Math.min(highScoreResult._sum.lines || 0, 10);
           break;
         case '6': // 50라인 클리어
-          progress = Math.min(gameStats._sum.lines || 0, 50);
+          progress = Math.min(highScoreResult._sum.lines || 0, 50);
           break;
         case '7': // 5레벨 달성
-          progress = Math.min(gameStats._max.level || 0, 5);
+          progress = Math.min(highScoreResult._sum.level || 0, 5);
           break;
         case '8': // 10레벨 달성
-          progress = Math.min(gameStats._max.level || 0, 10);
+          progress = Math.min(highScoreResult._sum.level || 0, 10);
           break;
         case '9': // 5회 게임 플레이
-          progress = Math.min(gameStats._count.id || 0, 5);
+          progress = Math.min(highScoreResult._count, 5);
           break;
         case '10': // 20회 게임 플레이
-          progress = Math.min(gameStats._count.id || 0, 20);
+          progress = Math.min(highScoreResult._count, 20);
           break;
         case '12': // 일일 로그인 7일
           progress = Math.min(attendanceCount, 7);
           break;
         default:
           progress = 0;
+      }
+
+      // 플랫폼 보상 정보 매핑
+      let claimValue = undefined;
+      let claimSymbol = undefined;
+      
+      if (platformRewards) {
+        const platformQuest = platformRewards.find((pq: { title: string; claimValue: string; claimSymbol: string }) => pq.title === quest.platformTitle);
+        if (platformQuest) {
+          claimValue = platformQuest.claimValue;
+          claimSymbol = platformQuest.claimSymbol;
+        }
       }
 
       return {
@@ -175,7 +218,10 @@ async function getRealTimeQuestProgress(gameUuid: number) {
         reward: quest.reward,
         isCompleted: progress >= quest.maxProgress,
         expiresAt: undefined,
-        createdAt: new Date()
+        createdAt: new Date(),
+        // 플랫폼 보상 정보 추가
+        claimValue,
+        claimSymbol
       };
     });
 
@@ -260,6 +306,22 @@ export async function GET(request: NextRequest) {
     const quests = await getRealTimeQuestProgress(parsedGameUuid);
     
     console.log('Retrieved real-time quests for gameUuid:', parsedGameUuid, 'count:', quests.length);
+    
+    // 플랫폼 보상 정보 로깅
+    quests.forEach(quest => {
+      if (quest.claimValue && quest.claimSymbol) {
+        console.log(`🎁 퀘스트 ${quest.id} 플랫폼 보상:`, {
+          title: quest.title,
+          claimValue: quest.claimValue,
+          claimSymbol: quest.claimSymbol
+        });
+      } else {
+        console.log(`📝 퀘스트 ${quest.id} 기본 보상:`, {
+          title: quest.title,
+          reward: quest.reward
+        });
+      }
+    });
 
     // 퀘스트 참여 정보 조회 (연동된 유저만)
     const [platformLink, participation] = await Promise.all([

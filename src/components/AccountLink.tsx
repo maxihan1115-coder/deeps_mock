@@ -13,19 +13,14 @@ interface AccountLinkProps {
 }
 
 export default function AccountLink({ userUuid, username }: AccountLinkProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLinked, setIsLinked] = useState(false);
   const [requestCode, setRequestCode] = useState<string | null>(null);
-  const [isCopied, setIsCopied] = useState(false);
-  const [error, setError] = useState('');
-  const [isLinked, setIsLinked] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-
-  // 컴포넌트 마운트 시 로그 및 연동 상태 확인
-  useEffect(() => {
-    console.log('🔗 AccountLink 컴포넌트 마운트됨 - UUID:', userUuid, 'Username:', username);
-    checkLinkStatus();
-  }, [userUuid, username]);
+  const [isCopied, setIsCopied] = useState(false);
+  const [linkDate, setLinkDate] = useState<number | null>(null); // 연동일자 추가
 
   // requestCode 상태 변화 추적
   useEffect(() => {
@@ -37,32 +32,41 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
     }
   }, [requestCode]);
 
-  // 플랫폼 연동 상태 확인 (quest/start API 200 응답 기준)
+  // 컴포넌트 마운트 시 연동 상태 확인
+  useEffect(() => {
+    console.log('🔍 AccountLink 컴포넌트 마운트 - 연동 상태 확인 시작');
+    checkLinkStatus();
+  }, []); // 빈 의존성 배열로 마운트 시에만 실행
+
+  // 플랫폼 연동 상태 확인 (platform-link/status API 사용)
   const checkLinkStatus = async () => {
     try {
-      console.log('🔍 플랫폼 연동 상태 확인 중 (quest/start API 기준)...');
+      console.log('🔍 플랫폼 연동 상태 확인 중 (platform-link/status API 기준)...');
       
-      const response = await fetch('/api/quest/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_BAPP_AUTH_TOKEN || '1300728b9eabc43c7b26fcd6507b9b59c75333bfc4e48784e9be0291ebc3615a'}`
-        },
-        body: JSON.stringify({ uuid: userUuid })
-      });
+      const response = await fetch(`/api/platform-link/status?gameUuid=${userUuid}`);
+      const data = await response.json();
       
-      console.log('📊 quest/start 응답 상태:', response.status);
+      console.log('📊 platform-link/status 응답:', data);
       
-      if (response.status === 200) {
-        setIsLinked(true);
-        console.log('🔗 연동 상태: 연동됨 (quest/start 성공)');
+      if (data.success) {
+        const { isLinked: linked, startDate } = data.payload;
+        setIsLinked(linked);
+        setLinkDate(startDate);
+        
+        if (linked) {
+          console.log('🔗 연동 상태: 연동됨, 연동일자:', startDate);
+        } else {
+          console.log('🔗 연동 상태: 미연동');
+        }
       } else {
         setIsLinked(false);
-        console.log('🔗 연동 상태: 미연동 (quest/start 실패)');
+        setLinkDate(null);
+        console.log('🔗 연동 상태: 미연동 (API 응답 실패)');
       }
     } catch (error) {
       console.error('❌ 연동 상태 확인 오류:', error);
       setIsLinked(false);
+      setLinkDate(null);
     }
   };
 
@@ -221,6 +225,24 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
               <p className="text-xs text-green-700 mt-1">
                 현재 BORA 플랫폼과 성공적으로 연동되어 있습니다.
               </p>
+              {linkDate && (
+                <div className="mt-2 p-2 bg-green-100 rounded border border-green-300">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-green-800">📅 연동일자:</span>
+                    <span className="text-xs text-green-700">
+                      {new Date(linkDate).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        weekday: 'long'
+                      })} {new Date(linkDate).toLocaleTimeString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
             
             <Dialog>

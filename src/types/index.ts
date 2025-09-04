@@ -48,6 +48,9 @@ export interface Quest {
   createdAt?: Date;
   lastResetTime?: Date;
   userId?: number; // 숫자 UUID (User.uuid)
+  // 플랫폼 보상 정보 추가
+  claimValue?: number;
+  claimSymbol?: string;
 }
 
 // API 응답 타입

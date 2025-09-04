@@ -6,7 +6,6 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
-import { shouldResetQuest, resetQuestProgress } from '@/lib/quest-utils';
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAuthToken } from '@/lib/auth-token';
 import { 
   createSuccessResponse, 
@@ -73,7 +73,7 @@ const QUEST_LIST = [
   }
 ];
 
-async function handleQuestList(_request: NextRequest) {
+async function handleQuestList() {
   try {
     console.log('Quest list API called');
 
