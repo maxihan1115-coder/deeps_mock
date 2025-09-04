@@ -8,6 +8,13 @@ import {
   API_ERROR_CODES 
 } from '@/lib/api-errors';
 
+// 한국시간 기준 오늘 날짜 가져오기
+function getKoreaToday(): string {
+  const now = new Date();
+  const koreaTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+  return koreaTime.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+}
+
 // 테트리스 게임에 맞는 퀘스트 목록 데이터
 const QUEST_LIST = [
   {
@@ -69,16 +76,16 @@ const QUEST_LIST = [
   {
     id: 9,
     title: "PLAY_GAMES_5",
-    koreanTitle: "5회 게임 플레이",
+    koreanTitle: "일일 5회 게임 플레이",
     totalTimes: 5,
-    type: "game_count"
+    type: "daily_game_count"
   },
   {
     id: 10,
     title: "PLAY_GAMES_20",
-    koreanTitle: "20회 게임 플레이",
+    koreanTitle: "일일 20회 게임 플레이",
     totalTimes: 20,
-    type: "game_count"
+    type: "daily_game_count"
   },
   {
     id: 12,
@@ -153,8 +160,19 @@ async function handleQuestCheck(request: NextRequest) {
       );
     }
 
+    // 한국시간 기준 오늘 날짜
+    const today = getKoreaToday();
+    
+    // 한국시간 00:00~23:59를 UTC 시간으로 변환
+    // 한국시간 00:00 = UTC 15:00 (전날), 한국시간 23:59 = UTC 14:59 (당일)
+    const koreaStartUTC = new Date(today + 'T00:00:00.000Z');
+    koreaStartUTC.setUTCHours(koreaStartUTC.getUTCHours() - 9); // UTC로 변환
+    
+    const koreaEndUTC = new Date(today + 'T23:59:59.999Z');
+    koreaEndUTC.setUTCHours(koreaEndUTC.getUTCHours() - 9); // UTC로 변환
+    
     // 병렬로 게임 데이터 조회 (성능 최적화)
-    const [gameStats, attendanceCount] = await Promise.all([
+    const [gameStats, attendanceCount, todayGameCount] = await Promise.all([
       // 하이스코어 데이터에서 게임 통계 계산
       prisma.highScore.aggregate({
         where: { userId: user.uuid },
@@ -170,6 +188,16 @@ async function handleQuestCheck(request: NextRequest) {
       // 출석 데이터 조회 (일일 로그인 퀘스트용)
       prisma.attendanceRecord.count({
         where: { userId: user.uuid }
+      }),
+      // 오늘 날짜의 게임 플레이 횟수 조회 (daily 퀘스트용, 한국시간 기준)
+      prisma.highScore.count({
+        where: { 
+          userId: user.uuid,
+          createdAt: {
+            gte: koreaStartUTC,
+            lt: koreaEndUTC
+          }
+        }
       })
     ]);
 
@@ -180,7 +208,10 @@ async function handleQuestCheck(request: NextRequest) {
         maxScore: gameStats._max.score || 0,
         maxLevel: gameStats._max.level || 0,
         totalLines: gameStats._sum.lines || 0,
-        attendanceDays: attendanceCount
+        attendanceDays: attendanceCount,
+        todayGameCount: todayGameCount,
+        koreaStartUTC: koreaStartUTC.toISOString(),
+        koreaEndUTC: koreaEndUTC.toISOString()
       });
     }
 
@@ -213,24 +244,51 @@ async function handleQuestCheck(request: NextRequest) {
       // 퀘스트 타입에 따른 현재 진행도 계산
       let currentTimes = 0;
       
-      switch (questInfo.type) {
-        case 'game_count':
-          currentTimes = gameStats._count.id || 0;
-          break;
-        case 'max_score':
-          currentTimes = gameStats._max.score || 0;
-          break;
-        case 'max_level':
-          currentTimes = gameStats._max.level || 0;
-          break;
-        case 'total_lines':
-          currentTimes = gameStats._sum.lines || 0;
-          break;
-        case 'daily_login':
-          currentTimes = attendanceCount;
-          break;
-        default:
-          currentTimes = 0;
+      // 개발 환경에서 디버깅 로그
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔍 퀘스트 ${questId} 처리:`, {
+          questInfo,
+          gameStats: gameStats._count.id,
+          todayGameCount,
+          attendanceCount
+        });
+      }
+      
+      // 퀘스트 9번, 10번은 강제로 daily_game_count로 처리
+      if (parsedQuestId === 9 || parsedQuestId === 10) {
+        currentTimes = todayGameCount;
+      } else {
+        switch (questInfo.type) {
+          case 'game_count':
+            currentTimes = gameStats._count.id || 0;
+            break;
+          case 'max_score':
+            currentTimes = gameStats._max.score || 0;
+            break;
+          case 'max_level':
+            currentTimes = gameStats._max.level || 0;
+            break;
+          case 'total_lines':
+            currentTimes = gameStats._sum.lines || 0;
+            break;
+          case 'daily_game_count':
+            currentTimes = todayGameCount;
+            break;
+          case 'daily_login':
+            currentTimes = attendanceCount;
+            break;
+          default:
+            currentTimes = 0;
+        }
+      }
+      
+      // 개발 환경에서 결과 로그
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ 퀘스트 ${questId} 결과:`, {
+          type: questInfo.type,
+          currentTimes,
+          totalTimes: questInfo.totalTimes
+        });
       }
 
       // 달성 여부 계산

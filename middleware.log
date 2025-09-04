@@ -3819,3 +3819,13 @@
 [2025-09-04T00:32:19.051Z] ✅ Auth successful - calling handler...
 [2025-09-04T00:32:19.181Z] 🎉 Handler completed successfully
 [2025-09-04T00:32:19.200Z] 🎉 Handler completed successfully
+[2025-09-04T03:02:52.213Z] 🔐 [withAuthToken] POST /api/quest/check
+[2025-09-04T03:02:52.217Z] ❌ No auth token found in headers
+[2025-09-04T03:08:29.988Z] 🔐 [withAuthToken] POST /api/quest/check
+[2025-09-04T03:08:29.990Z] 🔑 Auth type: Authorization Bearer
+[2025-09-04T03:08:29.990Z] ✅ Token validation result: INVALID
+[2025-09-04T03:08:29.991Z] ❌ Auth failed - invalid token
+[2025-09-04T03:13:42.995Z] 🔐 [withAuthToken] POST /api/quest/check
+[2025-09-04T03:13:42.996Z] 🔑 Auth type: Authorization Bearer
+[2025-09-04T03:13:42.996Z] ✅ Token validation result: INVALID
+[2025-09-04T03:13:42.996Z] ❌ Auth failed - invalid token

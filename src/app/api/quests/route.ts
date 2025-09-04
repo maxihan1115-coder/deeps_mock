@@ -34,6 +34,13 @@ async function fetchPlatformRewards() {
   }
 }
 
+// 한국시간 기준 오늘 날짜 가져오기
+function getKoreaToday(): string {
+  const now = new Date();
+  const koreaTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+  return koreaTime.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+}
+
 // 실시간 퀘스트 진행도 계산 함수
 async function getRealTimeQuestProgress(gameUuid: number) {
   // 퀘스트 카탈로그 정의 (quest/check와 동일)
@@ -112,18 +119,18 @@ async function getRealTimeQuestProgress(gameUuid: number) {
     },
     {
       id: '9',
-      title: '5회 게임 플레이',
-      description: '총 5회 게임을 플레이하세요',
-      type: 'single' as const,
+      title: '일일 5회 게임 플레이',
+      description: '하루에 5회 게임을 플레이하세요',
+      type: 'daily' as const,
       maxProgress: 5,
       reward: '경험치 200',
       platformTitle: 'PLAY_GAMES_5'
     },
     {
       id: '10',
-      title: '20회 게임 플레이',
-      description: '총 20회 게임을 플레이하세요',
-      type: 'single' as const,
+      title: '일일 20회 게임 플레이',
+      description: '하루에 20회 게임을 플레이하세요',
+      type: 'daily' as const,
       maxProgress: 20,
       reward: '경험치 500',
       platformTitle: 'PLAY_GAMES_20'
@@ -143,8 +150,19 @@ async function getRealTimeQuestProgress(gameUuid: number) {
     // 플랫폼 보상 정보 가져오기
     const platformRewards = await fetchPlatformRewards();
     
+    // 한국시간 기준 오늘 날짜
+    const today = getKoreaToday();
+    
+    // 한국시간 00:00~23:59를 UTC 시간으로 변환
+    // 한국시간 00:00 = UTC 15:00 (전날), 한국시간 23:59 = UTC 14:59 (당일)
+    const koreaStartUTC = new Date(today + 'T00:00:00.000Z');
+    koreaStartUTC.setUTCHours(koreaStartUTC.getUTCHours() - 9); // UTC로 변환
+    
+    const koreaEndUTC = new Date(today + 'T23:59:59.999Z');
+    koreaEndUTC.setUTCHours(koreaEndUTC.getUTCHours() - 9); // UTC로 변환
+    
     // 실시간 데이터로 진행도 계산
-    const [highScoreResult, attendanceCount] = await Promise.all([
+    const [highScoreResult, attendanceCount, todayGameCount] = await Promise.all([
       prisma.highScore.aggregate({
         where: { userId: gameUuid },
         _sum: { score: true, level: true, lines: true },
@@ -152,8 +170,28 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       }),
       prisma.attendanceRecord.count({
         where: { userId: gameUuid }
+      }),
+      // 오늘 날짜의 게임 플레이 횟수 조회 (한국시간 기준)
+      prisma.highScore.count({
+        where: { 
+          userId: gameUuid,
+          createdAt: {
+            gte: koreaStartUTC,
+            lt: koreaEndUTC
+          }
+        }
       })
     ]);
+
+    // 개발 환경에서 로그 출력
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📊 /api/quests 게임 통계:', {
+        totalGames: highScoreResult._count,
+        todayGameCount: todayGameCount,
+        koreaStartUTC: koreaStartUTC.toISOString(),
+        koreaEndUTC: koreaEndUTC.toISOString()
+      });
+    }
 
     const quests = QUEST_CATALOG.map(quest => {
       let progress = 0;
@@ -183,11 +221,11 @@ async function getRealTimeQuestProgress(gameUuid: number) {
         case '8': // 10레벨 달성
           progress = Math.min(highScoreResult._sum.level || 0, 10);
           break;
-        case '9': // 5회 게임 플레이
-          progress = Math.min(highScoreResult._count, 5);
+        case '9': // 일일 5회 게임 플레이
+          progress = Math.min(todayGameCount, 5);
           break;
-        case '10': // 20회 게임 플레이
-          progress = Math.min(highScoreResult._count, 20);
+        case '10': // 일일 20회 게임 플레이
+          progress = Math.min(todayGameCount, 20);
           break;
         case '12': // 일일 로그인 7일
           progress = Math.min(attendanceCount, 7);

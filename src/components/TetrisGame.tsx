@@ -670,9 +670,23 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
           const totalGames = data.payload.length;
           console.log('게임 종료 - 총 게임 수:', totalGames);
           
-          // 게임회수 퀘스트 업데이트
-          updateQuestProgress(QUEST_IDS.PLAY_GAMES_5, Math.min(totalGames, 5));
-          updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, Math.min(totalGames, 20));
+          // 오늘 날짜의 게임 횟수 계산 (daily 퀘스트용)
+          const today = new Date();
+          const koreaTime = new Date(today.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+          const todayStr = koreaTime.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+          
+          const todayGames = data.payload.filter((game: { createdAt: string }) => {
+            const gameDate = new Date(game.createdAt);
+            const gameKoreaTime = new Date(gameDate.getTime() + (9 * 60 * 60 * 1000));
+            const gameDateStr = gameKoreaTime.toISOString().split('T')[0];
+            return gameDateStr === todayStr;
+          }).length;
+          
+          console.log('게임 종료 - 오늘 게임 수:', todayGames);
+          
+          // daily 퀘스트 업데이트 (오늘 게임 횟수 사용)
+          updateQuestProgress(QUEST_IDS.PLAY_GAMES_5, Math.min(todayGames, 5));
+          updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, Math.min(todayGames, 20));
         }
       }
     } catch (error) {
