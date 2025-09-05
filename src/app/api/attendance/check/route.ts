@@ -32,6 +32,9 @@ export async function POST(request: NextRequest) {
       const attendanceRecords = await mysqlGameStore.getAttendanceRecords(gameUuid);
       const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
       
+      console.log('📅 출석 기록:', attendanceRecords.map(r => r.date).join(', '));
+      console.log('🔢 연속 출석일 계산:', consecutiveDays, '일');
+      
       // DAILY_LOGIN 퀘스트 ID: '12'
       await mysqlGameStore.updateQuestProgress(gameUuid, '12', Math.min(consecutiveDays, 7));
       console.log('✅ DAILY_LOGIN 퀘스트 업데이트:', consecutiveDays, '일 연속');

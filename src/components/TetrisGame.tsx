@@ -630,7 +630,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         setGameInterval(null);
       }
     }
-  }, [isGameStarted, gameState.isPaused, gameState.isGameOver, gameState.level, updateGame, gameInterval]);
+  }, [isGameStarted, gameState.isPaused, gameState.isGameOver, gameState.level, updateGame]);
 
   // 키보드 이벤트 리스너
   useEffect(() => {

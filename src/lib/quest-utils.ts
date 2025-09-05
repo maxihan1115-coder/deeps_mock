@@ -74,30 +74,46 @@ export function resetQuestProgress(_questType: string): { progress: number, last
   };
 }
 
-// 출석 연속일 계산
+// 출석 연속일 계산 (7일 연속 출석체크)
 import type { AttendanceRecord } from '@/types';
 export function calculateConsecutiveDays(records: AttendanceRecord[]): number {
-  // records: 최신 날짜부터 정렬되어 있다고 가정하지 않고 정렬
-  const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
+  if (records.length === 0) return 0;
+  
+  // 최신 날짜부터 정렬 (내림차순)
+  const sorted = [...records].sort((a, b) => b.date.localeCompare(a.date));
+  
   let consecutive = 0;
-  let lastDate: string | null = null;
-  for (const r of sorted) {
-    if (!lastDate) {
-      lastDate = r.date;
-      consecutive = 1;
-      continue;
-    }
-    // YYYY-MM-DD 또는 YYYYMMDD 둘 다 허용할 수 있으나 현재는 YYYY-MM-DD/문자열 비교 간단 처리
-    const prev = new Date(lastDate.replaceAll('-', ''));
-    const cur = new Date(r.date.replaceAll('-', ''));
-    const diff = (cur.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-    if (diff === 1) {
-      consecutive += 1;
-      lastDate = r.date;
-    } else if (diff > 1) {
-      consecutive = 1;
-      lastDate = r.date;
+  const today = new Date();
+  
+  // 오늘 날짜를 YYYY-MM-DD 형식으로 변환
+  const todayStr = today.toISOString().split('T')[0];
+  
+  // 오늘 출석했는지 확인
+  const hasTodayAttendance = sorted.some(record => record.date === todayStr);
+  if (!hasTodayAttendance) {
+    // 오늘 출석하지 않았으면 연속 출석은 0
+    return 0;
+  }
+  
+  consecutive = 1; // 오늘 출석했으므로 1부터 시작
+  
+  // 어제부터 역순으로 연속 출석 확인
+  const checkDate = new Date(today);
+  for (let i = 1; i < sorted.length; i++) {
+    checkDate.setDate(checkDate.getDate() - 1);
+    const expectedDateStr = checkDate.toISOString().split('T')[0];
+    
+    // 해당 날짜에 출석 기록이 있는지 확인
+    const hasAttendanceOnDate = sorted.some(record => record.date === expectedDateStr);
+    
+    if (hasAttendanceOnDate) {
+      // 연속 출석
+      consecutive++;
+    } else {
+      // 연속이 끊어짐
+      break;
     }
   }
+  
   return consecutive;
 }

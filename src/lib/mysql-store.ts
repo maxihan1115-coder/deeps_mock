@@ -117,6 +117,7 @@ class MySQLGameStore {
     const kstStart = this.getKstStartOfToday();
 
     // 실제 오늘 게임 플레이 횟수를 계산 (KST 기준)
+    // 이미 하이스코어가 저장된 상태이므로 +1을 하지 않음
     const todayGameCount = await prisma.highScore.count({
       where: {
         userId: gameUuid,
@@ -126,8 +127,8 @@ class MySQLGameStore {
       },
     });
 
-    // 게임 플레이 횟수 + 1 (현재 게임)
-    const actualProgress = Math.min(todayGameCount + 1, catalog.maxProgress);
+    // 현재 게임이 이미 하이스코어에 저장되어 있으므로 그대로 사용
+    const actualProgress = Math.min(todayGameCount, catalog.maxProgress);
 
     const updated = await prisma.questProgress.upsert({
       where: { userId_catalogId: { userId: gameUuid, catalogId } },
