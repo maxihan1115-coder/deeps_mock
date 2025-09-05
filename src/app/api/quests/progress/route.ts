@@ -34,8 +34,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 카탈로그 기반 진행 업데이트
-    const updatedQuest = await mysqlGameStore.upsertQuestProgress(gameUuid, questId, progress);
+    // 일일 게임 플레이(9/10)는 서버에서 증분 처리 (KST 기준)
+    let updatedQuest;
+    if (questId === '9' || questId === '10') {
+      updatedQuest = await mysqlGameStore.incrementDailyCatalogProgress(gameUuid, questId);
+    } else {
+      // 기타 퀘스트는 절대값 업데이트 유지
+      updatedQuest = await mysqlGameStore.upsertQuestProgress(gameUuid, questId, progress);
+    }
     if (!updatedQuest) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_QUEST,

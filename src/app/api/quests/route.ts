@@ -162,7 +162,7 @@ async function getRealTimeQuestProgress(gameUuid: number) {
     koreaEndUTC.setUTCHours(koreaEndUTC.getUTCHours() - 9); // UTC로 변환
     
     // 실시간 데이터로 진행도 계산
-    const [highScoreResult, attendanceCount, todayGameCount] = await Promise.all([
+    const [highScoreResult, attendanceCount, todayGameCount, questProgressData] = await Promise.all([
       prisma.highScore.aggregate({
         where: { userId: gameUuid },
         _sum: { score: true, level: true, lines: true },
@@ -180,6 +180,10 @@ async function getRealTimeQuestProgress(gameUuid: number) {
             lt: koreaEndUTC
           }
         }
+      }),
+      // quest_progress 테이블에서 저장된 퀘스트 진행도 조회
+      prisma.questProgress.findMany({
+        where: { userId: gameUuid }
       })
     ]);
 
@@ -222,10 +226,14 @@ async function getRealTimeQuestProgress(gameUuid: number) {
           progress = Math.min(highScoreResult._sum.level || 0, 10);
           break;
         case '9': // 일일 5회 게임 플레이
-          progress = Math.min(todayGameCount, 5);
+          // quest_progress에서 저장된 데이터 사용
+          const quest9Progress = questProgressData.find(qp => qp.catalogId === '9');
+          progress = quest9Progress ? quest9Progress.progress : Math.min(todayGameCount, 5);
           break;
         case '10': // 일일 20회 게임 플레이
-          progress = Math.min(todayGameCount, 20);
+          // quest_progress에서 저장된 데이터 사용
+          const quest10Progress = questProgressData.find(qp => qp.catalogId === '10');
+          progress = quest10Progress ? quest10Progress.progress : Math.min(todayGameCount, 20);
           break;
         case '12': // 일일 로그인 7일
           progress = Math.min(attendanceCount, 7);

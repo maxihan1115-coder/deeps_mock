@@ -60,8 +60,16 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
         setIsLinked(data.payload.isLinked || false);
         setError(null);
         
-        // 백엔드에서 이미 플랫폼 보상 정보를 포함하여 제공
-        setQuests(questsData);
+        // 미완료 퀘스트를 위에, 완료된 퀘스트를 아래에 정렬
+        const sortedQuests = questsData.sort((a: Quest, b: Quest) => {
+          // 미완료 퀘스트가 위에 오도록 정렬
+          if (a.isCompleted && !b.isCompleted) return 1;
+          if (!a.isCompleted && b.isCompleted) return -1;
+          // 완료 상태가 같으면 ID 순으로 정렬
+          return parseInt(a.id) - parseInt(b.id);
+        });
+        
+        setQuests(sortedQuests);
         console.log('📊 퀘스트 데이터 상태:', {
           questsCount: questsData.length || 0,
           isLinked: data.payload.isLinked,
@@ -344,9 +352,11 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
                       </span>
                       <span className="text-xs text-gray-400">(플랫폼)</span>
                     </div>
-                  ) : (
-                    <span className="text-xs text-gray-600">{quest.reward}</span>
-                  )}
+                  ) : quest.reward ? (
+                    <span className="text-sm font-medium text-red-500">
+                      API 호출 실패로 보상정보를 불러올 수 없습니다.
+                    </span>
+                  ) : null}
                 </div>
                 {quest.isCompleted && (
                   <Badge variant="default" className="text-xs bg-green-500">

@@ -19,7 +19,7 @@ class MySQLGameStore {
       { id: '7', title: 'REACH_LEVEL_5', description: '레벨 5 도달', type: 'SINGLE', maxProgress: 1, reward: 5 },
       { id: '8', title: 'REACH_LEVEL_10', description: '레벨 10 도달', type: 'SINGLE', maxProgress: 1, reward: 5 },
       { id: '9', title: 'PLAY_GAMES_5', description: '5게임 플레이', type: 'DAILY', maxProgress: 5, reward: 50 },
-      { id: '10', title: 'PLAY_GAMES_20', description: '20게임 플레이', type: 'WEEKLY', maxProgress: 20, reward: 100 },
+      { id: '10', title: 'PLAY_GAMES_20', description: '20게임 플레이', type: 'DAILY', maxProgress: 20, reward: 100 },
       { id: '11', title: 'HARD_DROP_10', description: '하드 드롭 10회', type: 'SINGLE', maxProgress: 10, reward: 5 },
       { id: '12', title: 'DAILY_LOGIN', description: '연속 로그인 7일', type: 'DAILY', maxProgress: 7, reward: 10 },
     ] as const;
@@ -83,6 +83,68 @@ class MySQLGameStore {
         isCompleted: nextProgress >= catalog.maxProgress,
       },
     });
+    const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    return {
+      id: catalog.id,
+      title: catalog.title,
+      description: catalog.description,
+      type: typeMapping[catalog.type] as Quest['type'],
+      progress: updated.progress,
+      maxProgress: catalog.maxProgress,
+      reward: catalog.reward,
+      isCompleted: updated.isCompleted,
+      expiresAt: undefined,
+      createdAt: new Date(),
+    };
+  }
+
+  private getKstStartOfToday(): Date {
+    const now = new Date();
+    // UTC 시간을 KST로 변환 (UTC+9)
+    const kstNow = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+    const yyyyMmDd = kstNow.toISOString().split('T')[0];
+    // KST 00:00을 UTC로 변환 (UTC-9)
+    const startKst = new Date(`${yyyyMmDd}T00:00:00.000Z`);
+    startKst.setTime(startKst.getTime() - (9 * 60 * 60 * 1000));
+    return startKst;
+  }
+
+  async incrementDailyCatalogProgress(gameUuid: number, catalogId: string): Promise<Quest | null> {
+    await this.ensureQuestCatalog();
+    const catalog = await prisma.questCatalog.findUnique({ where: { id: catalogId } });
+    if (!catalog) return null;
+
+    const kstStart = this.getKstStartOfToday();
+
+    // 실제 오늘 게임 플레이 횟수를 계산 (KST 기준)
+    const todayGameCount = await prisma.highScore.count({
+      where: {
+        userId: gameUuid,
+        createdAt: {
+          gte: kstStart,
+        },
+      },
+    });
+
+    // 게임 플레이 횟수 + 1 (현재 게임)
+    const actualProgress = Math.min(todayGameCount + 1, catalog.maxProgress);
+
+    const updated = await prisma.questProgress.upsert({
+      where: { userId_catalogId: { userId: gameUuid, catalogId } },
+      update: {
+        progress: actualProgress,
+        isCompleted: actualProgress >= catalog.maxProgress,
+        lastResetTime: kstStart, // 항상 오늘 날짜로 업데이트
+      },
+      create: {
+        userId: gameUuid,
+        catalogId,
+        progress: actualProgress,
+        isCompleted: actualProgress >= catalog.maxProgress,
+        lastResetTime: kstStart,
+      },
+    });
+
     const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
     return {
       id: catalog.id,
@@ -542,6 +604,28 @@ class MySQLGameStore {
     } catch (error) {
       console.error('Create quest error:', error);
       return null;
+    }
+  }
+
+  // 하이스코어 저장 메서드
+  async saveHighScore(gameUuid: number, score: number, level: number, lines: number): Promise<{ id: string; userId: number; score: number; level: number; lines: number; createdAt: Date }> {
+    console.log('💾 하이스코어 저장 시작:', { gameUuid, score, level, lines });
+    
+    try {
+      const highScore = await prisma.highScore.create({
+        data: {
+          userId: gameUuid,
+          score,
+          level,
+          lines,
+        },
+      });
+
+      console.log('✅ 하이스코어 저장 완료:', highScore);
+      return highScore;
+    } catch (error) {
+      console.error('❌ 하이스코어 저장 실패:', error);
+      throw error;
     }
   }
 

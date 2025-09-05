@@ -41,10 +41,8 @@ const QUEST_IDS = {
   DAILY_LOGIN: '12'
 };
 
-type HighScoreRecord = { id?: string; score: number; level: number; lines: number; createdAt?: string };
 interface TetrisGameProps {
   userId: number;  // gameUuid (숫자) - 플랫폼 연동용
-  userStringId: string;  // userId (문자열) - 퀘스트/DB용
   onScoreUpdate: (score: number) => void;
   onLevelUpdate: (level: number) => void;
   onLinesUpdate: (lines: number) => void;
@@ -53,7 +51,7 @@ interface TetrisGameProps {
   onPlatformLinkStatusChange?: (isLinked: boolean) => void;
 }
 
-export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver, onHighScoreUpdate, onPlatformLinkStatusChange }: TetrisGameProps) {
+export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver, onHighScoreUpdate, onPlatformLinkStatusChange }: TetrisGameProps) {
   const BOARD_WIDTH = 10;
   const BOARD_HEIGHT = 20;
   
@@ -89,7 +87,6 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
   // 퀘스트 관련 상태
   const [isLinked, setIsLinked] = useState(false);
   const [hardDropsUsed, setHardDropsUsed] = useState(0);
-  const [hasCheckedFirstGame, setHasCheckedFirstGame] = useState(false);
   const [windowSize, setWindowSize] = useState(() => {
     if (typeof window !== 'undefined') {
       return { width: window.innerWidth, height: window.innerHeight };
@@ -100,70 +97,51 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
   // 플랫폼 연동 상태 확인 (platform-link/status로만 확인)
   const checkPlatformLinkStatus = useCallback(async () => {
     try {
-      console.log('플랫폼 연동 상태 확인 시작 (status API):', { userId });
       const response = await fetch(`/api/platform-link/status?gameUuid=${userId}`);
       const data = await response.json();
       if (data.success && data.payload?.isLinked) {
         setIsLinked(true);
-        // 부모 컴포넌트에 연동 상태 변경 알림
         onPlatformLinkStatusChange?.(true);
-        // 필요 시 data.payload.startDate를 저장하여 클라이언트 기준으로도 활용 가능
-        console.log('플랫폼 연동 상태: TRUE, startDate:', data.payload?.startDate);
         return true;
       } else {
         setIsLinked(false);
-        // 부모 컴포넌트에 연동 상태 변경 알림
         onPlatformLinkStatusChange?.(false);
-        console.log('플랫폼 연동 상태: FALSE (status 응답)');
         return false;
       }
     } catch (error) {
       console.error('플랫폼 연동 상태 확인 실패:', error);
       setIsLinked(false);
-      // 부모 컴포넌트에 연동 상태 변경 알림
       onPlatformLinkStatusChange?.(false);
       return false;
     }
   }, [userId, onPlatformLinkStatusChange]);
 
-  // 하이스코어 저장 (플랫폼 연동과 무관하게 항상 저장)
+  // 하이스코어 저장 (폴백용 - 게임오버 API 실패 시 사용)
   const saveHighScore = useCallback(async (score: number, level: number, lines: number) => {
-    console.log('saveHighScore 함수 호출됨:', { score, level, lines, userId });
-    console.log('하이스코어 저장 진행 중... (플랫폼 연동 상태와 무관)');
-    
     // 데이터 유효성 검사
     if (typeof score !== 'number' || typeof level !== 'number' || typeof lines !== 'number') {
-      console.error('하이스코어 저장 실패: 잘못된 데이터 타입', { score, level, lines, types: { score: typeof score, level: typeof level, lines: typeof lines } });
+      console.error('하이스코어 저장 실패: 잘못된 데이터 타입');
       return;
     }
     
     if (!Number.isFinite(score) || !Number.isFinite(level) || !Number.isFinite(lines)) {
-      console.error('하이스코어 저장 실패: 무한값 또는 NaN', { score, level, lines });
+      console.error('하이스코어 저장 실패: 무한값 또는 NaN');
       return;
     }
     
     if (score < 0 || level < 0 || lines < 0) {
-      console.error('하이스코어 저장 실패: 음수 값', { score, level, lines });
+      console.error('하이스코어 저장 실패: 음수 값');
       return;
     }
     
     try {
       const requestBody = {
-        gameUuid: userId, // 숫자 UUID 사용
+        gameUuid: userId,
         score,
         level,
         lines
       };
       
-      console.log('하이스코어 저장 시도:', requestBody);
-      console.log('요청 데이터 타입 확인:', {
-        gameUuid: typeof userId,
-        score: typeof score,
-        level: typeof level,
-        lines: typeof lines
-      });
-      
-      console.log('🌐 API 호출 시작: /api/highscore');
       const response = await fetch('/api/highscore', {
         method: 'POST',
         headers: {
@@ -172,74 +150,34 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
         body: JSON.stringify(requestBody)
       });
       
-      console.log('📡 하이스코어 API 응답 상태:', response.status, response.statusText);
-      
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('하이스코어 저장 실패:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText,
-          requestBody
-        });
+        console.error('하이스코어 저장 실패:', response.status, errorText);
         return;
       }
       
       const result = await response.json();
-      console.log('하이스코어 저장 성공:', result);
       
-      // 하이스코어 업데이트 콜백 호출 (HighScoreDisplay 업데이트용)
+      // 하이스코어 업데이트 콜백 호출
       if (onHighScoreUpdate && result.highScore) {
-        console.log('onHighScoreUpdate 콜백 호출:', result.highScore);
         onHighScoreUpdate(result.highScore.score, result.highScore.level, result.highScore.lines);
-      } else {
-        console.log('onHighScoreUpdate 콜백 호출 실패:', { onHighScoreUpdate: !!onHighScoreUpdate, result });
       }
-      
-      // 하이스코어 저장 성공 로그
-      console.log('🎉 하이스코어 저장 완료! 새로운 점수:', result.highScore?.score);
     } catch (error) {
       console.error('하이스코어 저장 오류:', error);
-      const err = error as Error;
-      console.error('에러 상세 정보:', {
-        message: err?.message,
-        stack: err?.stack,
-        userId,
-        score,
-        level,
-        lines
-      });
     }
-  }, [isLinked, userId, onHighScoreUpdate]);
+  }, [userId, onHighScoreUpdate]);
 
-  // 게임 오버 시 하이스코어 저장을 위한 useEffect
-  useEffect(() => {
-    if (gameState.isGameOver && gameState.score > 0) {
-      console.log('🎮 useEffect에서 게임 오버 감지 - 하이스코어 저장 시도');
-      console.log('저장할 데이터:', {
-        score: gameState.score,
-        level: gameState.level,
-        lines: gameState.lines,
-        userId
-      });
-      saveHighScore(gameState.score, gameState.level, gameState.lines);
-    }
-  }, [gameState.isGameOver, gameState.score, gameState.level, gameState.lines, saveHighScore]);
 
   // 퀘스트 진행도 업데이트
   const updateQuestProgress = useCallback(async (questId: string, progress: number) => {
-    if (!isLinked) return; // 플랫폼 연동이 안되어 있으면 퀘스트 업데이트 안함
-    
     try {
-      console.log('퀘스트 업데이트 시도:', { gameUuid: userId, questId, progress });
-      
       const response = await fetch('/api/quests/progress', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          gameUuid: userId,  // 숫자 UUID 사용
+          gameUuid: userId,
           questId: questId,
           progress: progress
         })
@@ -247,28 +185,14 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('퀘스트 업데이트 실패:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText
-        });
+        console.error('퀘스트 업데이트 실패:', response.status, errorText);
         return;
       }
-      
-      const result = await response.json();
-      console.log('퀘스트 업데이트 성공:', result);
     } catch (error) {
       console.error('퀘스트 업데이트 오류:', error);
     }
-  }, [isLinked, userStringId, userId]);
+  }, [userId]);
 
-  // 게임 시작 시 퀘스트 체크
-  const checkFirstGameQuest = useCallback(() => {
-    if (!hasCheckedFirstGame && isLinked) {
-      updateQuestProgress(QUEST_IDS.FIRST_GAME, 1);
-      setHasCheckedFirstGame(true);
-    }
-  }, [hasCheckedFirstGame, isLinked, updateQuestProgress]);
 
   // 점수 관련 퀘스트 체크
   const checkScoreQuests = useCallback((score: number) => {
@@ -309,17 +233,9 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
 
   // 컴포넌트 마운트 시 플랫폼 연동 상태 확인
   useEffect(() => {
-    console.log('TetrisGame 컴포넌트 마운트 - 플랫폼 연동 상태 확인 시작');
     checkPlatformLinkStatus();
   }, [checkPlatformLinkStatus]);
 
-  // 게임 시작 시에도 플랫폼 연동 상태 재확인 (게임 중 호출 방지로 비활성화)
-  // useEffect(() => {
-  //   if (isGameStarted && !isLinked) {
-  //     console.log('게임 시작 시 플랫폼 연동 상태 재확인');
-  //     checkPlatformLinkStatus();
-  //   }
-  // }, [isGameStarted, isLinked, checkPlatformLinkStatus]);
 
   // 새로운 블록 생성
   const createNewBlock = useCallback((): TetrisBlock => {
@@ -403,9 +319,65 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
   }, []);
 
 
+  // 게임오버 처리 통합 함수
+  const handleGameOver = useCallback(async (score: number, level: number, lines: number) => {
+    try {
+      console.log('🎮 게임오버 API 호출 시작:', { gameUuid: userId, score, level, lines });
+      
+      // 게임오버 API 호출 (하이스코어 저장 + 퀘스트 업데이트 통합 처리)
+      const response = await fetch('/api/game/over', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          gameUuid: userId,
+          score,
+          level,
+          lines
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('게임오버 API 호출 실패:', response.status, errorText);
+        // API 실패 시 기존 방식으로 폴백
+        await saveHighScore(score, level, lines);
+        await Promise.all([
+          updateQuestProgress(QUEST_IDS.PLAY_GAMES_5, 1),
+          updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, 1)
+        ]);
+      } else {
+        const result = await response.json();
+        console.log('✅ 게임오버 API 호출 성공:', result);
+        
+        // 하이스코어 업데이트 콜백 호출
+        if (onHighScoreUpdate && result.payload?.highScore) {
+          onHighScoreUpdate(result.payload.highScore.score, result.payload.highScore.level, result.payload.highScore.lines);
+        }
+      }
+      
+      // 게임오버 콜백 호출
+      onGameOverRef.current();
+      
+    } catch (error) {
+      console.error('게임오버 처리 중 오류:', error);
+      // 오류 발생 시 기존 방식으로 폴백
+      try {
+        await saveHighScore(score, level, lines);
+        await Promise.all([
+          updateQuestProgress(QUEST_IDS.PLAY_GAMES_5, 1),
+          updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, 1)
+        ]);
+      } catch (fallbackError) {
+        console.error('폴백 처리도 실패:', fallbackError);
+      }
+      onGameOverRef.current();
+    }
+  }, [userId, onHighScoreUpdate, saveHighScore, updateQuestProgress]);
 
   // 게임 상태 업데이트
-  const updateGame = useCallback(() => {
+  const updateGame = useCallback(async () => {
     setGameState(prevState => {
       if (prevState.isGameOver || prevState.isPaused) {
         return prevState;
@@ -451,36 +423,19 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
           newState.nextBlock = createNewBlock();
           
           // 게임 오버 체크
-          console.log('게임 오버 체크 중...', {
-            currentBlock: newState.currentBlock,
-            boardHeight: newState.board.length,
-            isValid: isValidPosition(newState.currentBlock, newState.board)
-          });
-          
           if (!isValidPosition(newState.currentBlock, newState.board)) {
-            console.log('🎯 게임 오버 조건 만족 - 블록을 놓을 수 없음');
             newState.isGameOver = true;
             
-            // 게임 오버 핸들러를 다음 렌더 사이클로 지연
+            // 게임오버 처리를 다음 렌더 사이클로 지연
+            const gameOverScore = newState.score;
+            const gameOverLevel = newState.level;
+            const gameOverLines = newState.lines;
+            
             setTimeout(() => {
-              onGameOverRef.current();
+              if (typeof handleGameOver === 'function') {
+                handleGameOver(gameOverScore, gameOverLevel, gameOverLines);
+              }
             }, 0);
-            
-            // 게임 오버 시 게임 플레이 퀘스트 체크 및 하이스코어 저장
-            updateGamePlayQuests();
-            
-            // 하이스코어 저장 (게임 종료 시) - 플랫폼 연동과 무관하게 항상 저장
-            console.log('게임 오버 - 하이스코어 저장 시도:', {
-              score: newState.score,
-              level: newState.level,
-              lines: newState.lines,
-              userId
-            });
-            
-            // saveHighScore를 즉시 호출 (플랫폼 연동 상태와 무관)
-            console.log('saveHighScore 함수 호출 시작...');
-            saveHighScore(newState.score, newState.level, newState.lines);
-            console.log('saveHighScore 함수 호출 완료');
           }
         }
       } else {
@@ -491,7 +446,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       
       return newState;
     });
-  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests]);
+  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests, handleGameOver]);
 
   // 키보드 이벤트 처리
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -587,10 +542,8 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
                 onScoreUpdateRef.current(newState.score);
               }, 0);
               
-              // 하드 드롭 퀘스트 체크
-              const newHardDropsCount = hardDropsUsed + 1;
-              setHardDropsUsed(newHardDropsCount);
-              // checkHardDropQuests(newHardDropsCount); // 하드드롭 퀘스트 제거
+              // 하드 드롭 카운트 업데이트
+              setHardDropsUsed(prev => prev + 1);
             }
             
             // 다음 블록 생성
@@ -601,13 +554,16 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
             if (!isValidPosition(newState.currentBlock, newState.board)) {
               newState.isGameOver = true;
               
-              // 게임 오버 핸들러를 다음 렌더 사이클로 지연
-              setTimeout(() => {
-                onGameOverRef.current();
-              }, 0);
+              // 게임오버 처리를 다음 렌더 사이클로 지연
+              const gameOverScore = newState.score;
+              const gameOverLevel = newState.level;
+              const gameOverLines = newState.lines;
               
-              // 게임 오버 시 게임 플레이 퀘스트 체크
-              updateGamePlayQuests();
+              setTimeout(() => {
+                if (typeof handleGameOver === 'function') {
+                  handleGameOver(gameOverScore, gameOverLevel, gameOverLines);
+                }
+              }, 0);
             }
           }
           break;
@@ -615,7 +571,7 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       
       return newState;
     });
-  }, [gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests, hardDropsUsed]);
+  }, [gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests, handleGameOver]);
 
   // 게임 시작
   const startGame = () => {
@@ -632,8 +588,10 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
       isPaused: false,
     }));
     
-    // 첫 게임 퀘스트 체크
-    checkFirstGameQuest();
+    // 첫 게임 퀘스트 체크 (링크된 경우에만)
+    if (isLinked) {
+      updateQuestProgress(QUEST_IDS.FIRST_GAME, 1);
+    }
   };
 
   // 게임 시작/일시정지
@@ -656,57 +614,23 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
     });
   };
 
-  // 게임 종료 시 퀘스트 업데이트를 위한 함수
-  const updateGamePlayQuests = useCallback(async () => {
-    if (!isLinked) return;
-    
-    try {
-      // 현재 사용자의 총 게임 수를 가져와서 퀘스트 업데이트
-      const response = await fetch(`/api/highscore?gameUuid=${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.payload && data.payload.length > 0) {
-          // 총 게임 수 계산 (하이스코어 레코드 수)
-          const totalGames = data.payload.length;
-          console.log('게임 종료 - 총 게임 수:', totalGames);
-          
-          // 오늘 날짜의 게임 횟수 계산 (daily 퀘스트용)
-          const today = new Date();
-          const koreaTime = new Date(today.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-          const todayStr = koreaTime.toISOString().split('T')[0]; // YYYY-MM-DD 형식
-          
-          const todayGames = data.payload.filter((game: { createdAt: string }) => {
-            const gameDate = new Date(game.createdAt);
-            const gameKoreaTime = new Date(gameDate.getTime() + (9 * 60 * 60 * 1000));
-            const gameDateStr = gameKoreaTime.toISOString().split('T')[0];
-            return gameDateStr === todayStr;
-          }).length;
-          
-          console.log('게임 종료 - 오늘 게임 수:', todayGames);
-          
-          // daily 퀘스트 업데이트 (오늘 게임 횟수 사용)
-          updateQuestProgress(QUEST_IDS.PLAY_GAMES_5, Math.min(todayGames, 5));
-          updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, Math.min(todayGames, 20));
-        }
-      }
-    } catch (error) {
-      console.error('게임회수 퀘스트 업데이트 오류:', error);
-    }
-  }, [isLinked, userId, updateQuestProgress]);
-
   // 게임 루프 설정
   useEffect(() => {
     if (isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-      const interval = setInterval(updateGame, 1000 / gameState.level);
+      const interval = setInterval(() => {
+        updateGame();
+      }, 1000 / gameState.level);
       setGameInterval(interval);
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+      };
     } else {
       if (gameInterval) {
         clearInterval(gameInterval);
         setGameInterval(null);
       }
     }
-  }, [isGameStarted, gameState.isPaused, gameState.isGameOver, gameState.level, updateGame]);
+  }, [isGameStarted, gameState.isPaused, gameState.isGameOver, gameState.level, updateGame, gameInterval]);
 
   // 키보드 이벤트 리스너
   useEffect(() => {
@@ -1169,7 +1093,6 @@ export default function TetrisGame({ userId, userStringId, onScoreUpdate, onLeve
                   재시작
                 </Button>
                 
-                {/* 테스트용 강제 게임 오버 버튼 제거 */}
               </>
             )}
           </div>
