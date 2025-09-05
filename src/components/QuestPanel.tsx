@@ -347,10 +347,11 @@ export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPane
                       <span className="text-sm font-medium text-blue-600">
                         {formatClaimValue(quest.claimValue)}
                       </span>
-                      <span className="text-xs font-medium text-blue-500">
-                        {quest.claimSymbol}
-                      </span>
-                      <span className="text-xs text-gray-400">(플랫폼)</span>
+                      {quest.claimSymbol !== 'REPL' && (
+                        <span className="text-xs font-medium text-blue-500">
+                          {quest.claimSymbol}
+                        </span>
+                      )}
                     </div>
                   ) : quest.reward ? (
                     <span className="text-sm font-medium text-red-500">

@@ -21,7 +21,7 @@ class MySQLGameStore {
       { id: '9', title: 'PLAY_GAMES_5', description: '5게임 플레이', type: 'DAILY', maxProgress: 5, reward: 50 },
       { id: '10', title: 'PLAY_GAMES_20', description: '20게임 플레이', type: 'DAILY', maxProgress: 20, reward: 100 },
       { id: '11', title: 'HARD_DROP_10', description: '하드 드롭 10회', type: 'SINGLE', maxProgress: 10, reward: 5 },
-      { id: '12', title: 'DAILY_LOGIN', description: '연속 로그인 7일', type: 'DAILY', maxProgress: 7, reward: 10 },
+      { id: '12', title: 'DAILY_LOGIN', description: '7일 연속 출석체크', type: 'SINGLE', maxProgress: 7, reward: 10 },
     ] as const;
 
     for (const q of catalog) {

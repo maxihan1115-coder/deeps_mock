@@ -119,7 +119,7 @@ async function getRealTimeQuestProgress(gameUuid: number) {
     },
     {
       id: '9',
-      title: '일일 5회 게임 플레이',
+      title: '5회 게임 플레이',
       description: '하루에 5회 게임을 플레이하세요',
       type: 'daily' as const,
       maxProgress: 5,
@@ -128,7 +128,7 @@ async function getRealTimeQuestProgress(gameUuid: number) {
     },
     {
       id: '10',
-      title: '일일 20회 게임 플레이',
+      title: '20회 게임 플레이',
       description: '하루에 20회 게임을 플레이하세요',
       type: 'daily' as const,
       maxProgress: 20,
@@ -137,9 +137,9 @@ async function getRealTimeQuestProgress(gameUuid: number) {
     },
     {
       id: '12',
-      title: '일일 로그인 7일',
-      description: '7일 연속으로 로그인하세요',
-      type: 'daily' as const,
+      title: '7일 연속 출석체크',
+      description: '7일 연속 출석체크 하세요',
+      type: 'single' as const,
       maxProgress: 7,
       reward: '경험치 100',
       platformTitle: 'DAILY_LOGIN'
@@ -246,7 +246,14 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       let claimValue = undefined;
       let claimSymbol = undefined;
       
-      if (platformRewards) {
+      // 9번, 10번 퀘스트는 특별한 레플 퀘스트 보상 문구 사용
+      if (quest.id === '9') {
+        claimValue = '레플 퀘스트!! 1등 50BORA, 2등: 20BORA 3등: 10BORA, 4등: 꽝!!';
+        claimSymbol = 'REPL';
+      } else if (quest.id === '10') {
+        claimValue = '레플 퀘스트!! 1등 100BORA, 2등: 50BORA 3등: 20BORA, 4등: 꽝!!';
+        claimSymbol = 'REPL';
+      } else if (platformRewards) {
         const platformQuest = platformRewards.find((pq: { title: string; claimValue: string; claimSymbol: string }) => pq.title === quest.platformTitle);
         if (platformQuest) {
           claimValue = platformQuest.claimValue;

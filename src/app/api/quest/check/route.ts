@@ -76,21 +76,21 @@ const QUEST_LIST = [
   {
     id: 9,
     title: "PLAY_GAMES_5",
-    koreanTitle: "일일 5회 게임 플레이",
+    koreanTitle: "5회 게임 플레이",
     totalTimes: 5,
     type: "daily_game_count"
   },
   {
     id: 10,
     title: "PLAY_GAMES_20",
-    koreanTitle: "일일 20회 게임 플레이",
+    koreanTitle: "20회 게임 플레이",
     totalTimes: 20,
     type: "daily_game_count"
   },
   {
     id: 12,
     title: "DAILY_LOGIN",
-    koreanTitle: "일일 로그인 7일",
+    koreanTitle: "7일 연속 출석체크",
     totalTimes: 7,
     type: "daily_login"  // TODO: 출석 데이터 기반
   }
