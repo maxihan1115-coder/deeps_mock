@@ -632,6 +632,150 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
     }
   }, [isGameStarted, gameState.isPaused, gameState.isGameOver, gameState.level, updateGame]);
 
+  // 터치 이벤트 처리
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
+
+  // 터치 시작
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (gameState.isGameOver || gameState.isPaused) return;
+    
+    const touch = e.touches[0];
+    setTouchStart({ x: touch.clientX, y: touch.clientY });
+    setTouchEnd(null);
+  }, [gameState.isGameOver, gameState.isPaused]);
+
+  // 터치 이동
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (gameState.isGameOver || gameState.isPaused) return;
+    
+    const touch = e.touches[0];
+    setTouchEnd({ x: touch.clientX, y: touch.clientY });
+  }, [gameState.isGameOver, gameState.isPaused]);
+
+  // 터치 종료
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (gameState.isGameOver || gameState.isPaused || !touchStart || !touchEnd) return;
+    
+    const deltaX = touchEnd.x - touchStart.x;
+    const deltaY = touchEnd.y - touchStart.y;
+    const minSwipeDistance = 30; // 최소 스와이프 거리
+    
+    // 수직 스와이프 (아래로) - 하드 드롭
+    if (Math.abs(deltaY) > Math.abs(deltaX) && deltaY > minSwipeDistance) {
+      e.preventDefault();
+      // 하드 드롭 로직 (키보드 스페이스바와 동일)
+      setGameState(prevState => {
+        if (!prevState.currentBlock) return prevState;
+        
+        const newState = { ...prevState };
+        let dropDistance = 0;
+        const currentBlock = { ...prevState.currentBlock };
+
+        // 블록이 더 이상 떨어질 수 없을 때까지 아래로 이동
+        while (isValidPosition({ ...currentBlock, y: currentBlock.y + 1 }, prevState.board)) {
+          currentBlock.y += 1;
+          dropDistance += 1;
+        }
+
+        // 블록을 보드에 고정
+        newState.board = placeBlock(currentBlock, prevState.board);
+        
+        // 라인 제거 및 점수 계산
+        const { newBoard, linesCleared } = clearLines(newState.board);
+        newState.board = newBoard;
+        
+        if (linesCleared > 0) {
+          const scoreGain = calculateScore(linesCleared, newState.level);
+          newState.score += scoreGain;
+          newState.lines += linesCleared;
+          newState.level = Math.floor(newState.lines / 10) + 1;
+          
+          // 상태 업데이트를 다음 렌더 사이클로 지연
+          setTimeout(() => {
+            onScoreUpdateRef.current(newState.score);
+            onLevelUpdateRef.current(newState.level);
+            onLinesUpdateRef.current(newState.lines);
+          }, 0);
+          
+          // 퀘스트 체크
+          checkScoreQuests(newState.score);
+          checkLinesQuests(newState.lines);
+          checkLevelQuests(newState.level);
+        }
+        
+        // 하드 드롭 점수 추가
+        if (dropDistance > 0) {
+          newState.score += dropDistance * 2;
+          setTimeout(() => onScoreUpdateRef.current(newState.score), 0);
+        }
+        
+        // 새 블록 생성
+        const nextBlock = createNewBlock();
+        newState.currentBlock = nextBlock;
+        newState.nextBlock = createNewBlock();
+        
+        // 게임 오버 체크
+        if (!isValidPosition(nextBlock, newState.board)) {
+          newState.isGameOver = true;
+          setTimeout(() => handleGameOver(newState.score, newState.level, newState.lines), 100);
+        }
+        
+        return newState;
+      });
+    }
+    // 수평 스와이프 (좌우) - 블록 이동
+    else if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
+      e.preventDefault();
+      
+      setGameState(prevState => {
+        if (!prevState.currentBlock) return prevState;
+        
+        const newState = { ...prevState };
+        
+        if (deltaX > 0) {
+          // 오른쪽 스와이프
+          const rightBlock = { ...prevState.currentBlock, x: prevState.currentBlock.x + 1 };
+          if (isValidPosition(rightBlock, prevState.board)) {
+            newState.currentBlock = rightBlock;
+          }
+        } else {
+          // 왼쪽 스와이프
+          const leftBlock = { ...prevState.currentBlock, x: prevState.currentBlock.x - 1 };
+          if (isValidPosition(leftBlock, prevState.board)) {
+            newState.currentBlock = leftBlock;
+          }
+        }
+        
+        return newState;
+      });
+    }
+    // 짧은 터치 - 블록 회전
+    else if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) {
+      e.preventDefault();
+      
+      setGameState(prevState => {
+        if (!prevState.currentBlock) return prevState;
+        
+        const newState = { ...prevState };
+        
+        // 블록 회전 로직 (키보드 위쪽 화살표와 동일)
+        const rotatedShape = prevState.currentBlock.shape[0].map((_, i) =>
+          prevState.currentBlock!.shape.map(row => row[row.length - 1 - i])
+        );
+        const rotatedBlock = { ...prevState.currentBlock, shape: rotatedShape };
+        if (isValidPosition(rotatedBlock, prevState.board)) {
+          newState.currentBlock = rotatedBlock;
+        }
+        
+        return newState;
+      });
+    }
+    
+    setTouchStart(null);
+    setTouchEnd(null);
+  }, [gameState.isGameOver, gameState.isPaused, touchStart, touchEnd, isValidPosition, placeBlock, clearLines, calculateScore, checkScoreQuests, checkLinesQuests, checkLevelQuests, handleGameOver]);
+
   // 키보드 이벤트 리스너
   useEffect(() => {
     if (isGameStarted) {
@@ -680,7 +824,12 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
     }
 
     return (
-      <div className="inline-block border-2 border-gray-300 bg-gray-100">
+      <div 
+        className="inline-block border-2 border-gray-300 bg-gray-100 touch-none"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div 
           className={`grid ${!isGameStarted ? 'opacity-50' : ''}`}
           style={{
