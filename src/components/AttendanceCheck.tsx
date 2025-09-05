@@ -9,7 +9,6 @@ import { Check, X } from 'lucide-react';
 interface AttendanceCheckProps {
   userId: string;
   gameUuid: number;  // 플랫폼 연동 상태 확인용
-  onNavigateToLinking?: () => void;  // 플랫폼 연동 탭으로 이동하는 함수
 }
 
 interface AttendanceRecord {
@@ -19,7 +18,7 @@ interface AttendanceRecord {
   createdAt: string;
 }
 
-export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking }: AttendanceCheckProps) {
+export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckProps) {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [todayAttended, setTodayAttended] = useState(false);
@@ -70,20 +69,6 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
     return dateString >= linkedDate;
   };
 
-  // 이번 주 날짜들 생성
-  const getWeekDates = () => {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay()); // 일요일부터 시작
-    
-    const weekDates = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      weekDates.push(date);
-    }
-    return weekDates;
-  };
 
   // 출석 기록 조회
   const fetchAttendanceRecords = async () => {
@@ -171,17 +156,6 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
     }
   };
 
-  // 날짜가 출석했는지 확인
-  const isDateAttended = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    return attendanceRecords.some(record => record.date === dateString);
-  };
-
-  // 날짜가 오늘인지 확인
-  const isToday = (date: Date) => {
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
-  };
 
 
   useEffect(() => {
@@ -194,7 +168,6 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
     }
   }, [userId, gameUuid]);
 
-  const weekDates = getWeekDates();
 
   // 플랫폼 미연동 상태 UI
   if (!platformCheckLoading && !isLinked) {
@@ -202,7 +175,9 @@ export default function AttendanceCheck({ userId, gameUuid, onNavigateToLinking 
       <Card className="w-80 lg:w-80 min-w-80">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
+            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+              <Check className="w-3 h-3 text-white" />
+            </div>
             출석체크
           </CardTitle>
         </CardHeader>

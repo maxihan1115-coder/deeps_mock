@@ -203,7 +203,6 @@ function GamePageContent() {
                       <AttendanceCheck 
                         userId={currentUser.id} 
                         gameUuid={currentUser.uuid} 
-                        onNavigateToLinking={() => setActiveTab("platform")}
                       />
                     </div>
 
@@ -230,7 +229,6 @@ function GamePageContent() {
                   <AttendanceCheck 
                     userId={currentUser.id} 
                     gameUuid={currentUser.uuid} 
-                    onNavigateToLinking={() => setActiveTab("platform")}
                   />
 
                   {/* 최고 점수 */}
