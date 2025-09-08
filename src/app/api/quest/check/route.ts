@@ -316,6 +316,11 @@ async function handleQuestCheck(request: NextRequest) {
         }
       }
       
+      // 타입별 상한 처리 (안전망)
+      if (questInfo.type === 'max_score' || questInfo.type === 'max_level') {
+        currentTimes = Math.min(currentTimes, questInfo.totalTimes);
+      }
+
       // 개발 환경에서 결과 로그
       if (process.env.NODE_ENV === 'development') {
         console.log(`✅ 퀘스트 ${questId} 결과:`, {
