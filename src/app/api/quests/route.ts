@@ -166,6 +166,7 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       prisma.highScore.aggregate({
         where: { userId: gameUuid },
         _sum: { score: true, level: true, lines: true },
+        _max: { score: true, level: true },
         _count: true
       }),
       // 오늘 날짜의 게임 플레이 횟수 조회 (한국시간 기준)
@@ -201,14 +202,14 @@ async function getRealTimeQuestProgress(gameUuid: number) {
         case '1': // 첫 게임 플레이
           progress = highScoreResult._count > 0 ? 1 : 0;
           break;
-        case '2': // 1000점 달성
-          progress = Math.min(highScoreResult._sum.score || 0, 1000);
+        case '2': // 1000점 달성 (최고 점수 기준)
+          progress = Math.min(highScoreResult._max.score || 0, 1000);
           break;
-        case '3': // 5000점 달성
-          progress = Math.min(highScoreResult._sum.score || 0, 5000);
+        case '3': // 5000점 달성 (최고 점수 기준)
+          progress = Math.min(highScoreResult._max.score || 0, 5000);
           break;
-        case '4': // 10000점 달성
-          progress = Math.min(highScoreResult._sum.score || 0, 10000);
+        case '4': // 10000점 달성 (최고 점수 기준)
+          progress = Math.min(highScoreResult._max.score || 0, 10000);
           break;
         case '5': // 10라인 클리어
           progress = Math.min(highScoreResult._sum.lines || 0, 10);
@@ -216,11 +217,11 @@ async function getRealTimeQuestProgress(gameUuid: number) {
         case '6': // 50라인 클리어
           progress = Math.min(highScoreResult._sum.lines || 0, 50);
           break;
-        case '7': // 5레벨 달성
-          progress = Math.min(highScoreResult._sum.level || 0, 5);
+        case '7': // 5레벨 달성 (최고 레벨 기준)
+          progress = Math.min(highScoreResult._max.level || 0, 5);
           break;
-        case '8': // 10레벨 달성
-          progress = Math.min(highScoreResult._sum.level || 0, 10);
+        case '8': // 10레벨 달성 (최고 레벨 기준)
+          progress = Math.min(highScoreResult._max.level || 0, 10);
           break;
         case '9': // 일일 5회 게임 플레이
           // quest_progress에서 저장된 데이터 사용 (상한 적용)
