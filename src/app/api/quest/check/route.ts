@@ -325,13 +325,14 @@ async function handleQuestCheck(request: NextRequest) {
         });
       }
 
-      // 달성 여부 계산
-      const complete = currentTimes >= questInfo.totalTimes;
+      // 상한 처리 및 달성 여부 계산
+      const capped = Math.min(currentTimes, questInfo.totalTimes);
+      const complete = capped >= questInfo.totalTimes;
 
       questResults.push({
         id: String(parsedQuestId),
         totalTimes: questInfo.totalTimes,
-        currentTimes: currentTimes,
+        currentTimes: capped,
         complete: complete
       });
     }

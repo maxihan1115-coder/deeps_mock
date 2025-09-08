@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -13,6 +14,7 @@ interface AccountLinkProps {
 }
 
 export default function AccountLink({ userUuid, username }: AccountLinkProps) {
+  const router = useRouter();
   const [isLinked, setIsLinked] = useState(false);
   const [requestCode, setRequestCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -144,42 +146,29 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
   };
 
   // 플랫폼 연동 해제
-  const disconnectPlatform = async () => {
-    console.log('🔌 플랫폼 연동 해제 시작 - UUID:', userUuid);
+  const withdrawAccount = async () => {
+    console.log('🚪 BORA TETRIS 탈퇴 시작 - UUID:', userUuid);
     setIsDisconnecting(true);
     setError('');
     setSuccessMessage('');
 
     try {
-      const response = await fetch('/api/platform-link/unlink', {
+      const resp = await fetch('/api/account/withdraw', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          gameUuid: userUuid,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uuid: userUuid })
       });
-
-      const data = await response.json();
-      console.log('📡 연동 해제 응답:', data);
-
-      if (data.success) {
-        console.log('✅ 플랫폼 연동 해제 성공');
-        setIsLinked(false);
-        setRequestCode(null); // 요청 코드 초기화
-        setSuccessMessage('플랫폼 연동이 성공적으로 해제되었습니다.');
-        // 상태 다시 확인
-        await checkLinkStatus();
-        // 3초 후 성공 메시지 제거
-        setTimeout(() => setSuccessMessage(''), 3000);
-      } else {
-        console.error('❌ 연동 해제 실패:', data.error);
-        setError(data.error || '플랫폼 연동 해제에 실패했습니다.');
+      const data = await resp.json();
+      console.log('📡 탈퇴 응답:', data);
+      if (data?.success === true && data?.payload === true) {
+        try { localStorage.removeItem('userInfo'); } catch {}
+        router.push('/');
+        return;
       }
-    } catch (error) {
-      console.error('❌ 연동 해제 오류:', error);
-      setError('플랫폼 연동 해제 중 오류가 발생했습니다.');
+      setError(data?.error || '탈퇴 처리에 실패했습니다.');
+    } catch (e) {
+      console.error('❌ 탈퇴 처리 오류:', e);
+      setError('탈퇴 처리 중 오류가 발생했습니다.');
     } finally {
       setIsDisconnecting(false);
     }
@@ -255,24 +244,22 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
                   {isDisconnecting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      연동 해제 중...
+                      탈퇴 처리 중...
                     </>
                   ) : (
-                    '🔌 플랫폼 연동 해제'
+                    'BORA TETRIS 탈퇴'
                   )}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>플랫폼 연동 해제</DialogTitle>
+                  <DialogTitle>BORA TETRIS 탈퇴</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-600">
-                    정말로 플랫폼 연동을 해제하시겠습니까?
-                  </p>
+                  <p className="text-sm text-gray-600">정말로 탈퇴하시겠습니까?</p>
                   <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p className="text-xs text-yellow-800">
-                      ⚠️ 연동 해제 시 퀘스트 진행도가 더 이상 저장되지 않으며, 플랫폼 기능을 사용할 수 없습니다.
+                      ⚠️ 탈퇴 시 UUID를 제외한 게임 데이터(퀘스트 포함)와 연동 이력이 모두 삭제됩니다.
                     </p>
                   </div>
                   <div className="flex gap-2 justify-end">
@@ -282,12 +269,12 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
                       </Button>
                     </DialogTrigger>
                     <Button
-                      onClick={disconnectPlatform}
+                      onClick={withdrawAccount}
                       disabled={isDisconnecting}
                       variant="destructive"
                       size="sm"
                     >
-                      {isDisconnecting ? '해제 중...' : '연동 해제'}
+                      {isDisconnecting ? '처리 중...' : '탈퇴 확인'}
                     </Button>
                   </div>
                 </div>

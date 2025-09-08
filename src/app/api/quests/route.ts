@@ -223,14 +223,14 @@ async function getRealTimeQuestProgress(gameUuid: number) {
           progress = Math.min(highScoreResult._sum.level || 0, 10);
           break;
         case '9': // 일일 5회 게임 플레이
-          // quest_progress에서 저장된 데이터 사용
+          // quest_progress에서 저장된 데이터 사용 (상한 적용)
           const quest9Progress = questProgressData.find(qp => qp.catalogId === '9');
-          progress = quest9Progress ? quest9Progress.progress : Math.min(todayGameCount, 5);
+          progress = quest9Progress ? Math.min(quest9Progress.progress, 5) : Math.min(todayGameCount, 5);
           break;
         case '10': // 일일 20회 게임 플레이
-          // quest_progress에서 저장된 데이터 사용
+          // quest_progress에서 저장된 데이터 사용 (상한 적용)
           const quest10Progress = questProgressData.find(qp => qp.catalogId === '10');
-          progress = quest10Progress ? quest10Progress.progress : Math.min(todayGameCount, 20);
+          progress = quest10Progress ? Math.min(quest10Progress.progress, 20) : Math.min(todayGameCount, 20);
           break;
         case '12': // 7일 연속 출석체크
           // 연속 출석일 계산을 위해 출석 기록 조회
@@ -292,15 +292,16 @@ async function getRealTimeQuestProgress(gameUuid: number) {
         }
       }
 
+      const capped = Math.min(progress, quest.maxProgress);
       return {
         id: quest.id,
         title: quest.title,
         description: quest.description,
         type: quest.type,
-        progress: progress,
+        progress: capped,
         maxProgress: quest.maxProgress,
         reward: quest.reward,
-        isCompleted: progress >= quest.maxProgress,
+        isCompleted: capped >= quest.maxProgress,
         expiresAt: undefined,
         createdAt: new Date(),
         // 플랫폼 보상 정보 추가
