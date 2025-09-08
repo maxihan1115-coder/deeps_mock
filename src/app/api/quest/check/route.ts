@@ -275,7 +275,41 @@ async function handleQuestCheck(request: NextRequest) {
             currentTimes = todayGameCount;
             break;
           case 'daily_login':
-            currentTimes = attendanceCount;
+            // 연속 출석일 계산을 위해 출석 기록 조회
+            const attendanceRecords = await prisma.attendanceRecord.findMany({
+              where: { userId: user.uuid },
+              orderBy: { date: 'desc' }
+            });
+            
+            // 연속 출석일 계산
+            let consecutiveDays = 0;
+            if (attendanceRecords.length > 0) {
+              const today = new Date();
+              const todayStr = today.toISOString().split('T')[0];
+              
+              // 오늘 출석했는지 확인
+              const hasTodayAttendance = attendanceRecords.some(record => record.date === todayStr);
+              if (hasTodayAttendance) {
+                consecutiveDays = 1; // 오늘 출석했으므로 1부터 시작
+                
+                // 어제부터 역순으로 연속 출석 확인
+                const checkDate = new Date(today);
+                for (let i = 1; i < attendanceRecords.length; i++) {
+                  checkDate.setDate(checkDate.getDate() - 1);
+                  const expectedDateStr = checkDate.toISOString().split('T')[0];
+                  
+                  // 해당 날짜에 출석 기록이 있는지 확인
+                  const hasAttendanceOnDate = attendanceRecords.some(record => record.date === expectedDateStr);
+                  
+                  if (hasAttendanceOnDate) {
+                    consecutiveDays++;
+                  } else {
+                    break; // 연속이 끊어짐
+                  }
+                }
+              }
+            }
+            currentTimes = consecutiveDays;
             break;
           default:
             currentTimes = 0;

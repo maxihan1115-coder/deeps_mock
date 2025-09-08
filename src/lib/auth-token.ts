@@ -14,7 +14,7 @@ function logToFile(message: string) {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] ${message}\n`;
     fs.appendFileSync(logPath, logMessage);
-  } catch (error) {
+  } catch {
     // 파일 로깅 실패 시 무시 (콘솔 로그는 유지)
   }
 }

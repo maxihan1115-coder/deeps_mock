@@ -67,7 +67,7 @@ export function getNextResetTime(questType: string): Date {
 }
 
 // 퀘스트 진행도 초기화
-export function resetQuestProgress(_questType: string): { progress: number, lastResetTime: Date } {
+export function resetQuestProgress(): { progress: number, lastResetTime: Date } {
   return {
     progress: 0,
     lastResetTime: getCurrentKST()

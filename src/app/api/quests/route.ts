@@ -162,14 +162,11 @@ async function getRealTimeQuestProgress(gameUuid: number) {
     koreaEndUTC.setUTCHours(koreaEndUTC.getUTCHours() - 9); // UTC로 변환
     
     // 실시간 데이터로 진행도 계산
-    const [highScoreResult, attendanceCount, todayGameCount, questProgressData] = await Promise.all([
+    const [highScoreResult, todayGameCount, questProgressData] = await Promise.all([
       prisma.highScore.aggregate({
         where: { userId: gameUuid },
         _sum: { score: true, level: true, lines: true },
         _count: true
-      }),
-      prisma.attendanceRecord.count({
-        where: { userId: gameUuid }
       }),
       // 오늘 날짜의 게임 플레이 횟수 조회 (한국시간 기준)
       prisma.highScore.count({
@@ -197,7 +194,7 @@ async function getRealTimeQuestProgress(gameUuid: number) {
       });
     }
 
-    const quests = QUEST_CATALOG.map(quest => {
+    const quests = await Promise.all(QUEST_CATALOG.map(async (quest) => {
       let progress = 0;
 
       switch (quest.id) {
@@ -235,8 +232,42 @@ async function getRealTimeQuestProgress(gameUuid: number) {
           const quest10Progress = questProgressData.find(qp => qp.catalogId === '10');
           progress = quest10Progress ? quest10Progress.progress : Math.min(todayGameCount, 20);
           break;
-        case '12': // 일일 로그인 7일
-          progress = Math.min(attendanceCount, 7);
+        case '12': // 7일 연속 출석체크
+          // 연속 출석일 계산을 위해 출석 기록 조회
+          const attendanceRecords = await prisma.attendanceRecord.findMany({
+            where: { userId: gameUuid },
+            orderBy: { date: 'desc' }
+          });
+          
+          // 연속 출석일 계산 (quest-utils의 calculateConsecutiveDays와 동일한 로직)
+          let consecutiveDays = 0;
+          if (attendanceRecords.length > 0) {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            // 오늘 출석했는지 확인
+            const hasTodayAttendance = attendanceRecords.some(record => record.date === todayStr);
+            if (hasTodayAttendance) {
+              consecutiveDays = 1; // 오늘 출석했으므로 1부터 시작
+              
+              // 어제부터 역순으로 연속 출석 확인
+              const checkDate = new Date(today);
+              for (let i = 1; i < attendanceRecords.length; i++) {
+                checkDate.setDate(checkDate.getDate() - 1);
+                const expectedDateStr = checkDate.toISOString().split('T')[0];
+                
+                // 해당 날짜에 출석 기록이 있는지 확인
+                const hasAttendanceOnDate = attendanceRecords.some(record => record.date === expectedDateStr);
+                
+                if (hasAttendanceOnDate) {
+                  consecutiveDays++;
+                } else {
+                  break; // 연속이 끊어짐
+                }
+              }
+            }
+          }
+          progress = Math.min(consecutiveDays, 7);
           break;
         default:
           progress = 0;
@@ -276,7 +307,7 @@ async function getRealTimeQuestProgress(gameUuid: number) {
         claimValue,
         claimSymbol
       };
-    });
+    }));
 
     return quests;
   } catch (error) {

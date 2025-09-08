@@ -11,10 +11,9 @@ import { Trophy, Calendar, Clock, Target } from 'lucide-react';
 interface QuestPanelProps {
   userId: string;
   gameUuid: number;
-  currentScore: number;
 }
 
-export default function QuestPanel({ userId, gameUuid, currentScore }: QuestPanelProps) {
+export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   // 카탈로그 방식: 별도 초기화 불필요

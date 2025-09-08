@@ -13,16 +13,10 @@ interface HighScore {
 
 interface HighScoreDisplayProps {
   gameUuid: number; // userId → gameUuid (숫자)
-  currentScore: number;
-  currentLevel: number;
-  currentLines: number;
 }
 
 export default function HighScoreDisplay({ 
-  gameUuid, // userId → gameUuid (숫자)
-  currentScore, 
-  currentLevel, 
-  currentLines 
+  gameUuid // userId → gameUuid (숫자)
 }: HighScoreDisplayProps) {
   const [highScore, setHighScore] = useState<HighScore | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,7 +67,7 @@ export default function HighScoreDisplay({
     );
   }
 
-  const isCurrentScoreHigher = highScore ? currentScore > highScore.score : true;
+  // 현재 점수와 최고 점수 비교는 제거 (props에서 currentScore 제거됨)
 
   return (
     <Card className="w-80 lg:w-80 min-w-80">
@@ -89,7 +83,7 @@ export default function HighScoreDisplay({
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">최고 점수:</span>
-                <span className={`text-sm font-bold ${isCurrentScoreHigher ? 'text-green-600' : 'text-gray-900'}`}>
+                <span className="text-sm font-bold text-gray-900">
                   {highScore.score.toLocaleString()}
                 </span>
               </div>
@@ -112,29 +106,11 @@ export default function HighScoreDisplay({
               </div>
             </div>
 
-            {/* 현재 점수와 비교 */}
-            {currentScore > 0 && (
-              <div className="pt-2 border-t">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">현재 점수:</span>
-                  <span className={`text-sm font-bold ${isCurrentScoreHigher ? 'text-green-600' : 'text-gray-900'}`}>
-                    {currentScore.toLocaleString()}
-                  </span>
-                </div>
-                {isCurrentScoreHigher && (
-                  <div className="text-xs text-green-600 text-center mt-1">
-                    🎉 새로운 기록 달성!
-                  </div>
-                )}
-              </div>
-            )}
           </>
         ) : (
           <div className="text-center text-gray-500">
             <p className="text-sm">아직 기록이 없습니다.</p>
-            {currentScore > 0 && (
-              <p className="text-xs mt-1">첫 번째 기록을 만들어보세요!</p>
-            )}
+            <p className="text-xs mt-1">첫 번째 기록을 만들어보세요!</p>
           </div>
         )}
       </CardContent>

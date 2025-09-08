@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Quest } from '@/types';
 import { 
@@ -12,7 +11,6 @@ import {
   Calendar, 
   Clock, 
   Target, 
-  RefreshCw, 
   Award,
   CheckCircle,
   XCircle
@@ -21,7 +19,6 @@ import {
 export default function QuestsPage() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitializing, setIsInitializing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null); // string id (미사용 지향)
   const [gameUuid, setGameUuid] = useState<number | null>(null); // numeric uuid 사용
   const [totalRewards, setTotalRewards] = useState(0);
