@@ -17,17 +17,17 @@ const QUEST_LIST = [
   {
     id: 2,
     title: "SCORE_1000",
-    totalTimes: 1
+    totalTimes: 1000
   },
   {
     id: 3,
     title: "SCORE_5000",
-    totalTimes: 1
+    totalTimes: 5000
   },
   {
     id: 4,
     title: "SCORE_10000",
-    totalTimes: 1
+    totalTimes: 10000
   },
   {
     id: 5,
@@ -42,12 +42,12 @@ const QUEST_LIST = [
   {
     id: 7,
     title: "REACH_LEVEL_5",
-    totalTimes: 1
+    totalTimes: 5
   },
   {
     id: 8,
     title: "REACH_LEVEL_10",
-    totalTimes: 1
+    totalTimes: 10
   },
   {
     id: 9,
@@ -59,12 +59,7 @@ const QUEST_LIST = [
     id: 10,
     title: "PLAY_GAMES_20",
     totalTimes: 20,
-    type: "weekly"
-  },
-  {
-    id: 11,
-    title: "HARD_DROP_10",
-    totalTimes: 10
+    type: "daily"
   },
   {
     id: 12,
