@@ -13,15 +13,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  
-  // EC2에서만 타입체크 스킵
-  typescript: {
-    ignoreBuildErrors: process.env.SKIP_TYPE_CHECK === 'true',
-  },
-  
-  eslint: {
-    ignoreDuringBuilds: process.env.SKIP_TYPE_CHECK === 'true',
-  },
 }
 
 module.exports = nextConfig
