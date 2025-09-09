@@ -6,6 +6,8 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
+import { prisma } from '@/lib/prisma';
+import { Quest } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,13 +77,28 @@ export async function POST(request: NextRequest) {
     const highScoreResult = await mysqlGameStore.saveHighScore(gameUuid, score, level, lines);
     console.log('✅ 하이스코어 저장 완료:', highScoreResult);
 
-    // 2. 일일 게임 플레이 퀘스트 업데이트 (9/10번)
-    console.log('🎯 일일 퀘스트 업데이트 시작...');
-    const questResults = await Promise.all([
-      mysqlGameStore.incrementDailyCatalogProgress(gameUuid, '9'),
-      mysqlGameStore.incrementDailyCatalogProgress(gameUuid, '10')
-    ]);
-    console.log('✅ 일일 퀘스트 업데이트 완료:', questResults);
+    // 2. 플랫폼 연동 상태 확인 후 일일 게임 플레이 퀘스트 업데이트 (9/10번)
+    console.log('🎯 플랫폼 연동 상태 확인 및 퀘스트 업데이트 시작...');
+    let questResults: (Quest | null)[] = [null, null];
+    
+    try {
+      const platformLink = await prisma.platformLink.findUnique({
+        where: { gameUuid },
+        select: { isActive: true }
+      });
+
+      if (platformLink && platformLink.isActive) {
+        questResults = await Promise.all([
+          mysqlGameStore.incrementDailyCatalogProgress(gameUuid, '9'),
+          mysqlGameStore.incrementDailyCatalogProgress(gameUuid, '10')
+        ]);
+        console.log('✅ 일일 퀘스트 업데이트 완료:', questResults);
+      } else {
+        console.log('⚠️ 플랫폼 미연동 상태 - 퀘스트 진행도 업데이트 건너뜀');
+      }
+    } catch (error) {
+      console.error('❌ 퀘스트 업데이트 중 오류:', error);
+    }
 
     // 3. 응답 데이터 구성
     const responseData = {

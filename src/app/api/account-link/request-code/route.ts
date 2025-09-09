@@ -76,8 +76,10 @@ export async function GET(request: NextRequest) {
 
     // 게임 내부에도 임시 코드 저장 (검증용)
     console.log('🔐 Creating local temp code for user (uuid):', user.uuid);
-    const localRequestCode = await mysqlGameStore.createTempCode(user.uuid);
-    console.log('✅ Local temp code created:', localRequestCode.code);
+    const tempCode = platformData.payload.code;
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5분 후 만료
+    await mysqlGameStore.createTempCode(user.uuid, tempCode, expiresAt);
+    console.log('✅ Local temp code created:', tempCode);
 
     // 플랫폼에서 받은 코드 반환
     const successResponse = createSuccessResponse(platformData.payload);

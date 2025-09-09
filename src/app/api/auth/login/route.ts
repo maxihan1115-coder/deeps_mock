@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlGameStore } from '@/lib/mysql-store';
 import { calculateConsecutiveDays } from '@/lib/quest-utils';
+import { prisma } from '@/lib/prisma';
 
 // 출석 연속일 계산은 quest-utils의 calculateConsecutiveDays 사용
 
@@ -28,12 +29,18 @@ export async function POST(request: NextRequest) {
     // 사용자가 없으면 새로 생성 (패스워드는 무시)
     if (!user) {
       if (!isProduction) console.log('➕ Creating new user...');
-      user = await mysqlGameStore.createUser(username);
+      // 새로운 UUID 생성 (기존 사용자들의 최대 UUID + 1)
+      const maxUuid = await prisma.user.findFirst({
+        orderBy: { uuid: 'desc' },
+        select: { uuid: true },
+      });
+      const newUuid = (maxUuid?.uuid || 0) + 1;
+      user = await mysqlGameStore.createUser(username, newUuid);
       if (!isProduction) console.log('✅ New user created:', user.id);
     } else {
       // 기존 사용자의 마지막 로그인 시간 업데이트
       if (!isProduction) console.log('🔄 Updating last login...');
-      await mysqlGameStore.updateLastLogin(user.id);
+      await mysqlGameStore.updateLastLogin(user.uuid);
       if (!isProduction) console.log('✅ Last login updated');
     }
 
@@ -45,14 +52,23 @@ export async function POST(request: NextRequest) {
       const today = new Date().toISOString().split('T')[0];
       await mysqlGameStore.addAttendanceRecord(user.uuid, today); // user.id → user.uuid (숫자)
       
-      // DAILY_LOGIN 퀘스트 업데이트 (7일 연속 로그인) - 비동기로 처리
+      // 플랫폼 연동 상태 확인 후 퀘스트 업데이트
       try {
-        const attendanceRecords = await mysqlGameStore.getAttendanceRecords(user.uuid); // user.id → user.uuid (숫자)
-        const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
-        
-        // DAILY_LOGIN 퀘스트 ID: '12'
-        await mysqlGameStore.updateQuestProgress(user.uuid, '12', Math.min(consecutiveDays, 7)); // user.id → user.uuid (숫자)
-        if (!isProduction) console.log('✅ DAILY_LOGIN 퀘스트 업데이트:', consecutiveDays, '일 연속');
+        const platformLink = await prisma.platformLink.findUnique({
+          where: { gameUuid: user.uuid },
+          select: { isActive: true }
+        });
+
+        if (platformLink && platformLink.isActive) {
+          const attendanceRecords = await mysqlGameStore.getAttendanceRecords(user.uuid); // user.id → user.uuid (숫자)
+          const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
+          
+          // DAILY_LOGIN 퀘스트 ID: '12' - quest_progress 시스템 사용
+          await mysqlGameStore.upsertQuestProgress(user.uuid, '12', Math.min(consecutiveDays, 7)); // user.id → user.uuid (숫자)
+          if (!isProduction) console.log('✅ DAILY_LOGIN 퀘스트 업데이트:', consecutiveDays, '일 연속');
+        } else {
+          if (!isProduction) console.log('⚠️ 플랫폼 미연동 상태 - 퀘스트 진행도 업데이트 건너뜀');
+        }
       } catch (error) {
         console.error('❌ DAILY_LOGIN 퀘스트 업데이트 실패:', error);
       }

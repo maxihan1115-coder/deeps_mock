@@ -6,6 +6,7 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,6 +28,23 @@ export async function POST(request: NextRequest) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
         '게임 UUID는 숫자여야 합니다.'
+      );
+      return NextResponse.json(
+        errorResponse,
+        { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
+      );
+    }
+
+    // 플랫폼 연동 상태 확인
+    const platformLink = await prisma.platformLink.findUnique({
+      where: { gameUuid },
+      select: { isActive: true }
+    });
+
+    if (!platformLink || !platformLink.isActive) {
+      const errorResponse = createErrorResponse(
+        API_ERROR_CODES.INVALID_USER,
+        '플랫폼 미연동 상태 - 퀘스트 진행도 업데이트 불가'
       );
       return NextResponse.json(
         errorResponse,

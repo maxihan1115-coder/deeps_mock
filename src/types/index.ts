@@ -3,6 +3,7 @@ export interface User {
   id: string;
   username: string;
   uuid: number;
+  startDate?: Date;
   createdAt: Date;
   lastLoginAt: Date;
 }

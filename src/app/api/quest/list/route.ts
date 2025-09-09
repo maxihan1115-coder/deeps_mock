@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { withAuthToken } from '@/lib/auth-token';
 import { 
   createSuccessResponse, 
@@ -7,73 +8,22 @@ import {
   API_ERROR_CODES 
 } from '@/lib/api-errors';
 
-// 테트리스 게임에 맞는 퀘스트 목록 데이터
-const QUEST_LIST = [
-  {
-    id: 1,
-    title: "FIRST_GAME",
-    totalTimes: 1
-  },
-  {
-    id: 2,
-    title: "SCORE_1000",
-    totalTimes: 1000
-  },
-  {
-    id: 3,
-    title: "SCORE_5000",
-    totalTimes: 5000
-  },
-  {
-    id: 4,
-    title: "SCORE_10000",
-    totalTimes: 10000
-  },
-  {
-    id: 5,
-    title: "CLEAR_LINES_10",
-    totalTimes: 10
-  },
-  {
-    id: 6,
-    title: "CLEAR_LINES_50",
-    totalTimes: 50
-  },
-  {
-    id: 7,
-    title: "REACH_LEVEL_5",
-    totalTimes: 5
-  },
-  {
-    id: 8,
-    title: "REACH_LEVEL_10",
-    totalTimes: 10
-  },
-  {
-    id: 9,
-    title: "PLAY_GAMES_5",
-    totalTimes: 5,
-    type: "daily"
-  },
-  {
-    id: 10,
-    title: "PLAY_GAMES_20",
-    totalTimes: 20,
-    type: "daily"
-  },
-  {
-    id: 12,
-    title: "DAILY_LOGIN",
-    totalTimes: 7
-  }
-];
-
 async function handleQuestList() {
   try {
     console.log('Quest list API called');
 
-    // 성공 응답 - 퀘스트 목록 반환
-    const successResponse = createSuccessResponse(QUEST_LIST);
+    // DB 카탈로그 조회
+    const catalog = await prisma.questCatalog.findMany();
+
+    // 플랫폼 호환 형태로 매핑 (totalTimes = maxProgress)
+    const list = catalog.map((q) => ({
+      id: Number.isFinite(Number(q.id)) ? Number(q.id) : q.id, // 숫자 ID 우선
+      title: q.title,
+      totalTimes: q.maxProgress,
+      type: q.type ? q.type.toLowerCase() : undefined,
+    }));
+
+    const successResponse = createSuccessResponse(list);
     return NextResponse.json(successResponse);
 
   } catch (error) {

@@ -7,12 +7,80 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
+import { shouldResetQuest, getCurrentKST } from '@/lib/quest-utils';
 
 // 한국시간 기준 오늘 날짜 가져오기
 function getKoreaToday(): string {
   const now = new Date();
   const koreaTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
   return koreaTime.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+}
+
+// 모든 퀘스트 진행도 레코드 보장 함수
+async function ensureAllQuestProgress(gameUuid: number) {
+  try {
+    // 모든 퀘스트 카탈로그 조회
+    const catalogs = await prisma.questCatalog.findMany();
+    
+    for (const catalog of catalogs) {
+      // 각 퀘스트에 대한 진행도 레코드가 없으면 생성
+      await prisma.questProgress.upsert({
+        where: {
+          userId_catalogId: {
+            userId: gameUuid,
+            catalogId: catalog.id
+          }
+        },
+        update: {}, // 이미 존재하면 업데이트하지 않음
+        create: {
+          userId: gameUuid,
+          catalogId: catalog.id,
+          progress: 0,
+          isCompleted: false
+        }
+      });
+    }
+  } catch (error) {
+    console.error('퀘스트 진행도 레코드 보장 오류:', error);
+  }
+}
+
+// Daily Quest 초기화 함수
+async function resetDailyQuestsIfNeeded(gameUuid: number) {
+  try {
+    // Daily Quest 진행도 조회
+    const dailyQuests = await prisma.questProgress.findMany({
+      where: {
+        userId: gameUuid,
+        catalogId: { in: ['9', '10'] } // Daily Quest IDs
+      }
+    });
+
+    const currentKST = getCurrentKST();
+    
+    for (const quest of dailyQuests) {
+      // 마지막 업데이트 시간이 오늘 자정 이전이면 초기화
+      if (shouldResetQuest('daily', quest.updatedAt)) {
+        await prisma.questProgress.update({
+          where: {
+            userId_catalogId: {
+              userId: gameUuid,
+              catalogId: quest.catalogId
+            }
+          },
+          data: {
+            progress: 0,
+            isCompleted: false,
+            updatedAt: currentKST
+          }
+        });
+        
+        console.log(`Daily Quest ${quest.catalogId} 초기화 완료 (UUID: ${gameUuid})`);
+      }
+    }
+  } catch (error) {
+    console.error('Daily Quest 초기화 오류:', error);
+  }
 }
 
 // 테트리스 게임에 맞는 퀘스트 목록 데이터
@@ -113,6 +181,12 @@ async function handleQuestCheck(request: NextRequest) {
         { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
+
+    // 모든 퀘스트 진행도 레코드 보장
+    await ensureAllQuestProgress(parsedUuid);
+    
+    // Daily Quest 초기화 체크 및 실행
+    await resetDailyQuestsIfNeeded(parsedUuid);
 
     // questIds 검증
     if (!questIds || !Array.isArray(questIds) || questIds.length === 0) {

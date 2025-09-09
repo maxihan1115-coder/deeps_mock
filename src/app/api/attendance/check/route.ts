@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlGameStore } from '@/lib/mysql-store';
 import { calculateConsecutiveDays } from '@/lib/quest-utils';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,17 +28,26 @@ export async function POST(request: NextRequest) {
     // 출석 기록 추가
     const attendanceRecord = await mysqlGameStore.addAttendanceRecord(gameUuid, today);
 
-    // DAILY_LOGIN 퀘스트 업데이트 (7일 연속 로그인)
+    // 플랫폼 연동 상태 확인 후 퀘스트 업데이트
     try {
-      const attendanceRecords = await mysqlGameStore.getAttendanceRecords(gameUuid);
-      const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
-      
-      console.log('📅 출석 기록:', attendanceRecords.map(r => r.date).join(', '));
-      console.log('🔢 연속 출석일 계산:', consecutiveDays, '일');
-      
-      // DAILY_LOGIN 퀘스트 ID: '12'
-      await mysqlGameStore.updateQuestProgress(gameUuid, '12', Math.min(consecutiveDays, 7));
-      console.log('✅ DAILY_LOGIN 퀘스트 업데이트:', consecutiveDays, '일 연속');
+      const platformLink = await prisma.platformLink.findUnique({
+        where: { gameUuid },
+        select: { isActive: true }
+      });
+
+      if (platformLink && platformLink.isActive) {
+        const attendanceRecords = await mysqlGameStore.getAttendanceRecords(gameUuid);
+        const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
+        
+        console.log('📅 출석 기록:', attendanceRecords.map(r => r.date).join(', '));
+        console.log('🔢 연속 출석일 계산:', consecutiveDays, '일');
+        
+        // DAILY_LOGIN 퀘스트 ID: '12' - quest_progress 시스템 사용
+        await mysqlGameStore.upsertQuestProgress(gameUuid, '12', Math.min(consecutiveDays, 7));
+        console.log('✅ DAILY_LOGIN 퀘스트 업데이트:', consecutiveDays, '일 연속');
+      } else {
+        console.log('⚠️ 플랫폼 미연동 상태 - 퀘스트 진행도 업데이트 건너뜀');
+      }
     } catch (error) {
       console.error('❌ DAILY_LOGIN 퀘스트 업데이트 실패:', error);
     }

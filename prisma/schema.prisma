@@ -23,7 +23,6 @@ model User {
 
   // Relations
   attendanceRecords AttendanceRecord[]
-  quests           Quest[]
   gameStates       GameState[]
   highScores       HighScore[]
   questProgresses  QuestProgress[]
@@ -44,25 +43,6 @@ model AttendanceRecord {
   @@map("attendance_records")
 }
 
-model Quest {
-  id          String   @id @default(uuid())
-  userId      Int      // User.uuid (숫자) 참조
-  title       String
-  description String
-  type        QuestType
-  progress    Int      @default(0)
-  maxProgress Int
-  reward      Int
-  isCompleted Boolean  @default(false)
-  expiresAt   DateTime?
-  lastResetTime DateTime? // 퀘스트 마지막 초기화 시간
-  createdAt   DateTime @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
-
-  @@map("quests")
-}
 
 // 공통 퀘스트 카탈로그 (모든 유저가 공유하는 정의)
 model QuestCatalog {

@@ -6,6 +6,7 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
+import { shouldResetQuest, getCurrentKST } from '@/lib/quest-utils';
 
 // 플랫폼에서 퀘스트 보상 정보 가져오기
 async function fetchPlatformRewards() {
@@ -41,8 +42,114 @@ function getKoreaToday(): string {
   return koreaTime.toISOString().split('T')[0]; // YYYY-MM-DD 형식
 }
 
+// 모든 퀘스트 진행도 레코드 보장 함수
+async function ensureAllQuestProgress(gameUuid: number) {
+  try {
+    // 플랫폼 연동 상태 확인
+    const platformLink = await prisma.platformLink.findUnique({
+      where: { gameUuid },
+      select: { isActive: true }
+    });
+
+    if (!platformLink || !platformLink.isActive) {
+      console.log('⚠️ 플랫폼 미연동 상태 - 퀘스트 진행도 레코드 생성 건너뜀');
+      return;
+    }
+
+    // 모든 퀘스트 카탈로그 조회
+    const catalogs = await prisma.questCatalog.findMany();
+    
+    for (const catalog of catalogs) {
+      // 각 퀘스트에 대한 진행도 레코드가 없으면 생성
+      await prisma.questProgress.upsert({
+        where: {
+          userId_catalogId: {
+            userId: gameUuid,
+            catalogId: catalog.id
+          }
+        },
+        update: {}, // 이미 존재하면 업데이트하지 않음
+        create: {
+          userId: gameUuid,
+          catalogId: catalog.id,
+          progress: 0,
+          isCompleted: false
+        }
+      });
+    }
+  } catch (error) {
+    console.error('퀘스트 진행도 레코드 보장 오류:', error);
+  }
+}
+
+// Daily Quest 초기화 함수
+async function resetDailyQuestsIfNeeded(gameUuid: number) {
+  try {
+    // 플랫폼 연동 상태 확인
+    const platformLink = await prisma.platformLink.findUnique({
+      where: { gameUuid },
+      select: { isActive: true }
+    });
+
+    if (!platformLink || !platformLink.isActive) {
+      console.log('⚠️ 플랫폼 미연동 상태 - Daily Quest 초기화 건너뜀');
+      return;
+    }
+
+    // Daily Quest 진행도 조회
+    const dailyQuests = await prisma.questProgress.findMany({
+      where: {
+        userId: gameUuid,
+        catalogId: { in: ['9', '10'] } // Daily Quest IDs
+      }
+    });
+
+    const currentKST = getCurrentKST();
+    
+    for (const quest of dailyQuests) {
+      // 마지막 업데이트 시간이 오늘 자정 이전이면 초기화
+      if (shouldResetQuest('daily', quest.updatedAt)) {
+        await prisma.questProgress.update({
+          where: {
+            userId_catalogId: {
+              userId: gameUuid,
+              catalogId: quest.catalogId
+            }
+          },
+          data: {
+            progress: 0,
+            isCompleted: false,
+            updatedAt: currentKST
+          }
+        });
+        
+        console.log(`Daily Quest ${quest.catalogId} 초기화 완료 (UUID: ${gameUuid})`);
+      }
+    }
+  } catch (error) {
+    console.error('Daily Quest 초기화 오류:', error);
+  }
+}
+
 // 실시간 퀘스트 진행도 계산 함수
 async function getRealTimeQuestProgress(gameUuid: number) {
+  // 플랫폼 연동 상태 확인
+  const platformLink = await prisma.platformLink.findUnique({
+    where: { gameUuid },
+    select: { isActive: true }
+  });
+
+  const isLinked = Boolean(platformLink?.isActive);
+
+  if (!isLinked) {
+    console.log('⚠️ 플랫폼 미연동 상태 - 퀘스트 진행도는 0으로 표시');
+    // 미연동 상태에서는 진행도 0으로 퀘스트 목록 반환
+  } else {
+    // 연동된 상태에서만 퀘스트 진행도 레코드 보장 및 초기화
+    await ensureAllQuestProgress(gameUuid);
+    await resetDailyQuestsIfNeeded(gameUuid);
+  }
+  
   // 퀘스트 카탈로그 정의 (quest/check와 동일)
   const QUEST_CATALOG = [
     {
@@ -198,7 +305,12 @@ async function getRealTimeQuestProgress(gameUuid: number) {
     const quests = await Promise.all(QUEST_CATALOG.map(async (quest) => {
       let progress = 0;
 
-      switch (quest.id) {
+      // 플랫폼 미연동 상태에서는 모든 진행도를 0으로 설정
+      if (!isLinked) {
+        progress = 0;
+      } else {
+        // 연동된 상태에서만 실제 진행도 계산
+        switch (quest.id) {
         case '1': // 첫 게임 플레이
           progress = highScoreResult._count > 0 ? 1 : 0;
           break;
@@ -272,6 +384,7 @@ async function getRealTimeQuestProgress(gameUuid: number) {
           break;
         default:
           progress = 0;
+        }
       }
 
       // 플랫폼 보상 정보 매핑

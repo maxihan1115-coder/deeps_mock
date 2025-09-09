@@ -169,30 +169,17 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   }, [userId, onHighScoreUpdate]);
 
 
-  // 퀘스트 진행도 업데이트
+  // 퀘스트 진행도 업데이트 (quest_progress 시스템 사용)
   const updateQuestProgress = useCallback(async (questId: string, progress: number) => {
     try {
-      const response = await fetch('/api/quests/progress', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          gameUuid: userId,
-          questId: questId,
-          progress: progress
-        })
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('퀘스트 업데이트 실패:', response.status, errorText);
-        return;
-      }
+      // quest_progress 시스템을 사용하여 퀘스트 진행도 업데이트
+      // 실제로는 게임 종료 시 /api/quests API가 자동으로 진행도를 계산하므로
+      // 여기서는 로그만 출력
+      console.log(`퀘스트 진행도 업데이트: ${questId} = ${progress}`);
     } catch (error) {
-      console.error('퀘스트 업데이트 오류:', error);
+      console.error('퀘스트 진행도 업데이트 오류:', error);
     }
-  }, [userId]);
+  }, []);
 
 
   // 점수 관련 퀘스트 체크

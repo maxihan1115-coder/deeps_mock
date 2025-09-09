@@ -1,6 +1,5 @@
 import { prisma } from './prisma';
 import { User, AttendanceRecord, Quest, TetrisGameState } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
 import { QuestType } from '@prisma/client';
 
 // SQLite용으로 수정된 저장소 (MySQL과 동일한 인터페이스)
@@ -16,8 +15,8 @@ class MySQLGameStore {
       { id: '4', title: 'SCORE_10000', description: '10000점 달성', type: 'SINGLE', maxProgress: 10000, reward: 5 },
       { id: '5', title: 'CLEAR_LINES_10', description: '라인 10개 제거', type: 'SINGLE', maxProgress: 10, reward: 5 },
       { id: '6', title: 'CLEAR_LINES_50', description: '라인 50개 제거', type: 'SINGLE', maxProgress: 50, reward: 5 },
-      { id: '7', title: 'REACH_LEVEL_5', description: '레벨 5 도달', type: 'SINGLE', maxProgress: 1, reward: 5 },
-      { id: '8', title: 'REACH_LEVEL_10', description: '레벨 10 도달', type: 'SINGLE', maxProgress: 1, reward: 5 },
+      { id: '7', title: 'REACH_LEVEL_5', description: '레벨 5 도달', type: 'SINGLE', maxProgress: 5, reward: 5 },
+      { id: '8', title: 'REACH_LEVEL_10', description: '레벨 10 도달', type: 'SINGLE', maxProgress: 10, reward: 5 },
       { id: '9', title: 'PLAY_GAMES_5', description: '5게임 플레이', type: 'DAILY', maxProgress: 5, reward: 50 },
       { id: '10', title: 'PLAY_GAMES_20', description: '20게임 플레이', type: 'DAILY', maxProgress: 20, reward: 100 },
       { id: '11', title: 'HARD_DROP_10', description: '하드 드롭 10회', type: 'SINGLE', maxProgress: 10, reward: 5 },
@@ -127,7 +126,7 @@ class MySQLGameStore {
       },
     });
 
-    // 현재 게임이 이미 하이스코어에 저장되어 있으므로 그대로 사용
+    // 실제 진행도 계산 (상한 적용)
     const actualProgress = Math.min(todayGameCount, catalog.maxProgress);
 
     const updated = await prisma.questProgress.upsert({
@@ -135,14 +134,12 @@ class MySQLGameStore {
       update: {
         progress: actualProgress,
         isCompleted: actualProgress >= catalog.maxProgress,
-        lastResetTime: kstStart, // 항상 오늘 날짜로 업데이트
       },
       create: {
         userId: gameUuid,
         catalogId,
         progress: actualProgress,
         isCompleted: actualProgress >= catalog.maxProgress,
-        lastResetTime: kstStart,
       },
     });
 
@@ -160,102 +157,79 @@ class MySQLGameStore {
       createdAt: new Date(),
     };
   }
-  // 다음 UUID 번호를 가져오는 메서드
-  private async getNextUuid(): Promise<number> {
-    const lastUser = await prisma.user.findFirst({
-      orderBy: { uuid: 'desc' },
-    });
-    
-    return lastUser ? lastUser.uuid + 1 : 1;
-  }
+
   // 사용자 관련 메서드
-  async createUser(username: string): Promise<User> {
-    console.log('🏗️ Creating user in database:', username);
-    try {
-      const nextUuid = await this.getNextUuid();
-      console.log('🔢 Next UUID:', nextUuid);
-      
-      const user = await prisma.user.create({
-        data: {
-          username,
-          uuid: nextUuid,
-        },
-      });
-      console.log('✅ User created successfully:', user.id);
-
-      return {
-        id: user.id,
-        username: user.username,
-        uuid: user.uuid,
-        createdAt: user.createdAt,
-        lastLoginAt: user.lastLoginAt,
-      };
-    } catch (error) {
-      console.error('❌ Error creating user:', error);
-      throw error;
-    }
-  }
-
-  async getUserById(id: string): Promise<User | undefined> {
-    const user = await prisma.user.findUnique({
-      where: { id },
+  async createUser(username: string, uuid: number): Promise<User> {
+    const user = await prisma.user.create({
+      data: {
+        username,
+        uuid,
+      },
     });
-
-    if (!user) return undefined;
 
     return {
       id: user.id,
       username: user.username,
       uuid: user.uuid,
+      startDate: user.startDate || undefined,
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
     };
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const user = await prisma.user.findUnique({
-      where: { username },
-    });
-
-    if (!user) return undefined;
-
-    return {
-      id: user.id,
-      username: user.username,
-      uuid: user.uuid,
-      createdAt: user.createdAt,
-      lastLoginAt: user.lastLoginAt,
-    };
-  }
-
-  async getUserByUuid(uuid: number): Promise<User | undefined> {
+  async getUserByUuid(uuid: number): Promise<User | null> {
     const user = await prisma.user.findUnique({
       where: { uuid },
     });
 
-    if (!user) return undefined;
+    if (!user) return null;
 
     return {
       id: user.id,
       username: user.username,
       uuid: user.uuid,
+      startDate: user.startDate || undefined,
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
     };
   }
 
-  async updateLastLogin(userId: string): Promise<void> {
+  async getUserByUsername(username: string): Promise<User | null> {
+    const user = await prisma.user.findUnique({
+      where: { username },
+    });
+
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      username: user.username,
+      uuid: user.uuid,
+      startDate: user.startDate || undefined,
+      createdAt: user.createdAt,
+      lastLoginAt: user.lastLoginAt,
+    };
+  }
+
+  async updateUserStartDate(uuid: number, startDate: Date): Promise<void> {
     await prisma.user.update({
-      where: { id: userId },
+      where: { uuid },
+      data: { startDate },
+    });
+  }
+
+  async updateLastLogin(uuid: number): Promise<void> {
+    await prisma.user.update({
+      where: { uuid },
       data: { lastLoginAt: new Date() },
     });
   }
 
-  // 출석체크 관련 메서드
-  async addAttendanceRecord(gameUuid: number, date: string): Promise<AttendanceRecord> {
+  // 출석 관련 메서드
+  async addAttendanceRecord(userId: number, date: string): Promise<AttendanceRecord> {
     const record = await prisma.attendanceRecord.create({
       data: {
-        userId: gameUuid, // 숫자 UUID 사용
+        userId,
         date,
       },
     });
@@ -268,28 +242,10 @@ class MySQLGameStore {
     };
   }
 
-  async hasAttendanceToday(gameUuid: number): Promise<boolean> {
-    const today = new Date().toISOString().split('T')[0];
-    
-    const record = await prisma.attendanceRecord.findFirst({
-      where: {
-        userId: gameUuid, // 숫자 UUID 사용
-        date: today,
-      },
-    });
-
-    return !!record;
-  }
-
-  async getAttendanceRecords(gameUuid: number): Promise<AttendanceRecord[]> {
+  async getAttendanceRecords(userId: number): Promise<AttendanceRecord[]> {
     const records = await prisma.attendanceRecord.findMany({
-      where: {
-        userId: gameUuid, // 숫자 UUID 사용
-      },
-      orderBy: {
-        date: 'desc',
-      },
-      take: 30, // 최근 30일
+      where: { userId },
+      orderBy: { date: 'desc' },
     });
 
     return records.map(record => ({
@@ -300,340 +256,21 @@ class MySQLGameStore {
     }));
   }
 
-  // 퀘스트 관련 메서드
-  async initializeQuests(gameUuid: number): Promise<Quest[]> {
-          // 기존 퀘스트 삭제
-      await prisma.quest.deleteMany({
-        where: { userId: gameUuid }, // 숫자 UUID 직접 사용
-      });
-
-    const questsData = [
-      // Daily 퀘스트
-      {
-        title: '일일 게임 플레이',
-        description: '하루에 한 번 테트리스를 플레이하세요',
-        type: QuestType.DAILY,
-        progress: 0,
-        maxProgress: 1,
-        reward: 100,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      },
-      {
-        title: '일일 점수 달성',
-        description: '하루에 1000점을 달성하세요',
-        type: QuestType.DAILY,
-        progress: 0,
-        maxProgress: 1000,
-        reward: 200,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      },
-      // Weekly 퀘스트
-      {
-        title: '주간 게임 플레이',
-        description: '일주일에 7번 테트리스를 플레이하세요',
-        type: QuestType.WEEKLY,
-        progress: 0,
-        maxProgress: 7,
-        reward: 500,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
-      {
-        title: '주간 점수 달성',
-        description: '일주일에 10000점을 달성하세요',
-        type: QuestType.WEEKLY,
-        progress: 0,
-        maxProgress: 10000,
-        reward: 1000,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
-      // Monthly 퀘스트
-      {
-        title: '월간 게임 플레이',
-        description: '한 달에 30번 테트리스를 플레이하세요',
-        type: QuestType.MONTHLY,
-        progress: 0,
-        maxProgress: 30,
-        reward: 2000,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      },
-      // 1회 단일 달성 퀘스트
-      {
-        title: '첫 게임 플레이',
-        description: '처음으로 테트리스를 플레이하세요',
-        type: QuestType.SINGLE,
-        progress: 0,
-        maxProgress: 1,
-        reward: 300,
-        expiresAt: null,
-      },
-      {
-        title: '10000점 달성',
-        description: '한 번의 게임에서 10000점을 달성하세요',
-        type: QuestType.SINGLE,
-        progress: 0,
-        maxProgress: 10000,
-        reward: 500,
-        expiresAt: null,
-      },
-    ];
-
-    await prisma.quest.createMany({
-      data: questsData.map(quest => ({
-        ...quest,
-        userId: gameUuid, // 숫자 UUID 직접 사용
-      })),
-    });
-
-    // 생성된 퀘스트 조회
-    const quests = await prisma.quest.findMany({
-      where: { userId: gameUuid }, // 숫자 UUID 직접 사용
-    });
-
-    // 타입 매핑: Prisma enum -> 코드 타입
-    const typeMapping = {
-      'SINGLE': 'once',
-      'DAILY': 'daily',
-      'WEEKLY': 'weekly',
-      'MONTHLY': 'monthly'
-    };
-
-    return quests.map(quest => ({
-      id: quest.id,
-      title: quest.title,
-      description: quest.description,
-      type: typeMapping[quest.type] as Quest['type'] || 'once',
-      progress: quest.progress,
-      maxProgress: quest.maxProgress,
-      reward: quest.reward,
-      isCompleted: quest.isCompleted,
-      expiresAt: quest.expiresAt || undefined,
-      createdAt: quest.createdAt,
-    }));
-  }
-
-  async getQuests(gameUuid: number): Promise<Quest[]> {
-    const quests = await prisma.quest.findMany({
-      where: { userId: gameUuid }, // 숫자 UUID 직접 사용
-    });
-
-    // 타입 매핑: Prisma enum -> 코드 타입
-    const typeMapping = {
-      'SINGLE': 'once',
-      'DAILY': 'daily',
-      'WEEKLY': 'weekly',
-      'MONTHLY': 'monthly'
-    };
-
-    return quests.map(quest => ({
-      id: quest.id,
-      title: quest.title,
-      description: quest.description,
-      type: typeMapping[quest.type] as Quest['type'] || 'once',
-      progress: quest.progress,
-      maxProgress: quest.maxProgress,
-      reward: quest.reward,
-      isCompleted: quest.isCompleted,
-      expiresAt: quest.expiresAt || undefined,
-      createdAt: quest.createdAt,
-    }));
-  }
-
-  async getQuestById(gameUuid: number, questId: string): Promise<Quest | null> {
-    const quest = await prisma.quest.findFirst({
+  async hasAttendanceToday(userId: number): Promise<boolean> {
+    const today = new Date().toISOString().split('T')[0];
+    const record = await prisma.attendanceRecord.findFirst({
       where: {
-        id: questId,
-        userId: gameUuid, // 숫자 UUID 직접 사용
+        userId,
+        date: today,
       },
     });
-
-    if (!quest) return null;
-
-    // 타입 매핑: Prisma enum -> 코드 타입
-    const typeMapping = {
-      'SINGLE': 'once',
-      'DAILY': 'daily',
-      'WEEKLY': 'weekly',
-      'MONTHLY': 'monthly'
-    };
-
-    return {
-      id: quest.id,
-      title: quest.title,
-      description: quest.description,
-      type: typeMapping[quest.type] as Quest['type'] || 'once',
-      progress: quest.progress,
-      maxProgress: quest.maxProgress,
-      reward: quest.reward,
-      isCompleted: quest.isCompleted,
-      expiresAt: quest.expiresAt || undefined,
-      createdAt: quest.createdAt,
-      lastResetTime: quest.lastResetTime || undefined,
-    };
-  }
-
-  async updateQuestProgress(
-    gameUuid: number, 
-    questId: string, 
-    progress: number, 
-    lastResetTime?: Date
-  ): Promise<Quest | null> {
-    console.log(`🔍 updateQuestProgress 호출: gameUuid=${gameUuid}, questId=${questId}, progress=${progress}`);
-    
-    try {
-      const quest = await prisma.quest.findFirst({
-        where: {
-          id: questId,
-          userId: gameUuid, // 숫자 UUID 직접 사용
-        },
-      });
-
-      console.log(`🔍 퀘스트 조회 결과:`, quest);
-
-      if (!quest) {
-        console.log(`❌ 퀘스트를 찾을 수 없음: gameUuid=${gameUuid}, questId=${questId}`);
-        return null;
-      }
-
-    const updateData: {
-      progress: number;
-      isCompleted: boolean;
-      lastResetTime?: Date;
-    } = {
-      progress: Math.min(progress, quest.maxProgress),
-      isCompleted: Math.min(progress, quest.maxProgress) >= quest.maxProgress,
-    };
-
-    // lastResetTime이 제공된 경우 업데이트
-    if (lastResetTime) {
-      updateData.lastResetTime = lastResetTime;
-    }
-
-      console.log(`🔧 업데이트 데이터:`, updateData);
-      
-      const updatedQuest = await prisma.quest.update({
-        where: { id: questId },
-        data: updateData,
-      });
-      
-      console.log(`✅ 퀘스트 업데이트 성공:`, updatedQuest);
-
-    // 타입 매핑: Prisma enum -> 코드 타입
-    const typeMapping = {
-      'SINGLE': 'once',
-      'DAILY': 'daily',
-      'WEEKLY': 'weekly',
-      'MONTHLY': 'monthly'
-    };
-
-          return {
-        id: updatedQuest.id,
-        title: updatedQuest.title,
-        description: updatedQuest.description,
-        type: typeMapping[updatedQuest.type] as Quest['type'] || 'once',
-        progress: updatedQuest.progress,
-        maxProgress: updatedQuest.maxProgress,
-        reward: updatedQuest.reward,
-        isCompleted: updatedQuest.isCompleted,
-        expiresAt: updatedQuest.expiresAt || undefined,
-        createdAt: updatedQuest.createdAt,
-        lastResetTime: updatedQuest.lastResetTime || undefined,
-      };
-    } catch (error) {
-      console.error(`❌ updateQuestProgress 오류 발생:`, error);
-      console.error(`오류 상세:`, {
-        gameUuid,
-        questId,
-        progress,
-        error: error instanceof Error ? error.message : error,
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      throw error; // 상위로 전파
-    }
-  }
-
-  async createQuest(
-    gameUuid: number,
-    questId: string,
-    title: string,
-    maxProgress: number,
-    reward: number,
-    type: 'once' | 'daily' | 'weekly'
-  ): Promise<Quest | null> {
-    try {
-      // 타입 매핑: 코드 타입 -> Prisma enum
-      const typeMapping = {
-        'once': 'SINGLE',
-        'daily': 'DAILY', 
-        'weekly': 'WEEKLY'
-      };
-      
-      const quest = await prisma.quest.create({
-        data: {
-          id: questId,
-          userId: gameUuid, // 숫자 UUID 직접 사용
-          title,
-          description: title, // 기본적으로 title을 description으로 사용
-          type: typeMapping[type] as QuestType,
-          progress: 0,
-          maxProgress,
-          reward,
-          isCompleted: false,
-        },
-      });
-
-      // 타입 매핑: Prisma enum -> 코드 타입
-      const typeReverseMapping = {
-        'SINGLE': 'once',
-        'DAILY': 'daily',
-        'WEEKLY': 'weekly',
-        'MONTHLY': 'monthly'
-      };
-
-      return {
-        id: quest.id,
-        title: quest.title,
-        description: quest.description,
-        type: typeReverseMapping[quest.type] as Quest['type'] || 'once',
-        progress: quest.progress,
-        maxProgress: quest.maxProgress,
-        reward: quest.reward,
-        isCompleted: quest.isCompleted,
-        expiresAt: quest.expiresAt || undefined,
-        createdAt: quest.createdAt,
-        lastResetTime: quest.lastResetTime || undefined,
-      };
-    } catch (error) {
-      console.error('Create quest error:', error);
-      return null;
-    }
-  }
-
-  // 하이스코어 저장 메서드
-  async saveHighScore(gameUuid: number, score: number, level: number, lines: number): Promise<{ id: string; userId: number; score: number; level: number; lines: number; createdAt: Date }> {
-    console.log('💾 하이스코어 저장 시작:', { gameUuid, score, level, lines });
-    
-    try {
-      const highScore = await prisma.highScore.create({
-        data: {
-          userId: gameUuid,
-          score,
-          level,
-          lines,
-        },
-      });
-
-      console.log('✅ 하이스코어 저장 완료:', highScore);
-      return highScore;
-    } catch (error) {
-      console.error('❌ 하이스코어 저장 실패:', error);
-      throw error;
-    }
+    return !!record;
   }
 
   // 게임 상태 관련 메서드
-  async saveGameState(gameUuid: number, gameState: TetrisGameState): Promise<void> {
+  async saveGameState(userId: number, gameState: TetrisGameState): Promise<void> {
     await prisma.gameState.upsert({
-      where: { userId: gameUuid }, // 숫자 UUID 직접 사용
+      where: { userId },
       update: {
         board: JSON.stringify(gameState.board),
         score: gameState.score,
@@ -643,7 +280,7 @@ class MySQLGameStore {
         isPaused: gameState.isPaused,
       },
       create: {
-        userId: gameUuid, // 숫자 UUID 직접 사용
+        userId,
         board: JSON.stringify(gameState.board),
         score: gameState.score,
         level: gameState.level,
@@ -654,17 +291,17 @@ class MySQLGameStore {
     });
   }
 
-  async getGameState(gameUuid: number): Promise<TetrisGameState | undefined> {
+  async getGameState(userId: number): Promise<TetrisGameState | null> {
     const gameState = await prisma.gameState.findUnique({
-      where: { userId: gameUuid }, // 숫자 UUID 직접 사용
+      where: { userId },
     });
 
-    if (!gameState) return undefined;
+    if (!gameState) return null;
 
     return {
       board: JSON.parse(gameState.board),
-      currentBlock: null, // 게임 시작 시 새로 생성
-      nextBlock: null,    // 게임 시작 시 새로 생성
+      currentBlock: null, // 게임 상태에서는 블록 정보를 저장하지 않음
+      nextBlock: null, // 게임 상태에서는 블록 정보를 저장하지 않음
       score: gameState.score,
       level: gameState.level,
       lines: gameState.lines,
@@ -673,29 +310,60 @@ class MySQLGameStore {
     };
   }
 
+  // 하이스코어 관련 메서드
+  async saveHighScore(userId: number, score: number, level: number, lines: number): Promise<void> {
+    await prisma.highScore.create({
+      data: {
+        userId,
+        score,
+        level,
+        lines,
+      },
+    });
+  }
+
+  async getHighScore(userId: number): Promise<{ score: number; level: number; lines: number } | null> {
+    const highScore = await prisma.highScore.findFirst({
+      where: { userId },
+      orderBy: { score: 'desc' },
+    });
+
+    if (!highScore) return null;
+
+    return {
+      score: highScore.score,
+      level: highScore.level,
+      lines: highScore.lines,
+    };
+  }
+
+  async getHighScores(limit: number = 10): Promise<Array<{ userId: number; score: number; level: number; lines: number; username: string }>> {
+    const highScores = await prisma.highScore.findMany({
+      include: {
+        user: true,
+      },
+      orderBy: { score: 'desc' },
+      take: limit,
+    });
+
+    return highScores.map(hs => ({
+      userId: hs.userId,
+      score: hs.score,
+      level: hs.level,
+      lines: hs.lines,
+      username: hs.user.username,
+    }));
+  }
+
   // 임시 코드 관련 메서드
-  async createTempCode(gameUuid: number): Promise<{ code: string; expiresAt: Date }> {
-    console.log('🔐 Creating temp code for user:', gameUuid);
-    try {
-      const code = uuidv4();
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15분 후 만료
-      console.log('🔑 Generated code:', code);
-      console.log('⏰ Expires at:', expiresAt);
-
-      await prisma.tempCode.create({
-        data: {
-          code,
-          userId: gameUuid, // 숫자 UUID 직접 사용
-          expiresAt,
-        },
-      });
-      console.log('✅ Temp code saved to database');
-
-      return { code, expiresAt };
-    } catch (error) {
-      console.error('❌ Error creating temp code:', error);
-      throw error;
-    }
+  async createTempCode(userId: number, code: string, expiresAt: Date): Promise<void> {
+    await prisma.tempCode.create({
+      data: {
+        userId,
+        code,
+        expiresAt,
+      },
+    });
   }
 
   async validateTempCode(code: string): Promise<{ isValid: boolean; gameUuid?: number }> {

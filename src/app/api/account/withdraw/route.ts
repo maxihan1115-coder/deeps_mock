@@ -76,7 +76,6 @@ export async function POST(request: NextRequest) {
       prisma.highScore.deleteMany({ where: { userId: parsedUuid } }),
       prisma.gameState.deleteMany({ where: { userId: parsedUuid } }),
       prisma.questProgress.deleteMany({ where: { userId: parsedUuid } }),
-      prisma.quest.deleteMany({ where: { userId: parsedUuid } }),
       prisma.questParticipation.deleteMany({ where: { gameUuid: parsedUuid } }),
       prisma.tempCode.deleteMany({ where: { userId: parsedUuid } }),
       prisma.platformLinkHistory.deleteMany({ where: { gameUuid: parsedUuid } }),
