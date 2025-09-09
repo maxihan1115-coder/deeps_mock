@@ -6,7 +6,7 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
-import { shouldResetQuest, getCurrentKST } from '@/lib/quest-utils';
+import { shouldResetQuest, getCurrentKST, getEligibleStartTime } from '@/lib/quest-utils';
 
 // 플랫폼에서 퀘스트 보상 정보 가져오기
 async function fetchPlatformRewards() {
@@ -269,9 +269,15 @@ async function getRealTimeQuestProgress(gameUuid: number) {
     koreaEndUTC.setUTCHours(koreaEndUTC.getUTCHours() - 9); // UTC로 변환
     
     // 실시간 데이터로 진행도 계산
+    const eligibleStart = await getEligibleStartTime(gameUuid);
+    const gteTime = eligibleStart && eligibleStart > koreaStartUTC ? eligibleStart : koreaStartUTC;
+
     const [highScoreResult, todayGameCount, questProgressData] = await Promise.all([
       prisma.highScore.aggregate({
-        where: { userId: gameUuid },
+        where: { 
+          userId: gameUuid,
+          createdAt: eligibleStart ? { gte: eligibleStart } : undefined,
+        },
         _sum: { score: true, level: true, lines: true },
         _max: { score: true, level: true },
         _count: true
@@ -281,7 +287,7 @@ async function getRealTimeQuestProgress(gameUuid: number) {
         where: { 
           userId: gameUuid,
           createdAt: {
-            gte: koreaStartUTC,
+            gte: gteTime,
             lt: koreaEndUTC
           }
         }

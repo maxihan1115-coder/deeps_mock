@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlGameStore } from '@/lib/mysql-store';
-import { calculateConsecutiveDays } from '@/lib/quest-utils';
+import { calculateConsecutiveDays, getEligibleStartTime } from '@/lib/quest-utils';
 import { prisma } from '@/lib/prisma';
 
 // 출석 연속일 계산은 quest-utils의 calculateConsecutiveDays 사용
@@ -60,7 +60,14 @@ export async function POST(request: NextRequest) {
         });
 
         if (platformLink && platformLink.isActive) {
-          const attendanceRecords = await mysqlGameStore.getAttendanceRecords(user.uuid); // user.id → user.uuid (숫자)
+          // 연동 시점 이후의 출석만 카운트
+          const eligibleStart = await getEligibleStartTime(user.uuid);
+          let attendanceRecords = await mysqlGameStore.getAttendanceRecords(user.uuid); // user.id → user.uuid (숫자)
+          if (eligibleStart) {
+            const kstEligible = new Date(eligibleStart.getTime() + (9 * 60 * 60 * 1000));
+            const eligibleDateStr = kstEligible.toISOString().split('T')[0];
+            attendanceRecords = attendanceRecords.filter(r => r.date >= eligibleDateStr);
+          }
           const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
           
           // DAILY_LOGIN 퀘스트 ID: '12' - quest_progress 시스템 사용

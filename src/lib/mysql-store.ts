@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import { getEligibleStartTime } from '@/lib/quest-utils';
 import { User, AttendanceRecord, Quest, TetrisGameState } from '@/types';
 import { QuestType } from '@prisma/client';
 
@@ -114,6 +115,8 @@ class MySQLGameStore {
     if (!catalog) return null;
 
     const kstStart = this.getKstStartOfToday();
+    const eligibleStart = await getEligibleStartTime(gameUuid);
+    const gteDate = eligibleStart && eligibleStart > kstStart ? eligibleStart : kstStart;
 
     // 실제 오늘 게임 플레이 횟수를 계산 (KST 기준)
     // 이미 하이스코어가 저장된 상태이므로 +1을 하지 않음
@@ -121,7 +124,7 @@ class MySQLGameStore {
       where: {
         userId: gameUuid,
         createdAt: {
-          gte: kstStart,
+          gte: gteDate,
         },
       },
     });

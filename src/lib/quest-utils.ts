@@ -76,6 +76,7 @@ export function resetQuestProgress(): { progress: number, lastResetTime: Date } 
 
 // 출석 연속일 계산 (7일 연속 출석체크)
 import type { AttendanceRecord } from '@/types';
+import { prisma } from '@/lib/prisma';
 export function calculateConsecutiveDays(records: AttendanceRecord[]): number {
   if (records.length === 0) return 0;
   
@@ -116,4 +117,31 @@ export function calculateConsecutiveDays(records: AttendanceRecord[]): number {
   }
   
   return consecutive;
+}
+
+// 플랫폼 연동 시점(또는 퀘스트 참여 시작 시점) 이후만 집계하기 위한 기준 시각 조회
+// 우선순위: 최근 활성 연동 linkedAt -> 퀘스트 참여 startDate -> null(필터 없음)
+export async function getEligibleStartTime(gameUuid: number): Promise<Date | null> {
+  try {
+    const [platformLink, participation] = await Promise.all([
+      prisma.platformLink.findUnique({
+        where: { gameUuid },
+        select: { isActive: true, linkedAt: true }
+      }),
+      prisma.questParticipation.findFirst({
+        where: { gameUuid },
+        select: { startDate: true }
+      })
+    ]);
+
+    const linkedAt = platformLink?.isActive ? platformLink.linkedAt : null;
+    const startDate = participation?.startDate ?? null;
+
+    if (linkedAt && startDate) {
+      return linkedAt > startDate ? linkedAt : startDate;
+    }
+    return linkedAt || startDate || null;
+  } catch {
+    return null;
+  }
 }
