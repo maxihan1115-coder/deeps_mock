@@ -20,7 +20,6 @@ class MySQLGameStore {
       { id: '8', title: 'REACH_LEVEL_10', description: '레벨 10 도달', type: 'SINGLE', maxProgress: 10, reward: 5 },
       { id: '9', title: 'PLAY_GAMES_5', description: '5게임 플레이', type: 'DAILY', maxProgress: 5, reward: 50 },
       { id: '10', title: 'PLAY_GAMES_20', description: '20게임 플레이', type: 'DAILY', maxProgress: 20, reward: 100 },
-      { id: '11', title: 'HARD_DROP_10', description: '하드 드롭 10회', type: 'SINGLE', maxProgress: 10, reward: 5 },
       { id: '12', title: 'DAILY_LOGIN', description: '7일 연속 출석체크', type: 'SINGLE', maxProgress: 7, reward: 10 },
     ] as const;
 
@@ -48,21 +47,23 @@ class MySQLGameStore {
     ]);
     const progressByCatalog = new Map(progresses.map(p => [p.catalogId, p]));
     const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
-    return catalog.map(c => {
-      const p = progressByCatalog.get(c.id);
-      return {
-        id: c.id,
-        title: c.title,
-        description: c.description,
-        type: typeMapping[c.type] as Quest['type'],
-        progress: p?.progress ?? 0,
-        maxProgress: c.maxProgress,
-        reward: c.reward,
-        isCompleted: Boolean(p?.isCompleted),
-        expiresAt: undefined,
-        createdAt: new Date(),
-      };
-    });
+    return catalog
+      .filter(c => c.id !== '11') // 11번 퀘스트(HARD_DROP_10) 숨김 처리
+      .map(c => {
+        const p = progressByCatalog.get(c.id);
+        return {
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          type: typeMapping[c.type] as Quest['type'],
+          progress: p?.progress ?? 0,
+          maxProgress: c.maxProgress,
+          reward: c.reward,
+          isCompleted: Boolean(p?.isCompleted),
+          expiresAt: undefined,
+          createdAt: new Date(),
+        };
+      });
   }
 
   async upsertQuestProgress(gameUuid: number, catalogId: string, progress: number): Promise<Quest | null> {
