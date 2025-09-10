@@ -55,8 +55,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
       
       if (data.success) {
         console.log('✅ 퀘스트 목록 가져오기 성공:', data.payload);
-        const questsData = data.payload.quests || [];
-        setIsLinked(data.payload.isLinked || false);
+        const questsData = data.payload || [];
         setError(null);
         
         // 미완료 퀘스트를 위에, 완료된 퀘스트를 아래에 정렬
@@ -352,16 +351,26 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
                         </span>
                       )}
                     </div>
-                  ) : quest.reward ? (
-                    <span className="text-sm font-medium text-red-500">
-                      API 호출 실패로 보상정보를 불러올 수 없습니다.
+                  ) : (
+                    <span className="text-sm font-medium text-gray-500">
+                      {quest.reward} 포인트
                     </span>
-                  ) : null}
+                  )}
                 </div>
                 {quest.isCompleted && (
-                  <Badge variant="default" className="text-xs bg-green-500">
-                    완료
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default" className="text-xs bg-green-500">
+                      완료
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-6 px-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                      onClick={() => window.open('https://www.boradeeps.cc/quest', '_blank')}
+                    >
+                      보상받기
+                    </Button>
+                  </div>
                 )}
               </div>
               

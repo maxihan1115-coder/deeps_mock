@@ -7,30 +7,59 @@ import {
   API_ERROR_CODES 
 } from '@/lib/api-errors';
 import { shouldResetQuest, getCurrentKST, getEligibleStartTime } from '@/lib/quest-utils';
+import { mysqlGameStore } from '@/lib/mysql-store';
+
+// 플랫폼 보상 정보 타입 정의
+interface PlatformReward {
+  title: string;
+  claimValue: string;
+  claimSymbol: string;
+  claimType?: string;
+}
 
 // 플랫폼에서 퀘스트 보상 정보 가져오기
-async function fetchPlatformRewards() {
+async function fetchPlatformRewards(): Promise<PlatformReward[] | null> {
   try {
+    const apiKey = process.env.BAPP_API_KEY;
+    console.log('🔑 BAPP_API_KEY 존재 여부:', !!apiKey);
+    
+    if (!apiKey) {
+      console.error('BAPP_API_KEY가 설정되지 않았습니다.');
+      return null;
+    }
+    
     const requestHeaders = {
       'Accept': 'application/json',
-      'Accept-Language': 'en'
+      'Content-Type': 'application/json',
+      'BAPP-AUTH-TOKEN': apiKey
     };
-    
-    const platformResponse = await fetch('https://papi.boradeeps.cc/v1/quest/10006', {
+
+    console.log('🌐 플랫폼 보상 API 호출 시작...');
+    const response = await fetch('https://papi.boradeeps.cc/v1/quest/10006', {
       method: 'GET',
       headers: requestHeaders,
     });
 
-    if (platformResponse.ok) {
-      const platformData = await platformResponse.json();
-      
-      if (platformData.success && platformData.payload) {
-        return platformData.payload;
-      }
+    console.log('📡 플랫폼 보상 API 응답 상태:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('플랫폼 보상 정보 조회 실패:', response.status, response.statusText, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log('📊 플랫폼 보상 API 응답 성공:', data.success);
+    console.log('📊 플랫폼 보상 API payload 길이:', data.payload?.length);
+    
+    if (data.success && data.payload) {
+      console.log('📊 첫 번째 플랫폼 보상:', data.payload[0]);
+      return data.payload;
     }
     
     return null;
-  } catch {
+  } catch (error) {
+    console.error('플랫폼 보상 정보 조회 중 오류:', error);
     return null;
   }
 }
@@ -45,17 +74,6 @@ function getKoreaToday(): string {
 // 모든 퀘스트 진행도 레코드 보장 함수
 async function ensureAllQuestProgress(gameUuid: number) {
   try {
-    // 플랫폼 연동 상태 확인
-    const platformLink = await prisma.platformLink.findUnique({
-      where: { gameUuid },
-      select: { isActive: true }
-    });
-
-    if (!platformLink || !platformLink.isActive) {
-      console.log('⚠️ 플랫폼 미연동 상태 - 퀘스트 진행도 레코드 생성 건너뜀');
-      return;
-    }
-
     // 모든 퀘스트 카탈로그 조회
     const catalogs = await prisma.questCatalog.findMany();
     
@@ -85,17 +103,6 @@ async function ensureAllQuestProgress(gameUuid: number) {
 // Daily Quest 초기화 함수
 async function resetDailyQuestsIfNeeded(gameUuid: number) {
   try {
-    // 플랫폼 연동 상태 확인
-    const platformLink = await prisma.platformLink.findUnique({
-      where: { gameUuid },
-      select: { isActive: true }
-    });
-
-    if (!platformLink || !platformLink.isActive) {
-      console.log('⚠️ 플랫폼 미연동 상태 - Daily Quest 초기화 건너뜀');
-      return;
-    }
-
     // Daily Quest 진행도 조회
     const dailyQuests = await prisma.questProgress.findMany({
       where: {
@@ -131,321 +138,13 @@ async function resetDailyQuestsIfNeeded(gameUuid: number) {
   }
 }
 
-// 실시간 퀘스트 진행도 계산 함수
-async function getRealTimeQuestProgress(gameUuid: number) {
-  // 플랫폼 연동 상태 확인
-  const platformLink = await prisma.platformLink.findUnique({
-    where: { gameUuid },
-    select: { isActive: true }
-  });
-
-  const isLinked = Boolean(platformLink?.isActive);
-
-  if (!isLinked) {
-    console.log('⚠️ 플랫폼 미연동 상태 - 퀘스트 진행도는 0으로 표시');
-    // 미연동 상태에서는 진행도 0으로 퀘스트 목록 반환
-  } else {
-    // 연동된 상태에서만 퀘스트 진행도 레코드 보장 및 초기화
-    await ensureAllQuestProgress(gameUuid);
-    await resetDailyQuestsIfNeeded(gameUuid);
-  }
-  
-  // 퀘스트 카탈로그 정의 (quest/check와 동일)
-  const QUEST_CATALOG = [
-    {
-      id: '1',
-      title: '첫 게임 플레이',
-      description: '첫 번째 게임을 플레이하세요',
-      type: 'single' as const,
-      maxProgress: 1,
-      reward: '경험치 100',
-      platformTitle: 'FIRST_GAME'
-    },
-    {
-      id: '2',
-      title: '1000점 달성',
-      description: '1000점을 달성하세요',
-      type: 'single' as const,
-      maxProgress: 1000,
-      reward: '경험치 200',
-      platformTitle: 'SCORE_1000'
-    },
-    {
-      id: '3',
-      title: '5000점 달성',
-      description: '5000점을 달성하세요',
-      type: 'single' as const,
-      maxProgress: 5000,
-      reward: '경험치 300',
-      platformTitle: 'SCORE_5000'
-    },
-    {
-      id: '4',
-      title: '10000점 달성',
-      description: '10000점을 달성하세요',
-      type: 'single' as const,
-      maxProgress: 10000,
-      reward: '경험치 500',
-      platformTitle: 'SCORE_10000'
-    },
-    {
-      id: '5',
-      title: '10라인 클리어',
-      description: '총 10라인을 클리어하세요',
-      type: 'single' as const,
-      maxProgress: 10,
-      reward: '경험치 150',
-      platformTitle: 'CLEAR_LINES_10'
-    },
-    {
-      id: '6',
-      title: '50라인 클리어',
-      description: '총 50라인을 클리어하세요',
-      type: 'single' as const,
-      maxProgress: 50,
-      reward: '경험치 300',
-      platformTitle: 'CLEAR_LINES_50'
-    },
-    {
-      id: '7',
-      title: '5레벨 달성',
-      description: '5레벨에 도달하세요',
-      type: 'single' as const,
-      maxProgress: 5,
-      reward: '경험치 200',
-      platformTitle: 'REACH_LEVEL_5'
-    },
-    {
-      id: '8',
-      title: '10레벨 달성',
-      description: '10레벨에 도달하세요',
-      type: 'single' as const,
-      maxProgress: 10,
-      reward: '경험치 400',
-      platformTitle: 'REACH_LEVEL_10'
-    },
-    {
-      id: '9',
-      title: '5회 게임 플레이',
-      description: '하루에 5회 게임을 플레이하세요',
-      type: 'daily' as const,
-      maxProgress: 5,
-      reward: '경험치 200',
-      platformTitle: 'PLAY_GAMES_5'
-    },
-    {
-      id: '10',
-      title: '20회 게임 플레이',
-      description: '하루에 20회 게임을 플레이하세요',
-      type: 'daily' as const,
-      maxProgress: 20,
-      reward: '경험치 500',
-      platformTitle: 'PLAY_GAMES_20'
-    },
-    {
-      id: '12',
-      title: '7일 연속 출석체크',
-      description: '7일 연속 출석체크 하세요',
-      type: 'single' as const,
-      maxProgress: 7,
-      reward: '경험치 100',
-      platformTitle: 'DAILY_LOGIN'
-    }
-  ];
-
-  try {
-    // 플랫폼 보상 정보 가져오기
-    const platformRewards = await fetchPlatformRewards();
-    
-    // 한국시간 기준 오늘 날짜
-    const today = getKoreaToday();
-    
-    // 한국시간 00:00~23:59를 UTC 시간으로 변환
-    // 한국시간 00:00 = UTC 15:00 (전날), 한국시간 23:59 = UTC 14:59 (당일)
-    const koreaStartUTC = new Date(today + 'T00:00:00.000Z');
-    koreaStartUTC.setUTCHours(koreaStartUTC.getUTCHours() - 9); // UTC로 변환
-    
-    const koreaEndUTC = new Date(today + 'T23:59:59.999Z');
-    koreaEndUTC.setUTCHours(koreaEndUTC.getUTCHours() - 9); // UTC로 변환
-    
-    // 실시간 데이터로 진행도 계산
-    const eligibleStart = await getEligibleStartTime(gameUuid);
-    const gteTime = eligibleStart && eligibleStart > koreaStartUTC ? eligibleStart : koreaStartUTC;
-
-    const [highScoreResult, todayGameCount, questProgressData] = await Promise.all([
-      prisma.highScore.aggregate({
-        where: { 
-          userId: gameUuid,
-          createdAt: eligibleStart ? { gte: eligibleStart } : undefined,
-        },
-        _sum: { score: true, level: true, lines: true },
-        _max: { score: true, level: true },
-        _count: true
-      }),
-      // 오늘 날짜의 게임 플레이 횟수 조회 (한국시간 기준)
-      prisma.highScore.count({
-        where: { 
-          userId: gameUuid,
-          createdAt: {
-            gte: gteTime,
-            lt: koreaEndUTC
-          }
-        }
-      }),
-      // quest_progress 테이블에서 저장된 퀘스트 진행도 조회
-      prisma.questProgress.findMany({
-        where: { userId: gameUuid }
-      })
-    ]);
-
-    // 개발 환경에서 로그 출력
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📊 /api/quests 게임 통계:', {
-        totalGames: highScoreResult._count,
-        todayGameCount: todayGameCount,
-        koreaStartUTC: koreaStartUTC.toISOString(),
-        koreaEndUTC: koreaEndUTC.toISOString()
-      });
-    }
-
-    const quests = await Promise.all(QUEST_CATALOG.map(async (quest) => {
-      let progress = 0;
-
-      // 플랫폼 미연동 상태에서는 모든 진행도를 0으로 설정
-      if (!isLinked) {
-        progress = 0;
-      } else {
-        // 연동된 상태에서만 실제 진행도 계산
-        switch (quest.id) {
-        case '1': // 첫 게임 플레이
-          progress = highScoreResult._count > 0 ? 1 : 0;
-          break;
-        case '2': // 1000점 달성 (최고 점수 기준)
-          progress = Math.min(highScoreResult._max.score || 0, 1000);
-          break;
-        case '3': // 5000점 달성 (최고 점수 기준)
-          progress = Math.min(highScoreResult._max.score || 0, 5000);
-          break;
-        case '4': // 10000점 달성 (최고 점수 기준)
-          progress = Math.min(highScoreResult._max.score || 0, 10000);
-          break;
-        case '5': // 10라인 클리어
-          progress = Math.min(highScoreResult._sum.lines || 0, 10);
-          break;
-        case '6': // 50라인 클리어
-          progress = Math.min(highScoreResult._sum.lines || 0, 50);
-          break;
-        case '7': // 5레벨 달성 (최고 레벨 기준)
-          progress = Math.min(highScoreResult._max.level || 0, 5);
-          break;
-        case '8': // 10레벨 달성 (최고 레벨 기준)
-          progress = Math.min(highScoreResult._max.level || 0, 10);
-          break;
-        case '9': // 일일 5회 게임 플레이
-          // quest_progress에서 저장된 데이터 사용 (상한 적용)
-          const quest9Progress = questProgressData.find(qp => qp.catalogId === '9');
-          progress = quest9Progress ? Math.min(quest9Progress.progress, 5) : Math.min(todayGameCount, 5);
-          break;
-        case '10': // 일일 20회 게임 플레이
-          // quest_progress에서 저장된 데이터 사용 (상한 적용)
-          const quest10Progress = questProgressData.find(qp => qp.catalogId === '10');
-          progress = quest10Progress ? Math.min(quest10Progress.progress, 20) : Math.min(todayGameCount, 20);
-          break;
-        case '12': // 7일 연속 출석체크
-          // 연속 출석일 계산을 위해 출석 기록 조회
-          const attendanceRecords = await prisma.attendanceRecord.findMany({
-            where: { userId: gameUuid },
-            orderBy: { date: 'desc' }
-          });
-          
-          // 연속 출석일 계산 (quest-utils의 calculateConsecutiveDays와 동일한 로직)
-          let consecutiveDays = 0;
-          if (attendanceRecords.length > 0) {
-            const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
-            
-            // 오늘 출석했는지 확인
-            const hasTodayAttendance = attendanceRecords.some(record => record.date === todayStr);
-            if (hasTodayAttendance) {
-              consecutiveDays = 1; // 오늘 출석했으므로 1부터 시작
-              
-              // 어제부터 역순으로 연속 출석 확인
-              const checkDate = new Date(today);
-              for (let i = 1; i < attendanceRecords.length; i++) {
-                checkDate.setDate(checkDate.getDate() - 1);
-                const expectedDateStr = checkDate.toISOString().split('T')[0];
-                
-                // 해당 날짜에 출석 기록이 있는지 확인
-                const hasAttendanceOnDate = attendanceRecords.some(record => record.date === expectedDateStr);
-                
-                if (hasAttendanceOnDate) {
-                  consecutiveDays++;
-                } else {
-                  break; // 연속이 끊어짐
-                }
-              }
-            }
-          }
-          progress = Math.min(consecutiveDays, 7);
-          break;
-        default:
-          progress = 0;
-        }
-      }
-
-      // 플랫폼 보상 정보 매핑
-      let claimValue = undefined;
-      let claimSymbol = undefined;
-      
-      // 9번, 10번 퀘스트는 특별한 레플 퀘스트 보상 문구 사용
-      if (quest.id === '9') {
-        claimValue = '레플 퀘스트!! 1등 50BORA, 2등: 20BORA 3등: 10BORA, 4등: 꽝!!';
-        claimSymbol = 'REPL';
-      } else if (quest.id === '10') {
-        claimValue = '레플 퀘스트!! 1등 100BORA, 2등: 50BORA 3등: 20BORA, 4등: 꽝!!';
-        claimSymbol = 'REPL';
-      } else if (platformRewards) {
-        const platformQuest = platformRewards.find((pq: { title: string; claimValue: string; claimSymbol: string }) => pq.title === quest.platformTitle);
-        if (platformQuest) {
-          claimValue = platformQuest.claimValue;
-          claimSymbol = platformQuest.claimSymbol;
-        }
-      }
-
-      const capped = Math.min(progress, quest.maxProgress);
-      return {
-        id: quest.id,
-        title: quest.title,
-        description: quest.description,
-        type: quest.type,
-        progress: capped,
-        maxProgress: quest.maxProgress,
-        reward: quest.reward,
-        isCompleted: capped >= quest.maxProgress,
-        expiresAt: undefined,
-        createdAt: new Date(),
-        // 플랫폼 보상 정보 추가
-        claimValue,
-        claimSymbol
-      };
-    }));
-
-    return quests;
-  } catch (error) {
-    console.error('실시간 퀘스트 진행도 계산 중 오류:', error);
-    // 오류 발생 시 빈 배열 반환
-    return [];
-  }
-}
-
 export async function GET(request: NextRequest) {
   try {
     // Prisma 클라이언트 검증
     if (!prisma) {
-      console.error('Prisma client is not initialized');
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.SERVICE_UNAVAILABLE,
-        '데이터베이스 연결 오류'
+        '데이터베이스 연결이 없습니다.'
       );
       return NextResponse.json(
         errorResponse,
@@ -454,49 +153,25 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const gameUuid = searchParams.get('gameUuid');
-    const userId = searchParams.get('userId'); // fallback
+    const gameUuidParam = searchParams.get('gameUuid');
 
-    console.log('Quest API called with gameUuid:', gameUuid, 'userId:', userId);
-
-    let parsedGameUuid: number;
-
-    if (gameUuid) {
-      // gameUuid가 있으면 우선 사용
-      parsedGameUuid = Number.parseInt(gameUuid, 10);
-    } else if (userId) {
-      // userId가 있으면 사용자 정보에서 uuid 추출
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { uuid: true }
-      });
-      
-      if (!user) {
-        const errorResponse = createErrorResponse(
-          API_ERROR_CODES.INVALID_USER,
-          '존재하지 않는 유저'
-        );
-        return NextResponse.json(
-          errorResponse,
-          { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
-        );
-      }
-      parsedGameUuid = user.uuid;
-    } else {
+    if (!gameUuidParam) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
-        'gameUuid 또는 userId가 필요합니다.'
+        '게임 UUID가 필요합니다.'
       );
       return NextResponse.json(
         errorResponse,
         { status: getErrorStatusCode(API_ERROR_CODES.INVALID_USER) }
       );
     }
+
+    const parsedGameUuid = Number.parseInt(gameUuidParam, 10);
 
     if (!Number.isFinite(parsedGameUuid)) {
       const errorResponse = createErrorResponse(
         API_ERROR_CODES.INVALID_USER,
-        '유효하지 않은 gameUuid입니다.'
+        '게임 UUID는 숫자여야 합니다.'
       );
       return NextResponse.json(
         errorResponse,
@@ -504,62 +179,81 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 카탈로그 방식: 연동 상태와 무관하게 퀘스트 목록 제공
-    // const quests = await mysqlGameStore.getCatalogWithProgress(parsedGameUuid);
+    // 플랫폼 보상 정보 가져오기 (실패해도 계속 진행)
+    let platformRewards = null;
+    try {
+      platformRewards = await fetchPlatformRewards();
+      console.log('플랫폼 보상 정보 조회 결과:', platformRewards);
+      console.log('플랫폼 보상 정보 개수:', platformRewards?.length);
+      if (platformRewards && platformRewards.length > 0) {
+        console.log('첫 번째 플랫폼 보상 정보:', platformRewards[0]);
+        // 9번, 10번 퀘스트 보상 정보 확인
+        const quest9 = platformRewards.find((r: PlatformReward) => r.title === 'PLAY_GAMES_5');
+        const quest10 = platformRewards.find((r: PlatformReward) => r.title === 'PLAY_GAMES_20');
+        console.log('9번 퀘스트 플랫폼 보상:', quest9);
+        console.log('10번 퀘스트 플랫폼 보상:', quest10);
+      }
+    } catch (error) {
+      console.warn('플랫폼 보상 정보 조회 실패, 기본 보상으로 진행:', error);
+    }
     
-    // 실시간 데이터로 퀘스트 진행도 계산 (quest/check와 동일한 로직)
-    const quests = await getRealTimeQuestProgress(parsedGameUuid);
+    // quest_progress 테이블에서 직접 진행도 조회
+    const quests = await mysqlGameStore.getCatalogWithProgress(parsedGameUuid);
     
-    console.log('Retrieved real-time quests for gameUuid:', parsedGameUuid, 'count:', quests.length);
+    console.log('Retrieved quests for gameUuid:', parsedGameUuid, 'count:', quests.length);
+    
+    // 플랫폼 보상 정보를 퀘스트에 매핑
+    const questsWithRewards = quests.map(quest => {
+      const platformReward = platformRewards?.find((r: PlatformReward) => r.title === quest.title);
+      console.log(`🔍 퀘스트 매칭 시도:`, {
+        questTitle: quest.title,
+        questId: quest.id,
+        platformReward: platformReward ? {
+          title: platformReward.title,
+          claimValue: platformReward.claimValue,
+          claimSymbol: platformReward.claimSymbol
+        } : null
+      });
+      
+      // 모든 퀘스트는 플랫폼 API에서 받아온 값 우선 사용
+      let claimValue = platformReward?.claimValue || null;
+      let claimSymbol = platformReward?.claimSymbol || null;
+      
+      // 플랫폼 API 호출이 실패한 경우 하드코딩된 값 사용
+      if (!claimValue && !claimSymbol) {
+        if (quest.id === '9') {
+          claimValue = '50.00';
+          claimSymbol = 'BORA';
+        } else if (quest.id === '10') {
+          claimValue = '100.00';
+          claimSymbol = 'BORA';
+        } else {
+          claimValue = '5';
+          claimSymbol = 'BORA';
+        }
+      }
+      
+      return {
+        ...quest,
+        claimValue,
+        claimSymbol
+      };
+    });
     
     // 플랫폼 보상 정보 로깅
-    quests.forEach(quest => {
-      if (quest.claimValue && quest.claimSymbol) {
-        console.log(`🎁 퀘스트 ${quest.id} 플랫폼 보상:`, {
-          title: quest.title,
-          claimValue: quest.claimValue,
-          claimSymbol: quest.claimSymbol
-        });
+    questsWithRewards.forEach(quest => {
+      if (quest.claimSymbol) {
+        console.log(`퀘스트 ${quest.id} 플랫폼 보상 정보:`, quest.claimSymbol);
       } else {
-        console.log(`📝 퀘스트 ${quest.id} 기본 보상:`, {
-          title: quest.title,
-          reward: quest.reward
-        });
+        console.log(`퀘스트 ${quest.id} 기본 보상:`, quest.reward);
       }
     });
 
-    // 퀘스트 참여 정보 조회 (연동된 유저만)
-    const [platformLink, participation] = await Promise.all([
-      prisma.platformLink.findUnique({
-        where: { gameUuid: parsedGameUuid },
-        select: { isActive: true }
-      }),
-      prisma.questParticipation.findFirst({
-        where: { gameUuid: parsedGameUuid },
-        select: { startDate: true }
-      })
-    ]);
-
-    const isLinked = Boolean(platformLink?.isActive);
-    
-    const result = {
-      quests,
-      isLinked,
-      participation: participation ? {
-        isParticipating: true,
-        startDate: participation.startDate.getTime(),
-        startDateFormatted: participation.startDate.toISOString(),
-      } : {
-        isParticipating: false,
-        startDate: null,
-        startDateFormatted: null,
-      },
-    };
-
-    const successResponse = createSuccessResponse(result);
+    const successResponse = createSuccessResponse(questsWithRewards);
     return NextResponse.json(successResponse);
+
   } catch (error) {
-    console.error('Get quests error:', error);
+    console.error('퀘스트 조회 중 오류:', error);
     const errorResponse = createErrorResponse(
       API_ERROR_CODES.SERVICE_UNAVAILABLE,
       '퀘스트 조회 중 오류가 발생했습니다.'

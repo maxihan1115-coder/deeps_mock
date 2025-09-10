@@ -39,8 +39,10 @@
 - `POST /api/auth/login` - 로그인
 
 ### 퀘스트
-- `GET /api/quests?userId={userId}` - 퀘스트 조회
-- `POST /api/quests/progress` - 퀘스트 진행도 업데이트
+- `GET /api/quests?gameUuid={gameUuid}` - 퀘스트 조회 (quest_progress 테이블에서 직접 조회)
+- `POST /api/quest/check` - 퀘스트 달성 여부 확인 (quest_progress 테이블에서 직접 조회)
+- `GET /api/quest/list` - 퀘스트 목록 조회
+- `POST /api/game/over` - 게임 종료 시 퀘스트 진행도 자동 업데이트
 
 ### 계정 연동
 - `GET /api/account-link/request-code?uuid={uuid}` - 임시 코드 요청

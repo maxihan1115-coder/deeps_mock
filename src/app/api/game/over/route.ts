@@ -77,9 +77,9 @@ export async function POST(request: NextRequest) {
     const highScoreResult = await mysqlGameStore.saveHighScore(gameUuid, score, level, lines);
     console.log('✅ 하이스코어 저장 완료:', highScoreResult);
 
-    // 2. 플랫폼 연동 상태 확인 후 일일 게임 플레이 퀘스트 업데이트 (9/10번)
+    // 2. 플랫폼 연동 상태 확인 후 모든 관련 퀘스트 업데이트
     console.log('🎯 플랫폼 연동 상태 확인 및 퀘스트 업데이트 시작...');
-    let questResults: (Quest | null)[] = [null, null];
+    const questResults: { [key: string]: Quest | null } = {};
     
     try {
       const platformLink = await prisma.platformLink.findUnique({
@@ -88,11 +88,63 @@ export async function POST(request: NextRequest) {
       });
 
       if (platformLink && platformLink.isActive) {
-        questResults = await Promise.all([
+        // 일일 게임 플레이 퀘스트 (9/10번)
+        const dailyQuestResults = await Promise.all([
           mysqlGameStore.incrementDailyCatalogProgress(gameUuid, '9'),
           mysqlGameStore.incrementDailyCatalogProgress(gameUuid, '10')
         ]);
-        console.log('✅ 일일 퀘스트 업데이트 완료:', questResults);
+        questResults.quest9 = dailyQuestResults[0];
+        questResults.quest10 = dailyQuestResults[1];
+
+        // 점수/레벨/라인 관련 퀘스트 (1~8번) 업데이트
+        const scoreLevelLineQuests = await Promise.all([
+          // 1번: 첫 게임 플레이 (게임 수가 1개 이상이면 완료)
+          mysqlGameStore.upsertQuestProgress(gameUuid, '1', 1),
+          
+          // 2번: 1000점 달성
+          mysqlGameStore.upsertQuestProgress(gameUuid, '2', Math.min(score, 1000)),
+          
+          // 3번: 5000점 달성
+          mysqlGameStore.upsertQuestProgress(gameUuid, '3', Math.min(score, 5000)),
+          
+          // 4번: 10000점 달성
+          mysqlGameStore.upsertQuestProgress(gameUuid, '4', Math.min(score, 10000)),
+          
+          // 5번: 10라인 클리어 (누적 라인 수 조회 필요)
+          (async () => {
+            const totalLines = await prisma.highScore.aggregate({
+              where: { userId: gameUuid },
+              _sum: { lines: true }
+            });
+            return mysqlGameStore.upsertQuestProgress(gameUuid, '5', Math.min(totalLines._sum.lines || 0, 10));
+          })(),
+          
+          // 6번: 50라인 클리어 (누적 라인 수 조회 필요)
+          (async () => {
+            const totalLines = await prisma.highScore.aggregate({
+              where: { userId: gameUuid },
+              _sum: { lines: true }
+            });
+            return mysqlGameStore.upsertQuestProgress(gameUuid, '6', Math.min(totalLines._sum.lines || 0, 50));
+          })(),
+          
+          // 7번: 5레벨 달성
+          mysqlGameStore.upsertQuestProgress(gameUuid, '7', Math.min(level, 5)),
+          
+          // 8번: 10레벨 달성
+          mysqlGameStore.upsertQuestProgress(gameUuid, '8', Math.min(level, 10))
+        ]);
+
+        questResults.quest1 = scoreLevelLineQuests[0];
+        questResults.quest2 = scoreLevelLineQuests[1];
+        questResults.quest3 = scoreLevelLineQuests[2];
+        questResults.quest4 = scoreLevelLineQuests[3];
+        questResults.quest5 = await scoreLevelLineQuests[4];
+        questResults.quest6 = await scoreLevelLineQuests[5];
+        questResults.quest7 = scoreLevelLineQuests[6];
+        questResults.quest8 = scoreLevelLineQuests[7];
+
+        console.log('✅ 모든 퀘스트 업데이트 완료:', questResults);
       } else {
         console.log('⚠️ 플랫폼 미연동 상태 - 퀘스트 진행도 업데이트 건너뜀');
       }
@@ -103,10 +155,7 @@ export async function POST(request: NextRequest) {
     // 3. 응답 데이터 구성
     const responseData = {
       highScore: highScoreResult,
-      questUpdates: {
-        quest9: questResults[0],
-        quest10: questResults[1]
-      },
+      questUpdates: questResults,
       gameOver: {
         gameUuid,
         finalScore: score,

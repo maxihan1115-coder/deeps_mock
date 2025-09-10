@@ -169,53 +169,10 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   }, [userId, onHighScoreUpdate]);
 
 
-  // 퀘스트 진행도 업데이트 (quest_progress 시스템 사용)
-  const updateQuestProgress = useCallback(async (questId: string, progress: number) => {
-    try {
-      // quest_progress 시스템을 사용하여 퀘스트 진행도 업데이트
-      // 실제로는 게임 종료 시 /api/quests API가 자동으로 진행도를 계산하므로
-      // 여기서는 로그만 출력
-      console.log(`퀘스트 진행도 업데이트: ${questId} = ${progress}`);
-    } catch (error) {
-      console.error('퀘스트 진행도 업데이트 오류:', error);
-    }
-  }, []);
+  // 퀘스트 진행도는 게임 종료 시 서버에서 자동으로 업데이트됩니다.
 
 
-  // 점수 관련 퀘스트 체크
-  const checkScoreQuests = useCallback((score: number) => {
-    if (!isLinked) return;
-    
-    if (score >= 1000) {
-      updateQuestProgress(QUEST_IDS.SCORE_1000, 1);
-    }
-    if (score >= 5000) {
-      updateQuestProgress(QUEST_IDS.SCORE_5000, 1);
-    }
-    if (score >= 10000) {
-      updateQuestProgress(QUEST_IDS.SCORE_10000, 1);
-    }
-  }, [isLinked, updateQuestProgress]);
-
-  // 라인 제거 관련 퀘스트 체크
-  const checkLinesQuests = useCallback((totalLines: number) => {
-    if (!isLinked) return;
-    
-    updateQuestProgress(QUEST_IDS.CLEAR_LINES_10, Math.min(totalLines, 10));
-    updateQuestProgress(QUEST_IDS.CLEAR_LINES_50, Math.min(totalLines, 50));
-  }, [isLinked, updateQuestProgress]);
-
-  // 레벨 관련 퀘스트 체크
-  const checkLevelQuests = useCallback((level: number) => {
-    if (!isLinked) return;
-    
-    if (level >= 5) {
-      updateQuestProgress(QUEST_IDS.REACH_LEVEL_5, 1);
-    }
-    if (level >= 10) {
-      updateQuestProgress(QUEST_IDS.REACH_LEVEL_10, 1);
-    }
-  }, [isLinked, updateQuestProgress]);
+  // 퀘스트 체크는 게임 종료 시 서버에서 자동으로 처리됩니다.
 
 
 
@@ -343,10 +300,6 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         console.error('게임오버 API 호출 실패:', response.status, errorText);
         // API 실패 시 기존 방식으로 폴백
         await saveHighScore(score, level, lines);
-        await Promise.all([
-          updateQuestProgress(QUEST_IDS.PLAY_GAMES_5, 1),
-          updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, 1)
-        ]);
       } else {
         const result = await response.json();
         console.log('✅ 게임오버 API 호출 성공:', result);
@@ -365,16 +318,12 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       // 오류 발생 시 기존 방식으로 폴백
       try {
         await saveHighScore(score, level, lines);
-        await Promise.all([
-          updateQuestProgress(QUEST_IDS.PLAY_GAMES_5, 1),
-          updateQuestProgress(QUEST_IDS.PLAY_GAMES_20, 1)
-        ]);
       } catch (fallbackError) {
         console.error('폴백 처리도 실패:', fallbackError);
       }
       onGameOverRef.current();
     }
-  }, [userId, onHighScoreUpdate, saveHighScore, updateQuestProgress]);
+  }, [userId, onHighScoreUpdate, saveHighScore]);
 
   // 게임 상태 업데이트
   const updateGame = useCallback(async () => {
@@ -412,10 +361,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
               onLinesUpdateRef.current(newState.lines);
             }, 0);
             
-            // 퀘스트 체크 (점수, 라인, 레벨)
-            checkScoreQuests(newState.score);
-            checkLinesQuests(newState.lines);
-            checkLevelQuests(newState.level);
+            // 퀘스트 체크는 게임 종료 시 서버에서 자동으로 처리됩니다.
           }
           
           // 다음 블록 생성
@@ -446,7 +392,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       
       return newState;
     });
-  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests, handleGameOver]);
+  }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, handleGameOver]);
 
   // 키보드 이벤트 처리
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -527,10 +473,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                 onLinesUpdateRef.current(newState.lines);
               }, 0);
               
-              // 퀘스트 체크 (점수, 라인, 레벨)
-              checkScoreQuests(newState.score);
-              checkLinesQuests(newState.lines);
-              checkLevelQuests(newState.level);
+              // 퀘스트 체크는 게임 종료 시 서버에서 자동으로 처리됩니다.
             }
 
             // 하드 드롭 보너스 점수 (떨어진 거리 * 2)
@@ -571,7 +514,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       
       return newState;
     });
-  }, [gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, checkScoreQuests, checkLinesQuests, checkLevelQuests, handleGameOver]);
+  }, [gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, handleGameOver]);
 
   // 게임 시작
   const startGame = () => {
@@ -588,10 +531,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       isPaused: false,
     }));
     
-    // 첫 게임 퀘스트 체크 (링크된 경우에만)
-    if (isLinked) {
-      updateQuestProgress(QUEST_IDS.FIRST_GAME, 1);
-    }
+    // 첫 게임 퀘스트는 게임 종료 시 서버에서 자동으로 체크됩니다.
   };
 
   // 게임 시작/일시정지
@@ -704,10 +644,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             onLinesUpdateRef.current(newState.lines);
           }, 0);
           
-          // 퀘스트 체크
-          checkScoreQuests(newState.score);
-          checkLinesQuests(newState.lines);
-          checkLevelQuests(newState.level);
+          // 퀘스트 체크는 게임 종료 시 서버에서 자동으로 처리됩니다.
         }
         
         // 하드 드롭 점수 추가
@@ -790,7 +727,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
     
     setTouchStart(null);
     setTouchEnd(null);
-  }, [gameState.isGameOver, gameState.isPaused, touchStart, touchEnd, isValidPosition, placeBlock, clearLines, calculateScore, checkScoreQuests, checkLinesQuests, checkLevelQuests, handleGameOver]);
+  }, [gameState.isGameOver, gameState.isPaused, touchStart, touchEnd, isValidPosition, placeBlock, clearLines, calculateScore, handleGameOver]);
 
   // 키보드 이벤트 리스너
   useEffect(() => {
