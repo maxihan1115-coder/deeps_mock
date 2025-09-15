@@ -332,14 +332,34 @@ class MySQLGameStore {
 
   // 하이스코어 관련 메서드
   async saveHighScore(userId: number, score: number, level: number, lines: number): Promise<void> {
-    await prisma.highScore.create({
-      data: {
-        userId,
-        score,
-        level,
-        lines,
-      },
+    // 사용자별로 1건만 유지하며, 최고 점수만 기록
+    const existing = await prisma.highScore.findFirst({
+      where: { userId },
+      orderBy: { score: 'desc' },
     });
+
+    if (!existing) {
+      const created = await prisma.highScore.create({
+        data: { userId, score, level, lines },
+      });
+      // 혹시 존재하는 중복 레코드 정리
+      await prisma.highScore.deleteMany({ where: { userId, NOT: { id: created.id } } });
+      return;
+    }
+
+    // 새 점수가 더 높을 때만 업데이트
+    if (score > existing.score) {
+      const updated = await prisma.highScore.update({
+        where: { id: existing.id },
+        data: { score, level, lines },
+      });
+      // 중복 레코드 정리
+      await prisma.highScore.deleteMany({ where: { userId, NOT: { id: updated.id } } });
+      return;
+    }
+
+    // 점수가 낮거나 같으면 기존 최고 점수 유지, 그리고 중복 레코드가 있다면 정리
+    await prisma.highScore.deleteMany({ where: { userId, NOT: { id: existing.id } } });
   }
 
   async getHighScore(userId: number): Promise<{ score: number; level: number; lines: number } | null> {
