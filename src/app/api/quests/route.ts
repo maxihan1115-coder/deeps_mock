@@ -30,6 +30,7 @@ async function fetchPlatformRewards(): Promise<PlatformReward[] | null> {
     const requestHeaders = {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
+      'Accept-Language': 'en',
       'BAPP-AUTH-TOKEN': apiKey
     };
 
