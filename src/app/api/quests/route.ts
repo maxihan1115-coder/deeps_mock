@@ -6,7 +6,7 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
-import { shouldResetQuest, getCurrentKST, getEligibleStartTime } from '@/lib/quest-utils';
+import { shouldResetQuest, getCurrentKST, getEligibleStartTime, getTodayMidnightKST } from '@/lib/quest-utils';
 import { mysqlGameStore } from '@/lib/mysql-store';
 
 // 플랫폼 보상 정보 타입 정의
@@ -100,39 +100,39 @@ async function ensureAllQuestProgress(gameUuid: number) {
   }
 }
 
-// Daily Quest 초기화 함수
+// Daily Quest 초기화 함수 (모든 유저 대상)
 async function resetDailyQuestsIfNeeded(gameUuid: number) {
   try {
-    // Daily Quest 진행도 조회
-    const dailyQuests = await prisma.questProgress.findMany({
+    const currentKST = getCurrentKST();
+    const todayMidnight = getTodayMidnightKST();
+    
+    // 오늘 자정 이후에 이미 초기화된 퀘스트가 있는지 확인
+    const alreadyResetToday = await prisma.questProgress.findFirst({
       where: {
-        userId: gameUuid,
-        catalogId: { in: ['9', '10'] } // Daily Quest IDs
+        catalogId: { in: ['9', '10'] },
+        updatedAt: { gte: todayMidnight }
       }
     });
 
-    const currentKST = getCurrentKST();
-    
-    for (const quest of dailyQuests) {
-      // 마지막 업데이트 시간이 오늘 자정 이전이면 초기화
-      if (shouldResetQuest('daily', quest.updatedAt)) {
-        await prisma.questProgress.update({
-          where: {
-            userId_catalogId: {
-              userId: gameUuid,
-              catalogId: quest.catalogId
-            }
-          },
-          data: {
-            progress: 0,
-            isCompleted: false,
-            updatedAt: currentKST
-          }
-        });
-        
-        console.log(`Daily Quest ${quest.catalogId} 초기화 완료 (UUID: ${gameUuid})`);
-      }
+    // 오늘 이미 초기화되었다면 스킵
+    if (alreadyResetToday) {
+      console.log('Daily Quest는 이미 오늘 초기화되었습니다.');
+      return;
     }
+
+    // 모든 유저의 9번, 10번 퀘스트를 한 번에 초기화
+    const resetResult = await prisma.questProgress.updateMany({
+      where: {
+        catalogId: { in: ['9', '10'] }
+      },
+      data: {
+        progress: 0,
+        isCompleted: false,
+        updatedAt: currentKST
+      }
+    });
+    
+    console.log(`Daily Quest 9번, 10번 초기화 완료 - ${resetResult.count}개 퀘스트 초기화됨`);
   } catch (error) {
     console.error('Daily Quest 초기화 오류:', error);
   }
@@ -196,6 +196,9 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       console.warn('플랫폼 보상 정보 조회 실패, 기본 보상으로 진행:', error);
     }
+    
+    // Daily 퀘스트 초기화 확인 및 실행
+    await resetDailyQuestsIfNeeded(parsedGameUuid);
     
     // quest_progress 테이블에서 직접 진행도 조회
     const quests = await mysqlGameStore.getCatalogWithProgress(parsedGameUuid);
