@@ -71,17 +71,33 @@ class MySQLGameStore {
     const catalog = await prisma.questCatalog.findUnique({ where: { id: catalogId } });
     if (!catalog) return null;
     const nextProgress = Math.min(progress, catalog.maxProgress);
+
+    // REACH_LEVEL, SCORE 계열은 기존 진행도보다 작거나 같으면 덮어쓰지 않음
+    const isReachLevel = catalog.title.startsWith('REACH_LEVEL');
+    const isScoreQuest = catalog.title.startsWith('SCORE_');
+    const existing = await prisma.questProgress.findUnique({
+      where: { userId_catalogId: { userId: gameUuid, catalogId } },
+    });
+
+    const finalProgress = (() => {
+      if (!existing) return nextProgress;
+      if (isReachLevel || isScoreQuest) {
+        return Math.max(existing.progress, nextProgress);
+      }
+      return nextProgress;
+    })();
+
     const updated = await prisma.questProgress.upsert({
       where: { userId_catalogId: { userId: gameUuid, catalogId } },
       update: {
-        progress: nextProgress,
-        isCompleted: nextProgress >= catalog.maxProgress,
+        progress: finalProgress,
+        isCompleted: finalProgress >= catalog.maxProgress,
       },
       create: {
         userId: gameUuid,
         catalogId,
-        progress: nextProgress,
-        isCompleted: nextProgress >= catalog.maxProgress,
+        progress: finalProgress,
+        isCompleted: finalProgress >= catalog.maxProgress,
       },
     });
     const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
