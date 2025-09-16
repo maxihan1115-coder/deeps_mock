@@ -133,7 +133,7 @@ class MySQLGameStore {
 
     const kstStart = this.getKstStartOfToday();
     const eligibleStart = await getEligibleStartTime(gameUuid);
-    const gteDate = eligibleStart && eligibleStart > kstStart ? eligibleStart : kstStart;
+    const gteDate = eligibleStart || kstStart;
 
     // 실제 오늘 게임 플레이 횟수를 계산 (KST 기준)
     // 이미 하이스코어가 저장된 상태이므로 +1을 하지 않음
@@ -160,6 +160,60 @@ class MySQLGameStore {
         catalogId,
         progress: actualProgress,
         isCompleted: actualProgress >= catalog.maxProgress,
+      },
+    });
+
+    const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    return {
+      id: catalog.id,
+      title: catalog.title,
+      description: catalog.description,
+      type: typeMapping[catalog.type] as Quest['type'],
+      progress: updated.progress,
+      maxProgress: catalog.maxProgress,
+      reward: catalog.reward,
+      isCompleted: updated.isCompleted,
+      expiresAt: undefined,
+      createdAt: new Date(),
+    };
+  }
+
+  // 하이스코어와 무관하게 직접 퀘스트 진행도 증가
+  async incrementQuestProgressDirectly(gameUuid: number, catalogId: string): Promise<Quest | null> {
+    await this.ensureQuestCatalog();
+    const catalog = await prisma.questCatalog.findUnique({ where: { id: catalogId } });
+    if (!catalog) return null;
+
+    const kstStart = this.getKstStartOfToday();
+    const eligibleStart = await getEligibleStartTime(gameUuid);
+    const gteDate = eligibleStart || kstStart;
+
+    // 기존 진행도 조회
+    const existing = await prisma.questProgress.findUnique({
+      where: { userId_catalogId: { userId: gameUuid, catalogId } }
+    });
+
+    // 오늘 자정 이후의 진행도만 유효
+    const lastResetTime = existing?.updatedAt || new Date(0);
+    const shouldReset = lastResetTime < kstStart;
+    
+    let currentProgress = shouldReset ? 0 : (existing?.progress || 0);
+    
+    // 진행도 증가 (상한 적용)
+    currentProgress = Math.min(currentProgress + 1, catalog.maxProgress);
+
+    const updated = await prisma.questProgress.upsert({
+      where: { userId_catalogId: { userId: gameUuid, catalogId } },
+      update: {
+        progress: currentProgress,
+        isCompleted: currentProgress >= catalog.maxProgress,
+        updatedAt: new Date(),
+      },
+      create: {
+        userId: gameUuid,
+        catalogId,
+        progress: currentProgress,
+        isCompleted: currentProgress >= catalog.maxProgress,
       },
     });
 

@@ -88,10 +88,10 @@ export async function POST(request: NextRequest) {
       });
 
       if (platformLink && platformLink.isActive) {
-        // 일일 게임 플레이 퀘스트 (9/10번)
+        // 일일 게임 플레이 퀘스트 (9/10번) - 하이스코어와 무관하게 직접 카운트
         const dailyQuestResults = await Promise.all([
-          mysqlGameStore.incrementDailyCatalogProgress(gameUuid, '9'),
-          mysqlGameStore.incrementDailyCatalogProgress(gameUuid, '10')
+          mysqlGameStore.incrementQuestProgressDirectly(gameUuid, '9'),
+          mysqlGameStore.incrementQuestProgressDirectly(gameUuid, '10')
         ]);
         questResults.quest9 = dailyQuestResults[0];
         questResults.quest10 = dailyQuestResults[1];
