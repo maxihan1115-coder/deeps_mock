@@ -146,6 +146,12 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     }
   };
 
+  // 퀘스트 실패 상태 확인
+  const isQuestFailed = (quest: Quest) => {
+    // 백엔드에서 설정한 isFailed 플래그 사용
+    return quest.isFailed === true;
+  };
+
   // 점수 기반 퀘스트 자동 업데이트 제거 (무한 루프 방지)
   // useEffect(() => {
   //   if (currentScore > 0) {
@@ -273,75 +279,99 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             <div className="text-gray-500">퀘스트가 없습니다.</div>
           </div>
         ) : (
-          quests.map((quest) => (
-            <div key={quest.id} className="border rounded-lg p-3 space-y-2">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  {getQuestIcon(quest.type)}
-                  <span className="font-medium text-sm">{quest.title}</span>
-                </div>
-                <Badge variant={getQuestBadgeVariant(quest.type)} className="text-xs">
-                  {getQuestTypeName(quest.type)}
-                </Badge>
-              </div>
-              
-              <p className="text-xs text-gray-600">{quest.description}</p>
-              
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span>진행도</span>
-                  <span>{quest.progress} / {quest.maxProgress}</span>
-                </div>
-                <Progress 
-                  value={(quest.progress / quest.maxProgress) * 100} 
-                  className="h-2"
-                />
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">보상:</span>
-                  {quest.claimValue && quest.claimSymbol ? (
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium text-blue-600">
-                        {formatClaimValue(quest.claimValue)}
-                      </span>
-                      {quest.claimSymbol !== 'REPL' && (
-                        <span className="text-xs font-medium text-blue-500">
-                          {quest.claimSymbol}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-sm font-medium text-gray-500">
-                      {quest.reward} 포인트
+          quests.map((quest) => {
+            const isFailed = isQuestFailed(quest);
+            
+            return (
+              <div 
+                key={quest.id} 
+                className={`border rounded-lg p-3 space-y-2 ${isFailed ? 'bg-gray-100 opacity-60' : ''}`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    {getQuestIcon(quest.type)}
+                    <span className={`font-medium text-sm ${isFailed ? 'text-gray-600' : ''}`}>
+                      {quest.title}
                     </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={getQuestBadgeVariant(quest.type)} className="text-xs">
+                      {getQuestTypeName(quest.type)}
+                    </Badge>
+                    {isFailed && (
+                      <Badge variant="destructive" className="text-xs">
+                        실패
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                
+                <p className={`text-xs ${isFailed ? 'text-gray-500' : 'text-gray-600'}`}>
+                  {quest.description}
+                </p>
+                
+                {isFailed && (
+                  <p className="text-xs text-red-500 font-medium">
+                    30분 내에 완료하지 못했습니다
+                  </p>
+                )}
+                
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span>진행도</span>
+                    <span>{quest.progress} / {quest.maxProgress}</span>
+                  </div>
+                  <Progress 
+                    value={(quest.progress / quest.maxProgress) * 100} 
+                    className={`h-2 ${isFailed ? 'bg-gray-200' : ''}`}
+                  />
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">보상:</span>
+                    {quest.claimValue && quest.claimSymbol ? (
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-medium text-blue-600">
+                          {formatClaimValue(quest.claimValue)}
+                        </span>
+                        {quest.claimSymbol !== 'REPL' && (
+                          <span className="text-xs font-medium text-blue-500">
+                            {quest.claimSymbol}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm font-medium text-gray-500">
+                        {quest.reward} 포인트
+                      </span>
+                    )}
+                  </div>
+                  {quest.isCompleted && !isFailed && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default" className="text-xs bg-green-500">
+                        완료
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-6 px-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                        onClick={() => window.open('https://www.boradeeps.cc/quest', '_blank')}
+                      >
+                        보상받기
+                      </Button>
+                    </div>
                   )}
                 </div>
-                {quest.isCompleted && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="default" className="text-xs bg-green-500">
-                      완료
-                    </Badge>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs h-6 px-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                      onClick={() => window.open('https://www.boradeeps.cc/quest', '_blank')}
-                    >
-                      보상받기
-                    </Button>
+                
+                {quest.expiresAt && (
+                  <div className="text-xs text-gray-500">
+                    만료: {new Date(quest.expiresAt).toLocaleDateString()}
                   </div>
                 )}
               </div>
-              
-              {quest.expiresAt && (
-                <div className="text-xs text-gray-500">
-                  만료: {new Date(quest.expiresAt).toLocaleDateString()}
-                </div>
-              )}
-            </div>
-          ))
+            );
+          })
         )}
       </CardContent>
     </Card>

@@ -6,6 +6,7 @@ import {
   getErrorStatusCode,
   API_ERROR_CODES 
 } from '@/lib/api-errors';
+import { mysqlGameStore } from '@/lib/mysql-store';
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,11 +97,23 @@ export async function POST(request: NextRequest) {
       return updatedCurrency;
     });
 
+    // 골드 획득 시 퀘스트 13번 업데이트
+    let questUpdate = null;
+    if (type === 'GOLD' && amount > 0) {
+      try {
+        questUpdate = await mysqlGameStore.incrementGoldEarnQuestProgress(gameUuid, amount);
+      } catch (error) {
+        console.error('퀘스트 13번 업데이트 중 오류:', error);
+        // 퀘스트 업데이트 실패해도 재화 지급은 성공으로 처리
+      }
+    }
+
     const successResponse = createSuccessResponse({
       gold: result.gold,
       diamond: result.diamond,
       earnedAmount: amount,
-      earnedType: type
+      earnedType: type,
+      questUpdate: questUpdate
     });
 
     return NextResponse.json(successResponse);

@@ -28,6 +28,7 @@ class MySQLGameStore {
       { id: '9', title: 'PLAY_GAMES_5', description: '5게임 플레이', type: 'DAILY', maxProgress: 5, reward: 50 },
       { id: '10', title: 'PLAY_GAMES_20', description: '20게임 플레이', type: 'DAILY', maxProgress: 20, reward: 100 },
       { id: '12', title: 'DAILY_LOGIN', description: '7일 연속 출석체크', type: 'SINGLE', maxProgress: 7, reward: 10 },
+      { id: '13', title: 'GOLD_EARN_5000', description: '5000골드 획득 (30분 제한)', type: 'SINGLE', maxProgress: 5000, reward: 100 },
     ] as const;
 
     for (const q of catalog) {
@@ -66,12 +67,31 @@ class MySQLGameStore {
     // 진행도는 실시간으로 DB에서 조회 (캐싱하지 않음)
     const progresses = await prisma.questProgress.findMany({ where: { userId: gameUuid } });
     
+    // 13번 퀘스트의 경우 30분 제한 확인을 위해 사용자 정보 조회
+    let userCreatedAt: Date | null = null;
+    if (catalog.some(c => c.id === '13')) {
+      const user = await prisma.user.findUnique({
+        where: { uuid: gameUuid },
+        select: { createdAt: true }
+      });
+      userCreatedAt = user?.createdAt || null;
+    }
+    
     const progressByCatalog = new Map(progresses.map(p => [p.catalogId, p]));
     const typeMapping: Record<string, Quest['type']> = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' };
     return catalog
       .filter(c => c.id !== '11') // 11번 퀘스트(HARD_DROP_10) 숨김 처리
       .map(c => {
         const p = progressByCatalog.get(c.id);
+        
+        // 13번 퀘스트의 경우 30분 제한 확인
+        let isFailed = false;
+        if (c.id === '13' && userCreatedAt) {
+          const now = new Date();
+          const thirtyMinutesLater = new Date(userCreatedAt.getTime() + 30 * 60 * 1000);
+          isFailed = now > thirtyMinutesLater && !p?.isCompleted;
+        }
+        
         return {
           id: c.id,
           title: c.title,
@@ -81,6 +101,7 @@ class MySQLGameStore {
           maxProgress: c.maxProgress,
           reward: c.reward,
           isCompleted: Boolean(p?.isCompleted),
+          isFailed: isFailed,
           expiresAt: undefined,
           createdAt: new Date(),
         };
@@ -242,6 +263,101 @@ class MySQLGameStore {
       title: catalog.title,
       description: catalog.description,
       type: typeMapping[catalog.type] as Quest['type'],
+      progress: updated.progress,
+      maxProgress: catalog.maxProgress,
+      reward: catalog.reward,
+      isCompleted: updated.isCompleted,
+      expiresAt: undefined,
+      createdAt: new Date(),
+    };
+  }
+
+  // 골드 획득 퀘스트 진행도 증가 (13번 퀘스트 전용)
+  async incrementGoldEarnQuestProgress(gameUuid: number, earnedGold: number): Promise<Quest | null> {
+    await this.ensureQuestCatalog();
+    const catalog = await prisma.questCatalog.findUnique({ where: { id: '13' } });
+    if (!catalog) return null;
+
+    // 사용자 계정 생성 시간 확인
+    const user = await prisma.user.findUnique({
+      where: { uuid: gameUuid },
+      select: { createdAt: true }
+    });
+
+    if (!user) return null;
+
+    const now = new Date();
+    const thirtyMinutesLater = new Date(user.createdAt.getTime() + 30 * 60 * 1000);
+
+    // 30분이 경과된 경우 퀘스트 실패 처리
+    if (now > thirtyMinutesLater) {
+      // 기존 진행도 조회
+      const existing = await prisma.questProgress.findUnique({
+        where: { userId_catalogId: { userId: gameUuid, catalogId: '13' } }
+      });
+
+      // 30분 경과 시 실패 상태로 반환 (진행도는 유지)
+      return {
+        id: catalog.id,
+        title: catalog.title,
+        description: catalog.description,
+        type: 'single',
+        progress: existing?.progress || 0,
+        maxProgress: catalog.maxProgress,
+        reward: catalog.reward,
+        isCompleted: false, // 실패 상태
+        isFailed: true, // 실패 플래그 추가
+        expiresAt: undefined,
+        createdAt: new Date(),
+      };
+    }
+
+    // 기존 진행도 조회
+    const existing = await prisma.questProgress.findUnique({
+      where: { userId_catalogId: { userId: gameUuid, catalogId: '13' } }
+    });
+
+    // 이미 완료된 경우
+    if (existing && existing.isCompleted) {
+      return {
+        id: catalog.id,
+        title: catalog.title,
+        description: catalog.description,
+        type: 'single',
+        progress: existing.progress,
+        maxProgress: catalog.maxProgress,
+        reward: catalog.reward,
+        isCompleted: true,
+        expiresAt: undefined,
+        createdAt: new Date(),
+      };
+    }
+
+    // 진행도 증가
+    const currentProgress = existing?.progress || 0;
+    const newProgress = Math.min(currentProgress + earnedGold, catalog.maxProgress);
+    const isCompleted = newProgress >= catalog.maxProgress;
+
+    const updated = await prisma.questProgress.upsert({
+      where: { userId_catalogId: { userId: gameUuid, catalogId: '13' } },
+      update: {
+        progress: newProgress,
+        isCompleted: isCompleted,
+        updatedAt: new Date(),
+      },
+      create: {
+        userId: gameUuid,
+        catalogId: '13',
+        progress: newProgress,
+        isCompleted: isCompleted,
+      },
+    });
+
+    return {
+      id: catalog.id,
+      title: catalog.title,
+      description: catalog.description,
+      type: 'single',
       progress: updated.progress,
       maxProgress: catalog.maxProgress,
       reward: catalog.reward,

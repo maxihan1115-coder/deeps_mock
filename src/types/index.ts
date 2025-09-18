@@ -45,6 +45,7 @@ export interface Quest {
   maxProgress: number;
   reward: string | number;
   isCompleted: boolean;
+  isFailed?: boolean; // 퀘스트 실패 상태 (13번 퀘스트용)
   expiresAt?: Date;
   createdAt?: Date;
   lastResetTime?: Date;
