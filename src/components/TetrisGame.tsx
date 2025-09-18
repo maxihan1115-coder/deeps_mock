@@ -5,6 +5,7 @@ import { TetrisGameState, TetrisBlock } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Play, Pause, RotateCw, ArrowLeft, ArrowRight, ArrowDown } from 'lucide-react';
+import GameResultModal from '@/components/GameResultModal';
 
 // 테트리스 블록 모양 정의
 const TETRIS_SHAPES = [
@@ -26,20 +27,6 @@ const TETRIS_SHAPES = [
 
 const COLORS = ['#00f5ff', '#ffff00', '#a000f0', '#00f000', '#f00000', '#0000f0', '#ffa500'];
 
-// 퀘스트 ID 매핑
-const QUEST_IDS = {
-  FIRST_GAME: '1',
-  SCORE_1000: '2',
-  SCORE_5000: '3',
-  SCORE_10000: '4',
-  CLEAR_LINES_10: '5',
-  CLEAR_LINES_50: '6',
-  REACH_LEVEL_5: '7',
-  REACH_LEVEL_10: '8',
-  PLAY_GAMES_5: '9',
-  PLAY_GAMES_20: '10',
-  DAILY_LOGIN: '12'
-};
 
 interface TetrisGameProps {
   userId: number;  // gameUuid (숫자) - 플랫폼 연동용
@@ -53,6 +40,15 @@ interface TetrisGameProps {
 }
 
 export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver, onHighScoreUpdate, onPlatformLinkStatusChange, onGameStateChange }: TetrisGameProps) {
+  // 게임 결과 모달 상태
+  const [showGameResultModal, setShowGameResultModal] = useState(false);
+  const [isProcessingGameOver, setIsProcessingGameOver] = useState(false);
+  const [gameResult, setGameResult] = useState({
+    score: 0,
+    level: 1,
+    lines: 0,
+    earnedGold: 0
+  });
   const BOARD_WIDTH = 10;
   const BOARD_HEIGHT = 20;
   
@@ -279,6 +275,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   // 게임오버 처리 통합 함수
   const handleGameOver = useCallback(async (score: number, level: number, lines: number) => {
     try {
+      setIsProcessingGameOver(true);
       console.log('🎮 게임오버 API 호출 시작:', { gameUuid: userId, score, level, lines });
       
       // 게임오버 API 호출 (하이스코어 저장 + 퀘스트 업데이트 통합 처리)
@@ -300,6 +297,15 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         console.error('게임오버 API 호출 실패:', response.status, errorText);
         // API 실패 시 기존 방식으로 폴백
         await saveHighScore(score, level, lines);
+        
+        // 실패 시에도 모달 표시 (골드 없이)
+        setGameResult({
+          score,
+          level,
+          lines,
+          earnedGold: 0
+        });
+        setShowGameResultModal(true);
       } else {
         const result = await response.json();
         console.log('✅ 게임오버 API 호출 성공:', result);
@@ -308,6 +314,21 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         if (onHighScoreUpdate && result.payload?.highScore) {
           onHighScoreUpdate(result.payload.highScore.score, result.payload.highScore.level, result.payload.highScore.lines);
         }
+        
+        // 게임 결과 모달 표시
+        const earnedGold = result.payload?.earnedGold || 0;
+        setGameResult({
+          score,
+          level,
+          lines,
+          earnedGold
+        });
+        setShowGameResultModal(true);
+        
+            // 재화 잔액 업데이트
+            if (typeof (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance === 'function') {
+              (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
+            }
       }
       
       // 게임오버 콜백 호출
@@ -318,10 +339,21 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       // 오류 발생 시 기존 방식으로 폴백
       try {
         await saveHighScore(score, level, lines);
+        
+        // 실패 시에도 모달 표시 (골드 없이)
+        setGameResult({
+          score,
+          level,
+          lines,
+          earnedGold: 0
+        });
+        setShowGameResultModal(true);
       } catch (fallbackError) {
         console.error('폴백 처리도 실패:', fallbackError);
       }
       onGameOverRef.current();
+    } finally {
+      setIsProcessingGameOver(false);
     }
   }, [userId, onHighScoreUpdate, saveHighScore]);
 
@@ -924,7 +956,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           </div>
           
           {/* 게임 시작 전 오버레이 */}
-          {!isGameStarted && (
+          {!isGameStarted && !isProcessingGameOver && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center rounded-lg">
               <div className="text-center space-y-4 lg:space-y-6 px-4">
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
@@ -936,6 +968,21 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                 >
                   START
                 </Button>
+              </div>
+            </div>
+          )}
+
+          {/* 게임 종료 처리 중 로딩 오버레이 */}
+          {isProcessingGameOver && (
+            <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center rounded-lg">
+              <div className="text-center space-y-4 px-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">
+                  점수 집계 중...
+                </h2>
+                <p className="text-sm text-gray-300">
+                  골드 지급 및 퀘스트 업데이트를 진행하고 있습니다
+                </p>
               </div>
             </div>
           )}
@@ -1189,14 +1236,15 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             )}
           </div>
 
-          {gameState.isGameOver && (
-            <div className="text-center p-4 bg-red-100 rounded-lg">
-              <p className="font-bold text-red-600">게임 오버!</p>
-              <p className="text-sm text-red-500">최종 점수: {gameState.score}</p>
-            </div>
-          )}
         </CardContent>
       </Card>
+
+          {/* 게임 결과 모달 */}
+          <GameResultModal
+            isOpen={showGameResultModal}
+            onClose={() => setShowGameResultModal(false)}
+            gameResult={gameResult}
+          />
     </div>
   );
 }

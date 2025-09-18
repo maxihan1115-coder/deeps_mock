@@ -27,6 +27,9 @@ model User {
   highScores       HighScore[]
   questProgresses  QuestProgress[]
   questParticipations QuestParticipation[] // 추가
+  currencies       UserCurrency[]
+  transactions     CurrencyTransaction[]
+  shopPurchases    ShopPurchase[]
 
   @@map("users")
 }
@@ -154,6 +157,73 @@ model QuestParticipation {
   
   @@unique([gameUuid]) // gameUuid에 대한 고유 인덱스 추가
   @@map("quest_participation")
+}
+
+// 사용자 재화 정보
+model UserCurrency {
+  id        String   @id @default(uuid())
+  userId    Int      // User.uuid 참조
+  gold      Int      @default(0)      // 무료재화 (골드)
+  diamond   Int      @default(0)      // 유료재화 (다이아)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
+  
+  @@unique([userId])
+  @@map("user_currencies")
+}
+
+// 재화 거래 내역
+model CurrencyTransaction {
+  id          String   @id @default(uuid())
+  userId      Int      // User.uuid 참조
+  type        CurrencyType
+  amount      Int      // 양수: 획득, 음수: 소모
+  reason      String   // 거래 사유
+  gameScore   Int?     // 게임 점수 (골드 획득 시)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
+  
+  @@map("currency_transactions")
+}
+
+// 상점 아이템
+model ShopItem {
+  id          String   @id @default(uuid())
+  name        String   // 아이템 이름
+  description String?  // 아이템 설명
+  price       Int      // 가격
+  currency    CurrencyType // GOLD 또는 DIAMOND
+  isActive    Boolean  @default(true) // 판매 중인지 여부
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // 구매 내역
+  purchases   ShopPurchase[]
+  
+  @@map("shop_items")
+}
+
+// 상점 구매 내역
+model ShopPurchase {
+  id        String   @id @default(uuid())
+  userId    Int      // User.uuid 참조
+  itemId    String   // ShopItem.id 참조
+  price     Int      // 구매 가격
+  currency  CurrencyType // 사용한 재화 타입
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
+  item ShopItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  
+  @@map("shop_purchases")
+}
+
+enum CurrencyType {
+  GOLD
+  DIAMOND
 }
 
 enum QuestType {

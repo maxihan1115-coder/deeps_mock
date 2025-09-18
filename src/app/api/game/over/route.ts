@@ -77,7 +77,39 @@ export async function POST(request: NextRequest) {
     const highScoreResult = await mysqlGameStore.saveHighScore(gameUuid, score, level, lines);
     console.log('✅ 하이스코어 저장 완료:', highScoreResult);
 
-    // 2. 플랫폼 연동 상태 확인 후 모든 관련 퀘스트 업데이트
+    // 2. 골드 지급 (점수의 1/10)
+    const earnedGold = Math.floor(score / 10);
+    console.log('🪙 골드 지급 시작:', { score, earnedGold });
+    
+    let goldResult = null;
+    if (earnedGold > 0) {
+      try {
+        const goldResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/currency/earn`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            gameUuid,
+            type: 'GOLD',
+            amount: earnedGold,
+            reason: '게임 플레이 보상',
+            gameScore: score
+          })
+        });
+
+        if (goldResponse.ok) {
+          goldResult = await goldResponse.json();
+          console.log('✅ 골드 지급 완료:', goldResult);
+        } else {
+          console.error('❌ 골드 지급 실패:', goldResponse.status);
+        }
+      } catch (error) {
+        console.error('❌ 골드 지급 중 오류:', error);
+      }
+    }
+
+    // 3. 플랫폼 연동 상태 확인 후 모든 관련 퀘스트 업데이트
     console.log('🎯 플랫폼 연동 상태 확인 및 퀘스트 업데이트 시작...');
     const questResults: { [key: string]: Quest | null } = {};
     
@@ -152,10 +184,12 @@ export async function POST(request: NextRequest) {
       console.error('❌ 퀘스트 업데이트 중 오류:', error);
     }
 
-    // 3. 응답 데이터 구성
+    // 4. 응답 데이터 구성
     const responseData = {
       highScore: highScoreResult,
       questUpdates: questResults,
+      earnedGold: earnedGold,
+      goldResult: goldResult,
       gameOver: {
         gameUuid,
         finalScore: score,

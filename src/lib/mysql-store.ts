@@ -2,13 +2,20 @@ import { prisma } from './prisma';
 import { getEligibleStartTime } from '@/lib/quest-utils';
 import { User, AttendanceRecord, Quest, TetrisGameState } from '@/types';
 import { QuestType } from '@prisma/client';
+import { memoryCache, CACHE_KEYS } from '@/lib/cache';
 
 // SQLite용으로 수정된 저장소 (MySQL과 동일한 인터페이스)
 
 // MySQL 기반 데이터 저장소
 class MySQLGameStore {
-  // 카탈로그 보장: 존재하지 않으면 기본 12개를 upsert
+  // 카탈로그 보장: 존재하지 않으면 기본 12개를 upsert (캐싱 적용)
   async ensureQuestCatalog(): Promise<void> {
+    // 캐시에서 먼저 확인
+    const cachedCatalog = memoryCache.get<Array<{id: string; title: string; description: string; type: string; maxProgress: number; reward: number}>>(CACHE_KEYS.QUEST_CATALOG);
+    if (cachedCatalog) {
+      return; // 캐시에 있으면 DB 작업 생략
+    }
+
     const catalog = [
       { id: '1', title: 'FIRST_GAME', description: '첫 번째 테트리스 게임', type: 'SINGLE', maxProgress: 1, reward: 5 },
       { id: '2', title: 'SCORE_1000', description: '1000점 달성', type: 'SINGLE', maxProgress: 1000, reward: 5 },
@@ -37,16 +44,30 @@ class MySQLGameStore {
         },
       });
     }
+
+    // 캐시에 저장 (1시간 TTL - 카탈로그는 거의 변경되지 않음)
+    memoryCache.set(CACHE_KEYS.QUEST_CATALOG, catalog, 60 * 60 * 1000);
   }
 
   async getCatalogWithProgress(gameUuid: number): Promise<Quest[]> {
     await this.ensureQuestCatalog();
-    const [catalog, progresses] = await Promise.all([
-      prisma.questCatalog.findMany(),
-      prisma.questProgress.findMany({ where: { userId: gameUuid } }),
-    ]);
+    
+    // 카탈로그는 캐시에서 가져오기 (진행도는 실시간으로 DB에서)
+    let catalog;
+    const cachedCatalog = memoryCache.get<Array<{id: string; title: string; description: string; type: string; maxProgress: number; reward: number}>>(CACHE_KEYS.QUEST_CATALOG);
+    if (cachedCatalog) {
+      catalog = cachedCatalog;
+    } else {
+      catalog = await prisma.questCatalog.findMany();
+      // 캐시에 저장
+      memoryCache.set(CACHE_KEYS.QUEST_CATALOG, catalog, 60 * 60 * 1000);
+    }
+    
+    // 진행도는 실시간으로 DB에서 조회 (캐싱하지 않음)
+    const progresses = await prisma.questProgress.findMany({ where: { userId: gameUuid } });
+    
     const progressByCatalog = new Map(progresses.map(p => [p.catalogId, p]));
-    const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    const typeMapping: Record<string, Quest['type']> = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' };
     return catalog
       .filter(c => c.id !== '11') // 11번 퀘스트(HARD_DROP_10) 숨김 처리
       .map(c => {
@@ -55,7 +76,7 @@ class MySQLGameStore {
           id: c.id,
           title: c.title,
           description: c.description,
-          type: typeMapping[c.type] as Quest['type'],
+          type: typeMapping[c.type] || 'single',
           progress: p?.progress ?? 0,
           maxProgress: c.maxProgress,
           reward: c.reward,
@@ -100,7 +121,7 @@ class MySQLGameStore {
         isCompleted: finalProgress >= catalog.maxProgress,
       },
     });
-    const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    const typeMapping = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
     return {
       id: catalog.id,
       title: catalog.title,
@@ -163,7 +184,7 @@ class MySQLGameStore {
       },
     });
 
-    const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    const typeMapping = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
     return {
       id: catalog.id,
       title: catalog.title,
@@ -185,8 +206,6 @@ class MySQLGameStore {
     if (!catalog) return null;
 
     const kstStart = this.getKstStartOfToday();
-    const eligibleStart = await getEligibleStartTime(gameUuid);
-    const gteDate = eligibleStart || kstStart;
 
     // 기존 진행도 조회
     const existing = await prisma.questProgress.findUnique({
@@ -217,7 +236,7 @@ class MySQLGameStore {
       },
     });
 
-    const typeMapping = { SINGLE: 'once', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    const typeMapping = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
     return {
       id: catalog.id,
       title: catalog.title,

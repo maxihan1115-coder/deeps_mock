@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { LogOut, User, Gamepad2, Trophy, Link, Calendar, Award, BarChart3 } from 'lucide-react';
+import { LogOut, User, Gamepad2, Trophy, Link, Calendar, Award, BarChart3, ShoppingBag } from 'lucide-react';
+import CurrencyDisplay from '@/components/CurrencyDisplay';
+import ShopModal from '@/components/ShopModal';
 
 export default function GamePage() {
   return (
@@ -40,6 +42,7 @@ function GamePageContent() {
   const [activeTab, setActiveTab] = useState("game");
   const [gameState, setGameState] = useState<{score: number; level: number; lines: number; nextBlock: {shape: number[][]; color: string} | null} | null>(null);
   const [isGameStarted, setIsGameStarted] = useState(false);
+  const [showShopModal, setShowShopModal] = useState(false);
 
   // URL 파라미터에서 사용자 정보 확인
   useEffect(() => {
@@ -125,6 +128,20 @@ function GamePageContent() {
                   UUID: {currentUser.uuid}
                 </Badge>
               </div>
+
+              {/* 상점 아이콘 */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowShopModal(true)}
+                title="상점"
+                className="border-orange-300 hover:border-orange-400 hover:bg-orange-50"
+              >
+                <ShoppingBag className="w-4 h-4 text-orange-500" />
+              </Button>
+
+              {/* 재화 표시 */}
+              <CurrencyDisplay gameUuid={currentUser.uuid} />
               
               <Button
                 variant="outline"
@@ -323,6 +340,19 @@ function GamePageContent() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* 상점 모달 */}
+      <ShopModal
+        isOpen={showShopModal}
+        onClose={() => setShowShopModal(false)}
+        gameUuid={currentUser?.uuid || 0}
+            onPurchaseSuccess={() => {
+              // 재화 잔액 업데이트
+              if (typeof (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance === 'function') {
+                (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
+              }
+            }}
+      />
     </div>
   );
 }

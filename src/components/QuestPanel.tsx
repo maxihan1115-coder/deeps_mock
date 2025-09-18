@@ -23,22 +23,16 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   // 플랫폼 연동 상태 확인
   const checkPlatformLinkStatus = useCallback(async () => {
     try {
-      console.log('🔍 QuestPanel에서 플랫폼 연동 상태 확인 시작:', { gameUuid, userId });
-      
       const response = await fetch(`/api/platform-link/status?gameUuid=${gameUuid}`);
       const data = await response.json();
       
-      console.log('📡 QuestPanel 플랫폼 연동 상태 API 응답:', data);
-      
       if (data.success && data.payload?.isLinked) {
-        console.log('✅ QuestPanel 플랫폼 연동 상태: TRUE');
         setIsLinked(true);
       } else {
-        console.log('❌ QuestPanel 플랫폼 연동 상태: FALSE');
         setIsLinked(false);
       }
     } catch (error) {
-      console.error('❌ QuestPanel 플랫폼 연동 상태 확인 실패:', error);
+      console.error('플랫폼 연동 상태 확인 실패:', error);
       setIsLinked(false);
     }
   }, [gameUuid, userId]);
@@ -46,15 +40,10 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   // 퀘스트 목록 가져오기
   const fetchQuests = useCallback(async () => {
     try {
-      console.log('🔄 퀘스트 목록 가져오기 시작:', { gameUuid, userId });
-      
       const response = await fetch(`/api/quests?gameUuid=${gameUuid}`);
       const data = await response.json();
       
-      console.log('📡 퀘스트 목록 API 응답:', data);
-      
       if (data.success) {
-        console.log('✅ 퀘스트 목록 가져오기 성공:', data.payload);
         const questsData = data.payload || [];
         setError(null);
         
@@ -68,37 +57,14 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
         });
         
         setQuests(sortedQuests);
-        console.log('📊 퀘스트 데이터 상태:', {
-          questsCount: questsData.length || 0,
-          isLinked: data.payload.isLinked,
-          quests: questsData
-        });
-        
-        // 플랫폼 보상 정보 상세 로깅
-        questsData.forEach((quest: Quest) => {
-          if (quest.claimValue && quest.claimSymbol) {
-            console.log(`🎁 퀘스트 ${quest.id} 플랫폼 보상 확인:`, {
-              title: quest.title,
-              claimValue: quest.claimValue,
-              claimSymbol: quest.claimSymbol
-            });
-          } else {
-            console.log(`📝 퀘스트 ${quest.id} 기본 보상 확인:`, {
-              title: quest.title,
-              reward: quest.reward,
-              hasClaimValue: !!quest.claimValue,
-              hasClaimSymbol: !!quest.claimSymbol
-            });
-          }
-        });
       } else {
-        console.error('❌ 퀘스트 목록 가져오기 실패:', data.error);
+        console.error('퀘스트 목록 가져오기 실패:', data.error);
         setQuests([]);
         setIsLinked(false);
         setError(data.error || '퀘스트 조회에 실패했습니다.');
       }
     } catch (error) {
-      console.error('❌ 퀘스트 목록 가져오기 중 오류:', error);
+      console.error('퀘스트 목록 가져오기 중 오류:', error);
       setQuests([]);
       setIsLinked(false);
       setError('퀘스트 조회 중 오류가 발생했습니다.');
@@ -205,38 +171,33 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   //   }
   // }, [currentScore, quests]);
 
-  // 초기 연동 상태 확인 및 퀘스트 로드
+  // 초기 연동 상태 확인 및 퀘스트 로드 (병렬 처리)
   useEffect(() => {
     const initializePanel = async () => {
-      console.log('🚀 QuestPanel 초기화 시작');
-      // 먼저 플랫폼 연동 상태 확인
-      await checkPlatformLinkStatus();
-      // 그 다음 퀘스트 로드
-      await fetchQuests();
-      console.log('✅ QuestPanel 초기화 완료');
+      // 플랫폼 연동 상태 확인과 퀘스트 로드를 병렬로 실행
+      await Promise.all([
+        checkPlatformLinkStatus(),
+        fetchQuests()
+      ]);
     };
     
     if (gameUuid) {
       initializePanel();
     }
-  }, [gameUuid, fetchQuests, checkPlatformLinkStatus]); // fetchQuests와 checkPlatformLinkStatus를 의존성 배열에 추가
+  }, [gameUuid, fetchQuests, checkPlatformLinkStatus]);
 
   // 주기적으로 퀘스트 상태 새로고침 (연동된 유저만)
   useEffect(() => {
     if (!isLinked || !gameUuid) return;
     
-    console.log('🔄 QuestPanel 주기적 새로고침 시작 (30초 간격)');
-    
     const refreshInterval = setInterval(() => {
-      console.log('🔄 퀘스트 상태 자동 새로고침...');
       fetchQuests();
     }, 30000); // 30초마다 새로고침
     
     return () => {
-      console.log('🔄 QuestPanel 주기적 새로고침 정리');
       clearInterval(refreshInterval);
     };
-  }, [isLinked, gameUuid, fetchQuests]); // fetchQuests를 의존성 배열에 추가
+  }, [isLinked, gameUuid, fetchQuests]);
 
   if (isLoading) {
     return (
