@@ -100,10 +100,21 @@ async function handleQuestCheck(request: NextRequest) {
       const progress = questProgresses.find(p => p.catalogId === String(questId));
       const catalog = questCatalogs.find(c => c.id === String(questId));
       
-      if (!progress || !catalog) {
+      // catalog가 없으면 에러 처리
+      if (!catalog) {
         return {
           id: String(questId),
           totalTimes: 0,
+          currentTimes: 0,
+          complete: false
+        };
+      }
+
+      // progress가 없으면 기본값으로 처리
+      if (!progress) {
+        return {
+          id: String(questId),
+          totalTimes: catalog.maxProgress,
           currentTimes: 0,
           complete: false
         };
