@@ -34,7 +34,13 @@ class MySQLGameStore {
     for (const q of catalog) {
       await prisma.questCatalog.upsert({
         where: { id: q.id },
-        update: {},
+        update: {
+          title: q.title,
+          description: q.description,
+          type: q.type as unknown as QuestType,
+          maxProgress: q.maxProgress,
+          reward: q.reward,
+        },
         create: {
           id: q.id,
           title: q.title,
