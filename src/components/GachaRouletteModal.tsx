@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AlertCircle, Gem } from 'lucide-react';
 
 interface GachaRouletteModalProps {
   isOpen: boolean;
@@ -36,8 +37,10 @@ export default function GachaRouletteModal({
 }: GachaRouletteModalProps) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLocked, setIsLocked] = useState(false); // 한번 클릭 후 재활성화 방지
   const [result, setResult] = useState<GachaResult | null>(null);
   const [currentHighlight, setCurrentHighlight] = useState(0);
+  const [showInsufficientModal, setShowInsufficientModal] = useState(false);
 
   // 룰렛 아이템들 (11개)
   const rouletteItems = gachaItem.gachaRewards.map(reward => ({
@@ -57,10 +60,11 @@ export default function GachaRouletteModal({
   }, [isSpinning, rouletteItems.length]);
 
   const handlePurchase = async () => {
-    if (isProcessing) return;
+    if (isProcessing || isLocked) return;
 
     setIsProcessing(true);
     setIsSpinning(true);
+    setIsLocked(true);
 
     try {
       console.log('🎰 가챠 구매 시작:', { gameUuid, gachaItemId: gachaItem.id });
@@ -90,7 +94,13 @@ export default function GachaRouletteModal({
       } else {
         console.error('❌ 가챠 구매 실패:', data.error);
         setIsSpinning(false);
-        alert(data.error || '가챠 구매에 실패했습니다.');
+        
+        // 다이아몬드 부족 에러인지 확인
+        if (data.error && data.error.includes('다이아몬드가 부족합니다')) {
+          setShowInsufficientModal(true);
+        } else {
+          alert(data.error || '가챠 구매에 실패했습니다.');
+        }
       }
     } catch (error) {
       console.error('❌ 가챠 구매 중 오류:', error);
@@ -178,13 +188,13 @@ export default function GachaRouletteModal({
             <div className="flex justify-center">
               <Button 
                 onClick={handlePurchase}
-                disabled={isProcessing}
+                disabled={isProcessing || isLocked}
                 className="px-8 py-3 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
               >
                 {isProcessing ? (
                   isSpinning ? '🎰 돌리는 중...' : '처리 중...'
                 ) : (
-                  '🎰 룰렛 돌리기'
+                  isLocked ? '완료됨' : '🎰 룰렛 돌리기'
                 )}
               </Button>
             </div>
@@ -232,6 +242,49 @@ export default function GachaRouletteModal({
           </div>
         )}
       </DialogContent>
+
+      {/* 다이아몬드 부족 모달 */}
+      <Dialog open={showInsufficientModal} onOpenChange={setShowInsufficientModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+              <AlertCircle className="w-6 h-6" />
+              다이아몬드 부족
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="text-center space-y-4 py-4">
+            <div className="flex items-center justify-center">
+              <AlertCircle className="w-12 h-12 text-red-500" />
+            </div>
+            
+            <div className="space-y-2">
+              <p className="text-lg font-semibold text-gray-800">
+                다이아몬드가 부족합니다
+              </p>
+              <p className="text-gray-600">
+                가챠를 구매하려면 <span className="font-bold text-blue-600">{gachaItem.price.toLocaleString()} 다이아몬드</span>가 필요합니다.
+              </p>
+            </div>
+            
+            <div className="bg-gray-100 rounded-lg p-4">
+              <div className="flex items-center justify-center gap-2 text-gray-600">
+                <Gem className="w-5 h-5" />
+                <span className="text-sm">게임을 플레이하여 다이아몬드를 획득하세요!</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <Button
+              onClick={() => setShowInsufficientModal(false)}
+              className="px-8 py-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-semibold"
+            >
+              확인
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

@@ -61,7 +61,12 @@ export default function ShopModal({
       const response = await fetch('/api/shop/items');
       const data = await response.json();
       if (data.success) {
-        setItems(data.payload);
+        // 가챠 아이템을 항상 최상단으로 정렬
+        const sorted: ShopItem[] = [...data.payload].sort((a: ShopItem, b: ShopItem) => {
+          if (a.isGacha === b.isGacha) return 0;
+          return a.isGacha ? -1 : 1;
+        });
+        setItems(sorted);
       } else {
         console.error('상점 아이템 조회 실패:', data.error);
       }

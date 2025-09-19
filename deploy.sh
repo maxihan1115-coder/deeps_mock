@@ -1,49 +1,21 @@
 #!/bin/bash
 
-# AWS EC2 Docker 배포 스크립트
-echo "🚀 Starting deployment..."
+echo "🚀 EC2 배포 스크립트 시작..."
 
-# 환경 변수 확인
-if [ -z "$DATABASE_URL" ]; then
-    echo "❌ DATABASE_URL is not set"
-    exit 1
-fi
+# 1. 최신 코드 가져오기 (Git 사용 시)
+echo "📥 최신 코드 가져오기..."
+git pull origin main
 
-if [ -z "$BAPP_API_KEY" ]; then
-    echo "❌ BAPP_API_KEY is not set"
-    exit 1
-fi
+# 2. Docker Compose로 빌드 및 실행
+echo "🔨 Docker 이미지 빌드 및 서버 실행..."
+docker-compose up --build --no-cache -d
 
-# 기존 컨테이너 중지 및 제거
-echo "🛑 Stopping existing containers..."
-docker-compose down
+# 3. 실행 상태 확인
+echo "✅ 서버 상태 확인..."
+docker-compose ps
 
-# 기존 이미지 제거 (선택사항)
-echo "🧹 Cleaning up old images..."
-docker system prune -f
+# 4. 로그 확인 (선택사항)
+echo "📋 최근 로그 확인..."
+docker-compose logs --tail=20
 
-# 새 이미지 빌드
-echo "🔨 Building new Docker image..."
-docker-compose build --no-cache
-
-# 컨테이너 시작
-echo "🚀 Starting containers..."
-docker-compose up -d
-
-# 헬스체크 대기
-echo "⏳ Waiting for health check..."
-sleep 30
-
-# 헬스체크 확인
-echo "🏥 Checking application health..."
-curl -f http://localhost:3000/api/health
-
-if [ $? -eq 0 ]; then
-    echo "✅ Deployment successful!"
-    echo "🌐 Application is running on http://localhost:3000"
-else
-    echo "❌ Deployment failed!"
-    echo "📋 Checking logs..."
-    docker-compose logs
-    exit 1
-fi
+echo "🎉 배포 완료!"
