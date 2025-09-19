@@ -76,9 +76,27 @@ export default function QuestsPage() {
 
 
 
-  // 퀘스트 필터링
-  const getQuestsByType = (type: Quest['type']) => {
-    return quests.filter(quest => quest.type === type);
+  // 퀘스트 카테고리별 필터링
+  const getQuestsByCategory = (category: string) => {
+    switch (category) {
+      case 'general':
+        // 일반 퀘스트 (1-8번)
+        return quests.filter(quest => quest.id >= 1 && quest.id <= 8);
+      case 'daily':
+        // 초기화 퀘스트 (9-10번)
+        return quests.filter(quest => quest.id >= 9 && quest.id <= 10);
+      case 'attendance':
+        // 출석체크 퀘스트 (12번)
+        return quests.filter(quest => quest.id === 12);
+      case 'ranking':
+        // 랭킹형 퀘스트 (placeholder)
+        return quests.filter(quest => quest.id === 11);
+      case 'other':
+        // 기타 퀘스트 (13번)
+        return quests.filter(quest => quest.id === 13);
+      default:
+        return quests;
+    }
   };
 
   // 초기 퀘스트 로드
@@ -170,52 +188,82 @@ export default function QuestsPage() {
 
       {/* 퀘스트 탭 */}
       {quests.length > 0 && (
-        <Tabs defaultValue="all" className="w-full">
+        <Tabs defaultValue="general" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="all">전체</TabsTrigger>
-            <TabsTrigger value="daily">일일</TabsTrigger>
-            <TabsTrigger value="weekly">주간</TabsTrigger>
-            <TabsTrigger value="monthly">월간</TabsTrigger>
-            <TabsTrigger value="single">단일</TabsTrigger>
+            <TabsTrigger value="general">일반 퀘스트</TabsTrigger>
+            <TabsTrigger value="daily">초기화 퀘스트</TabsTrigger>
+            <TabsTrigger value="attendance">출석체크 퀘스트</TabsTrigger>
+            <TabsTrigger value="ranking">랭킹형 퀘스트</TabsTrigger>
+            <TabsTrigger value="other">기타</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all" className="mt-6">
+          <TabsContent value="general" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {quests.map((quest) => (
-                <QuestCard key={quest.id} quest={quest} />
-              ))}
+              {getQuestsByCategory('general').length === 0 ? (
+                <div className="col-span-full text-center text-gray-500 py-8">
+                  일반 퀘스트가 없습니다.
+                </div>
+              ) : (
+                getQuestsByCategory('general').map((quest) => (
+                  <QuestCard key={quest.id} quest={quest} />
+                ))
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="daily" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {getQuestsByType('daily').map((quest) => (
-                <QuestCard key={quest.id} quest={quest} />
-              ))}
+              {getQuestsByCategory('daily').length === 0 ? (
+                <div className="col-span-full text-center text-gray-500 py-8">
+                  초기화 퀘스트가 없습니다.
+                </div>
+              ) : (
+                getQuestsByCategory('daily').map((quest) => (
+                  <QuestCard key={quest.id} quest={quest} />
+                ))
+              )}
             </div>
           </TabsContent>
 
-          <TabsContent value="weekly" className="mt-6">
+          <TabsContent value="attendance" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {getQuestsByType('weekly').map((quest) => (
-                <QuestCard key={quest.id} quest={quest} />
-              ))}
+              {getQuestsByCategory('attendance').length === 0 ? (
+                <div className="col-span-full text-center text-gray-500 py-8">
+                  출석체크 퀘스트가 없습니다.
+                </div>
+              ) : (
+                getQuestsByCategory('attendance').map((quest) => (
+                  <QuestCard key={quest.id} quest={quest} />
+                ))
+              )}
             </div>
           </TabsContent>
 
-          <TabsContent value="monthly" className="mt-6">
+          <TabsContent value="ranking" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {getQuestsByType('monthly').map((quest) => (
-                <QuestCard key={quest.id} quest={quest} />
-              ))}
+              {getQuestsByCategory('ranking').length === 0 ? (
+                <div className="col-span-full text-center text-gray-500 py-8">
+                  랭킹형 퀘스트가 없습니다.
+                </div>
+              ) : (
+                getQuestsByCategory('ranking').map((quest) => (
+                  <QuestCard key={quest.id} quest={quest} />
+                ))
+              )}
             </div>
           </TabsContent>
 
-          <TabsContent value="single" className="mt-6">
+          <TabsContent value="other" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {getQuestsByType('single').map((quest) => (
-                <QuestCard key={quest.id} quest={quest} />
-              ))}
+              {getQuestsByCategory('other').length === 0 ? (
+                <div className="col-span-full text-center text-gray-500 py-8">
+                  기타 퀘스트가 없습니다.
+                </div>
+              ) : (
+                getQuestsByCategory('other').map((quest) => (
+                  <QuestCard key={quest.id} quest={quest} />
+                ))
+              )}
             </div>
           </TabsContent>
         </Tabs>

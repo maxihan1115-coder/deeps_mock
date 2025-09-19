@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Quest } from '@/types';
-import { Trophy, Calendar, Clock, Target } from 'lucide-react';
+import { Trophy, Calendar, Clock, Target, Star, RefreshCw, UserX, Award } from 'lucide-react';
 
 interface QuestPanelProps {
   userId: string;
@@ -152,6 +153,116 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     return quest.isFailed === true;
   };
 
+  // 퀘스트 분류 함수
+  const getQuestCategory = (questId: string) => {
+    const id = parseInt(questId);
+    if (id >= 1 && id <= 8) return 'general';
+    if (id === 9 || id === 10) return 'daily';
+    if (id === 12) return 'attendance';
+    if (id === 13) return 'other';
+    return 'ranking'; // 추후 추가될 랭킹형 퀘스트
+  };
+
+  // 퀘스트 필터링 함수
+  const getQuestsByCategory = (category: string) => {
+    return quests.filter(quest => getQuestCategory(quest.id) === category);
+  };
+
+  // 퀘스트 렌더링 함수
+  const renderQuest = (quest: Quest) => {
+    const isFailed = isQuestFailed(quest);
+    
+    return (
+      <div 
+        key={quest.id} 
+        className={`border rounded-lg p-3 space-y-2 ${isFailed ? 'bg-gray-100 opacity-60' : ''}`}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            {getQuestIcon(quest.type)}
+            <span className={`font-medium text-sm ${isFailed ? 'text-gray-600' : ''}`}>
+              {quest.title}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={getQuestBadgeVariant(quest.type)} className="text-xs">
+              {getQuestTypeName(quest.type)}
+            </Badge>
+            {isFailed && (
+              <Badge variant="destructive" className="text-xs">
+                실패
+              </Badge>
+            )}
+          </div>
+        </div>
+        
+        <p className={`text-xs ${isFailed ? 'text-gray-500' : 'text-gray-600'}`}>
+          {quest.description}
+        </p>
+        
+        {isFailed && (
+          <p className="text-xs text-red-500 font-medium">
+            30분 내에 완료하지 못했습니다
+          </p>
+        )}
+        
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs">
+            <span>진행도</span>
+            <span>{quest.progress} / {quest.maxProgress}</span>
+          </div>
+          <Progress 
+            value={(quest.progress / quest.maxProgress) * 100} 
+            className={`h-2 ${isFailed ? 'bg-gray-200' : ''}`}
+          />
+        </div>
+        
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">보상:</span>
+            {quest.claimValue && quest.claimSymbol ? (
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-medium text-blue-600">
+                  {formatClaimValue(quest.claimValue)}
+                </span>
+                {quest.claimSymbol !== 'REPL' && (
+                  <span className="text-xs font-medium text-blue-500">
+                    {quest.claimSymbol}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-sm font-medium text-gray-500">
+                {quest.reward} 포인트
+              </span>
+            )}
+          </div>
+          {quest.isCompleted && !isFailed && (
+            <div className="flex items-center gap-2">
+              <Badge variant="default" className="text-xs bg-green-500">
+                완료
+              </Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-6 px-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                onClick={() => window.open('https://www.boradeeps.cc/quest', '_blank')}
+              >
+                보상받기
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        {quest.expiresAt && (
+          <div className="text-xs text-gray-500">
+            만료: {new Date(quest.expiresAt).toLocaleDateString()}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // 점수 기반 퀘스트 자동 업데이트 제거 (무한 루프 방지)
   // useEffect(() => {
   //   if (currentScore > 0) {
@@ -279,99 +390,80 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             <div className="text-gray-500">퀘스트가 없습니다.</div>
           </div>
         ) : (
-          quests.map((quest) => {
-            const isFailed = isQuestFailed(quest);
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="general" className="flex items-center gap-1">
+                <Star className="w-3 h-3" />
+                <span className="hidden sm:inline">일반</span>
+              </TabsTrigger>
+              <TabsTrigger value="daily" className="flex items-center gap-1">
+                <RefreshCw className="w-3 h-3" />
+                <span className="hidden sm:inline">초기화</span>
+              </TabsTrigger>
+              <TabsTrigger value="attendance" className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                <span className="hidden sm:inline">출석체크</span>
+              </TabsTrigger>
+              <TabsTrigger value="ranking" className="flex items-center gap-1">
+                <Award className="w-3 h-3" />
+                <span className="hidden sm:inline">랭킹형</span>
+              </TabsTrigger>
+              <TabsTrigger value="other" className="flex items-center gap-1">
+                <UserX className="w-3 h-3" />
+                <span className="hidden sm:inline">기타</span>
+              </TabsTrigger>
+            </TabsList>
             
-            return (
-              <div 
-                key={quest.id} 
-                className={`border rounded-lg p-3 space-y-2 ${isFailed ? 'bg-gray-100 opacity-60' : ''}`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    {getQuestIcon(quest.type)}
-                    <span className={`font-medium text-sm ${isFailed ? 'text-gray-600' : ''}`}>
-                      {quest.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={getQuestBadgeVariant(quest.type)} className="text-xs">
-                      {getQuestTypeName(quest.type)}
-                    </Badge>
-                    {isFailed && (
-                      <Badge variant="destructive" className="text-xs">
-                        실패
-                      </Badge>
-                    )}
-                  </div>
+            <TabsContent value="general" className="space-y-3 mt-4">
+              {getQuestsByCategory('general').length === 0 ? (
+                <div className="text-center text-gray-500 py-4">
+                  일반 퀘스트가 없습니다.
                 </div>
-                
-                <p className={`text-xs ${isFailed ? 'text-gray-500' : 'text-gray-600'}`}>
-                  {quest.description}
-                </p>
-                
-                {isFailed && (
-                  <p className="text-xs text-red-500 font-medium">
-                    30분 내에 완료하지 못했습니다
-                  </p>
-                )}
-                
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span>진행도</span>
-                    <span>{quest.progress} / {quest.maxProgress}</span>
-                  </div>
-                  <Progress 
-                    value={(quest.progress / quest.maxProgress) * 100} 
-                    className={`h-2 ${isFailed ? 'bg-gray-200' : ''}`}
-                  />
+              ) : (
+                getQuestsByCategory('general').map(renderQuest)
+              )}
+            </TabsContent>
+            
+            <TabsContent value="daily" className="space-y-3 mt-4">
+              {getQuestsByCategory('daily').length === 0 ? (
+                <div className="text-center text-gray-500 py-4">
+                  초기화 퀘스트가 없습니다.
                 </div>
-                
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">보상:</span>
-                    {quest.claimValue && quest.claimSymbol ? (
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm font-medium text-blue-600">
-                          {formatClaimValue(quest.claimValue)}
-                        </span>
-                        {quest.claimSymbol !== 'REPL' && (
-                          <span className="text-xs font-medium text-blue-500">
-                            {quest.claimSymbol}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-sm font-medium text-gray-500">
-                        {quest.reward} 포인트
-                      </span>
-                    )}
-                  </div>
-                  {quest.isCompleted && !isFailed && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="default" className="text-xs bg-green-500">
-                        완료
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs h-6 px-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                        onClick={() => window.open('https://www.boradeeps.cc/quest', '_blank')}
-                      >
-                        보상받기
-                      </Button>
-                    </div>
-                  )}
+              ) : (
+                getQuestsByCategory('daily').map(renderQuest)
+              )}
+            </TabsContent>
+            
+            <TabsContent value="attendance" className="space-y-3 mt-4">
+              {getQuestsByCategory('attendance').length === 0 ? (
+                <div className="text-center text-gray-500 py-4">
+                  출석체크 퀘스트가 없습니다.
                 </div>
-                
-                {quest.expiresAt && (
-                  <div className="text-xs text-gray-500">
-                    만료: {new Date(quest.expiresAt).toLocaleDateString()}
-                  </div>
-                )}
-              </div>
-            );
-          })
+              ) : (
+                getQuestsByCategory('attendance').map(renderQuest)
+              )}
+            </TabsContent>
+            
+            <TabsContent value="ranking" className="space-y-3 mt-4">
+              {getQuestsByCategory('ranking').length === 0 ? (
+                <div className="text-center text-gray-500 py-4">
+                  랭킹형 퀘스트가 없습니다.
+                </div>
+              ) : (
+                getQuestsByCategory('ranking').map(renderQuest)
+              )}
+            </TabsContent>
+            
+            <TabsContent value="other" className="space-y-3 mt-4">
+              {getQuestsByCategory('other').length === 0 ? (
+                <div className="text-center text-gray-500 py-4">
+                  기타 퀘스트가 없습니다.
+                </div>
+              ) : (
+                getQuestsByCategory('other').map(renderQuest)
+              )}
+            </TabsContent>
+          </Tabs>
         )}
       </CardContent>
     </Card>

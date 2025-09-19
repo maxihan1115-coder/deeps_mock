@@ -28,7 +28,7 @@ class MySQLGameStore {
       { id: '9', title: 'PLAY_GAMES_5', description: '5게임 플레이', type: 'DAILY', maxProgress: 5, reward: 50 },
       { id: '10', title: 'PLAY_GAMES_20', description: '20게임 플레이', type: 'DAILY', maxProgress: 20, reward: 100 },
       { id: '12', title: 'DAILY_LOGIN', description: '7일 연속 출석체크', type: 'SINGLE', maxProgress: 7, reward: 10 },
-      { id: '13', title: 'GOLD_EARN_5000', description: '5000골드 획득 (30분 제한)', type: 'SINGLE', maxProgress: 5000, reward: 100 },
+      { id: '13', title: 'GOLD_EARN_5000', description: '5000골드 획득 (게임 회원 가입 후 30분 제한), 플랫폼 연동이 되지 않아도 퀘스트 진행도가 업데이트 됩니다.', type: 'SINGLE', maxProgress: 5000, reward: 100 },
     ] as const;
 
     for (const q of catalog) {

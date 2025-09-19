@@ -35,10 +35,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call platform disconnect API
+    // Call platform disconnect API (외부 플랫폼에서의 탈퇴 처리)
     const authHeader = process.env.BAPP_API_KEY || '';
     const platformResp = await fetch('https://api.boradeeps.cc/m/auth/v1/bapp/disconnect', {
-      method: 'GET',
+      method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Purge user-related data except keeping users.uuid row
+    // Note: /api/quest/disconnect는 호출하지 않음 (탈퇴 시에는 모든 데이터를 직접 삭제)
     await prisma.$transaction([
       prisma.attendanceRecord.deleteMany({ where: { userId: parsedUuid } }),
       prisma.highScore.deleteMany({ where: { userId: parsedUuid } }),
@@ -80,6 +81,10 @@ export async function POST(request: NextRequest) {
       prisma.tempCode.deleteMany({ where: { userId: parsedUuid } }),
       prisma.platformLinkHistory.deleteMany({ where: { gameUuid: parsedUuid } }),
       prisma.platformLink.deleteMany({ where: { gameUuid: parsedUuid } }),
+      // 재화 관련 데이터 삭제
+      prisma.userCurrency.deleteMany({ where: { userId: parsedUuid } }),
+      prisma.currencyTransaction.deleteMany({ where: { userId: parsedUuid } }),
+      prisma.shopPurchase.deleteMany({ where: { userId: parsedUuid } }),
       prisma.user.update({
         where: { uuid: parsedUuid },
         data: {
