@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -36,7 +36,7 @@ export default function QuestsPage() {
   }, []);
 
   // 퀘스트 조회
-  const fetchQuests = async () => {
+  const fetchQuests = useCallback(async () => {
     if (gameUuid == null) return;
     
     try {
@@ -70,7 +70,7 @@ export default function QuestsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [gameUuid]);
 
   // 카탈로그 방식: 초기화 로직 제거
 
@@ -81,19 +81,25 @@ export default function QuestsPage() {
     switch (category) {
       case 'general':
         // 일반 퀘스트 (1-8번)
-        return quests.filter(quest => quest.id >= 1 && quest.id <= 8);
+        return quests.filter(quest => {
+          const questId = parseInt(quest.id);
+          return questId >= 1 && questId <= 8;
+        });
       case 'daily':
         // 초기화 퀘스트 (9-10번)
-        return quests.filter(quest => quest.id >= 9 && quest.id <= 10);
+        return quests.filter(quest => {
+          const questId = parseInt(quest.id);
+          return questId >= 9 && questId <= 10;
+        });
       case 'attendance':
         // 출석체크 퀘스트 (12번)
-        return quests.filter(quest => quest.id === 12);
+        return quests.filter(quest => parseInt(quest.id) === 12);
       case 'ranking':
         // 랭킹형 퀘스트 (placeholder)
-        return quests.filter(quest => quest.id === 11);
+        return quests.filter(quest => parseInt(quest.id) === 11);
       case 'other':
         // 기타 퀘스트 (13번)
-        return quests.filter(quest => quest.id === 13);
+        return quests.filter(quest => parseInt(quest.id) === 13);
       default:
         return quests;
     }
@@ -104,7 +110,7 @@ export default function QuestsPage() {
     if (gameUuid != null) {
       fetchQuests();
     }
-  }, [gameUuid]);
+  }, [gameUuid, fetchQuests]);
 
   if (!userId) {
     return (
