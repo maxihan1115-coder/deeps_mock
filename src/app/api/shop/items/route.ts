@@ -14,7 +14,9 @@ export async function GET() {
         name: true,
         description: true,
         price: true,
-        currency: true
+        currency: true,
+        isGacha: true,
+        gachaRewards: true
       },
       orderBy: [
         { currency: 'asc' }, // GOLD 먼저, DIAMOND 나중에

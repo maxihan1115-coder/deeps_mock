@@ -30,6 +30,7 @@ model User {
   currencies       UserCurrency[]
   transactions     CurrencyTransaction[]
   shopPurchases    ShopPurchase[]
+  gachaPurchases   GachaPurchase[]
 
   @@map("users")
 }
@@ -197,11 +198,14 @@ model ShopItem {
   price       Int      // 가격
   currency    CurrencyType // GOLD 또는 DIAMOND
   isActive    Boolean  @default(true) // 판매 중인지 여부
+  isGacha     Boolean  @default(false) // 가챠 아이템 여부
+  gachaRewards Json?   // 가챠 보상 정보 (JSON 형태)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   // 구매 내역
   purchases   ShopPurchase[]
+  gachaPurchases GachaPurchase[]
   
   @@map("shop_items")
 }
@@ -219,6 +223,21 @@ model ShopPurchase {
   item ShopItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
   
   @@map("shop_purchases")
+}
+
+// 가챠 구매 내역
+model GachaPurchase {
+  id            String   @id @default(uuid())
+  userId        Int      // User.uuid 참조
+  gachaItemId   String   // ShopItem.id 참조 (가챠 아이템)
+  diamondCost   Int      // 구매에 사용한 다이아몬드
+  earnedDiamonds Int     // 획득한 다이아몬드
+  createdAt     DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
+  gachaItem ShopItem @relation(fields: [gachaItemId], references: [id], onDelete: Cascade)
+  
+  @@map("gacha_purchases")
 }
 
 enum CurrencyType {

@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Coins, Gem, ShoppingBag, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Coins, Gem, ShoppingBag, Loader2, Sparkles, AlertCircle, History } from 'lucide-react';
+import GachaRouletteModal from './GachaRouletteModal';
+import GachaHistoryModal from './GachaHistoryModal';
 
 interface ShopModalProps {
   isOpen: boolean;
@@ -19,6 +21,8 @@ interface ShopItem {
   description: string | null;
   price: number;
   currency: 'GOLD' | 'DIAMOND';
+  isGacha: boolean;
+  gachaRewards?: Array<{diamonds: number, probability: number}>;
 }
 
 interface PurchaseResult {
@@ -47,6 +51,9 @@ export default function ShopModal({
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [purchasedItem, setPurchasedItem] = useState<PurchaseResult | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showGachaModal, setShowGachaModal] = useState(false);
+  const [selectedGachaItem, setSelectedGachaItem] = useState<ShopItem | null>(null);
+  const [showGachaHistory, setShowGachaHistory] = useState(false);
 
   // 상점 아이템 목록 조회
   const fetchItems = async () => {
@@ -133,6 +140,17 @@ export default function ShopModal({
     return currency === 'GOLD' ? 'bg-yellow-50' : 'bg-blue-50';
   };
 
+  const handleGachaPurchase = (item: ShopItem) => {
+    setSelectedGachaItem(item);
+    setShowGachaModal(true);
+  };
+
+  const handleGachaSuccess = () => {
+    setShowGachaModal(false);
+    setSelectedGachaItem(null);
+    onPurchaseSuccess?.();
+  };
+
   if (isLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -157,10 +175,21 @@ export default function ShopModal({
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
-              <ShoppingBag className="w-6 h-6" />
-              상점
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent flex items-center gap-2">
+                <ShoppingBag className="w-6 h-6" />
+                상점
+              </DialogTitle>
+              <Button
+                onClick={() => setShowGachaHistory(true)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <History className="w-4 h-4" />
+                가챠 내역
+              </Button>
+            </div>
           </DialogHeader>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -184,10 +213,12 @@ export default function ShopModal({
                       </div>
                       
                       <Button
-                        onClick={() => handlePurchase(item)}
+                        onClick={() => item.isGacha ? handleGachaPurchase(item) : handlePurchase(item)}
                         disabled={purchasing === item.id}
                         className={`min-w-[80px] ${
-                          item.currency === 'GOLD'
+                          item.isGacha 
+                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                            : item.currency === 'GOLD'
                             ? 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700'
                             : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
                         }`}
@@ -195,7 +226,7 @@ export default function ShopModal({
                         {purchasing === item.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          '구매'
+                          item.isGacha ? '🎰 룰렛' : '구매'
                         )}
                       </Button>
                     </div>
@@ -302,6 +333,33 @@ export default function ShopModal({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* 가챠 룰렛 모달 */}
+      {selectedGachaItem && (
+        <GachaRouletteModal
+          isOpen={showGachaModal}
+          onClose={() => {
+            setShowGachaModal(false);
+            setSelectedGachaItem(null);
+          }}
+          gameUuid={gameUuid}
+          gachaItem={{
+            id: selectedGachaItem.id,
+            name: selectedGachaItem.name,
+            description: selectedGachaItem.description || '',
+            price: selectedGachaItem.price,
+            gachaRewards: selectedGachaItem.gachaRewards || []
+          }}
+          onPurchaseSuccess={handleGachaSuccess}
+        />
+      )}
+
+      {/* 가챠 내역 모달 */}
+      <GachaHistoryModal
+        isOpen={showGachaHistory}
+        onClose={() => setShowGachaHistory(false)}
+        gameUuid={gameUuid}
+      />
     </>
   );
 }
