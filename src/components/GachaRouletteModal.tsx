@@ -112,6 +112,8 @@ export default function GachaRouletteModal({
   };
 
   const handleClose = () => {
+    // 헤더 잔액 갱신 (확인 버튼 클릭 시)
+    (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance?.();
     setResult(null);
     setCurrentHighlight(0);
     setIsLocked(false);
@@ -119,6 +121,8 @@ export default function GachaRouletteModal({
   };
 
   const handlePlayAgain = () => {
+    // 헤더 잔액 갱신 (다시 구매 클릭 시)
+    (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance?.();
     setResult(null);
     setCurrentHighlight(0);
     setIsLocked(false);

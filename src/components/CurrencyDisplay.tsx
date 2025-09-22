@@ -55,8 +55,15 @@ export default function CurrencyDisplay({ gameUuid }: CurrencyDisplayProps) {
   // 전역 함수로 등록 (게임 종료 시 호출용)
   React.useEffect(() => {
     (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance = updateBalance;
+    (window as unknown as { adjustCurrencyBalance?: (delta: { gold?: number; diamond?: number }) => void }).adjustCurrencyBalance = (delta) => {
+      setBalance((prev) => ({
+        gold: Math.max(0, prev.gold + (delta.gold ?? 0)),
+        diamond: Math.max(0, prev.diamond + (delta.diamond ?? 0)),
+      }));
+    };
     return () => {
       delete (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance;
+      delete (window as unknown as { adjustCurrencyBalance?: (delta: { gold?: number; diamond?: number }) => void }).adjustCurrencyBalance;
     };
   }, [updateBalance]);
 
