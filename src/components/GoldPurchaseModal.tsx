@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Coins, CheckCircle, AlertCircle, Sparkles, Check, Loader2 } from 'lucide-react';
+import { Coins, AlertCircle, Sparkles, Check, Loader2 } from 'lucide-react';
 
 interface GoldPurchaseModalProps {
   isOpen: boolean;

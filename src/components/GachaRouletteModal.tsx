@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { AlertCircle, Gem } from 'lucide-react';
 
 interface GachaRouletteModalProps {
@@ -32,8 +31,7 @@ export default function GachaRouletteModal({
   isOpen, 
   onClose, 
   gameUuid,
-  gachaItem,
-  onPurchaseSuccess 
+  gachaItem
 }: GachaRouletteModalProps) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -93,14 +91,15 @@ export default function GachaRouletteModal({
         }, 3000); // 3초간 스핀
 
       } else {
-        console.error('❌ 가챠 구매 실패:', data.error);
+        console.error('❌ 가챠 구매 실패:', data);
         setIsSpinning(false);
         
         // 다이아몬드 부족 에러인지 확인
-        if (data.error && data.error.includes('다이아몬드가 부족합니다')) {
+        const errorMessage = data.payload || data.error || '';
+        if (errorMessage.includes('다이아몬드가 부족합니다')) {
           setShowInsufficientModal(true);
         } else {
-          alert(data.error || '가챠 구매에 실패했습니다.');
+          alert(errorMessage || '가챠 구매에 실패했습니다.');
         }
       }
     } catch (error) {

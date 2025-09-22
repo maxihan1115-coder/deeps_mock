@@ -674,27 +674,59 @@ class MySQLGameStore {
   }
 
   async updateDiamondPurchaseQuestProgress(gameUuid: number, amount: number, isLinked: boolean): Promise<void> {
-    const questIds = isLinked ? ['21'] : ['20'];
-    await this.incrementQuestProgress(gameUuid, questIds, amount);
+    try {
+      const questIds = isLinked ? ['21'] : ['20'];
+      console.log(`🔍 다이아몬드 구매 퀘스트 업데이트: 사용자 ${gameUuid}, 금액 ${amount}, 연동상태 ${isLinked}, 퀘스트ID ${questIds}`);
+      await this.incrementQuestProgress(gameUuid, questIds, amount);
+      console.log(`✅ 다이아몬드 구매 퀘스트 진행도 업데이트 성공`);
+    } catch (error) {
+      console.error(`❌ 다이아몬드 구매 퀘스트 진행도 업데이트 실패:`, error);
+      throw error; // 오류를 다시 던져서 상위에서 처리할 수 있도록
+    }
   }
 
-  private async incrementQuestProgress(gameUuid: number, questIds: string[], increment: number): Promise<void> {
+  async incrementQuestProgress(gameUuid: number, questIds: string[], increment: number): Promise<void> {
     for (const questId of questIds) {
+      // 1. 카탈로그 정보 조회
+      const catalog = await prisma.questCatalog.findUnique({ where: { id: questId } });
+      if (!catalog) {
+        console.warn(`⚠️ 퀘스트 카탈로그를 찾을 수 없습니다: ${questId}`);
+        continue;
+      }
+
+      // 2. 기존 진행도 조회
+      const existing = await prisma.questProgress.findUnique({
+        where: { userId_catalogId: { userId: gameUuid, catalogId: questId } }
+      });
+
+      // 3. 이미 완료된 퀘스트는 더 이상 진행도 증가하지 않음
+      if (existing?.isCompleted) {
+        console.log(`✅ 퀘스트 ${questId}는 이미 완료되었습니다. 진행도를 증가시키지 않습니다.`);
+        continue;
+      }
+
+      // 4. 새로운 진행도 계산 (상한 적용)
+      const currentProgress = existing?.progress || 0;
+      const newProgress = Math.min(currentProgress + increment, catalog.maxProgress);
+      
+      // 5. 완료 상태 계산
+      const isCompleted = newProgress >= catalog.maxProgress;
+
+      console.log(`📊 퀘스트 ${questId} 진행도 업데이트: ${currentProgress} → ${newProgress}/${catalog.maxProgress} (완료: ${isCompleted})`);
+
+      // 6. 업데이트
       await prisma.questProgress.upsert({
-        where: {
-          userId_catalogId: {
-            userId: gameUuid,
-            catalogId: questId,
-          },
-        },
+        where: { userId_catalogId: { userId: gameUuid, catalogId: questId } },
         update: {
-          progress: { increment },
+          progress: newProgress,
+          isCompleted: isCompleted,
           updatedAt: new Date(),
         },
         create: {
           userId: gameUuid,
           catalogId: questId,
-          progress: increment,
+          progress: newProgress,
+          isCompleted: isCompleted,
         },
       });
     }

@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     // 트랜잭션으로 가챠 구매 처리
     const result = await prisma.$transaction(async (tx) => {
       // 1. 다이아몬드 차감
-      const updatedCurrency = await tx.userCurrency.update({
+      await tx.userCurrency.update({
         where: { userId: parsedGameUuid },
         data: {
           diamond: { decrement: gachaItem.price }
