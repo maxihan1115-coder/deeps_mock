@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Coins, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Coins, CheckCircle, AlertCircle, Sparkles, Check, Loader2 } from 'lucide-react';
 
 interface GoldPurchaseModalProps {
   isOpen: boolean;
@@ -45,6 +45,7 @@ export default function GoldPurchaseModal({
   const [items, setItems] = useState<GoldItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [purchasedItem, setPurchasedItem] = useState<PurchaseResult | null>(null);
@@ -91,9 +92,17 @@ export default function GoldPurchaseModal({
       const data = await response.json();
       
       if (data.success) {
+        // 상태를 동시에 업데이트
         setPurchasedItem(data.payload);
+        setPurchaseSuccess(item.id);
+        
+        // 성공 모달 표시
         setShowSuccessModal(true);
-        onPurchaseSuccess?.();
+        
+        // 2초 후 성공 상태 초기화
+        setTimeout(() => {
+          setPurchaseSuccess(null);
+        }, 2000);
       } else {
         setErrorMessage(data.error || '골드 구매에 실패했습니다.');
         setShowErrorModal(true);
@@ -175,10 +184,16 @@ export default function GoldPurchaseModal({
                         <Button
                           onClick={() => handlePurchase(item)}
                           disabled={purchasing === item.id}
-                          className="ml-4 bg-yellow-500 hover:bg-yellow-600 text-white"
+                          className={`ml-4 min-w-[80px] ${
+                            purchaseSuccess === item.id
+                              ? 'bg-green-500 hover:bg-green-600'
+                              : 'bg-yellow-500 hover:bg-yellow-600'
+                          } text-white`}
                         >
                           {purchasing === item.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : purchaseSuccess === item.id ? (
+                            <Check className="w-4 h-4" />
                           ) : (
                             '구매'
                           )}
@@ -194,41 +209,66 @@ export default function GoldPurchaseModal({
       </Dialog>
 
       {/* 구매 성공 모달 */}
-      <Dialog open={showSuccessModal} onOpenChange={() => setShowSuccessModal(false)}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="sm:max-w-md z-50">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-green-600">
-              <CheckCircle className="w-5 h-5" />
+            <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+              <Sparkles className="w-6 h-6" />
               구매 완료!
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          
+          <div className="text-center space-y-4 py-4">
             {purchasedItem && (
               <>
-                <div className="text-center">
-                  <p className="text-lg font-semibold mb-2">
-                    {purchasedItem.item.name} 구매 완료!
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {purchasedItem.item.price.toLocaleString()} 다이아를 사용했습니다.
-                  </p>
+                <div className="flex items-center justify-center gap-3">
+                  <Coins className="w-8 h-8 text-yellow-500" />
+                  <span className="text-3xl font-bold text-yellow-600">
+                    {getGoldAmount(purchasedItem.item.name).toLocaleString()}
+                  </span>
+                  <span className="text-lg font-semibold text-gray-700">골드</span>
                 </div>
+                
+                <p className="text-lg text-gray-600">
+                  골드를 성공적으로 구매했습니다!
+                </p>
+                
+                <p className="text-sm text-gray-500">
+                  {purchasedItem.item.price.toLocaleString()} 다이아를 사용했습니다.
+                </p>
+                
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium mb-2">현재 잔액</h4>
+                  <h4 className="font-medium mb-2 text-gray-700">현재 잔액</h4>
                   <div className="flex justify-between text-sm">
-                    <span className="text-yellow-600">
+                    <span className="text-yellow-600 font-medium">
                       골드: {purchasedItem.remainingBalance.gold.toLocaleString()}
                     </span>
-                    <span className="text-blue-600">
+                    <span className="text-blue-600 font-medium">
                       다이아: {purchasedItem.remainingBalance.diamond.toLocaleString()}
                     </span>
                   </div>
                 </div>
               </>
             )}
-            <Button onClick={() => setShowSuccessModal(false)} className="w-full">
-              확인
-            </Button>
+          </div>
+
+          <div className="flex justify-center">
+                <Button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    setPurchasedItem(null);
+                    setPurchaseSuccess(null);
+                    onClose(); // 구매 모달도 함께 닫기
+                    
+                    // 잔액 업데이트 (확인 버튼 클릭 시에만)
+                    if (onPurchaseSuccess) {
+                      onPurchaseSuccess();
+                    }
+                  }}
+                  className="px-8 py-2 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-semibold"
+                >
+                  확인
+                </Button>
           </div>
         </DialogContent>
       </Dialog>
