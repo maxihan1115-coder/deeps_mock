@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createSuccessResponse, createErrorResponse, getErrorStatusCode, API_ERROR_CODES } from '@/lib/api-errors';
 import { CurrencyType } from '@prisma/client';
+import { mysqlGameStore } from '@/lib/mysql-store';
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,6 +61,21 @@ export async function POST(request: NextRequest) {
         gameScore: null, // 구매는 게임 점수와 무관
       },
     });
+
+    // 퀘스트 진행도 업데이트 (다이아몬드 구매)
+    try {
+      // 플랫폼 연동 상태 확인
+      const platformLink = await prisma.platformLink.findUnique({
+        where: { gameUuid: parsedGameUuid }
+      });
+      const isLinked = !!platformLink;
+      
+      await mysqlGameStore.updateDiamondPurchaseQuestProgress(parsedGameUuid, amount, isLinked);
+      console.log('✅ 다이아몬드 구매 퀘스트 진행도 업데이트 완료');
+    } catch (error) {
+      console.error('❌ 다이아몬드 구매 퀘스트 진행도 업데이트 실패:', error);
+      // 퀘스트 업데이트 실패해도 구매는 성공으로 처리
+    }
 
     console.log(`✅ 다이아몬드 구매 완료: 사용자 ${parsedGameUuid}, ${amount}개, 가격: ${price}원`);
 

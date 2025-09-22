@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createSuccessResponse, createErrorResponse, getErrorStatusCode, API_ERROR_CODES } from '@/lib/api-errors';
+import { mysqlGameStore } from '@/lib/mysql-store';
 
 // 가챠 보상 계산 함수
 function calculateGachaReward(gachaRewards: Array<{diamonds: number, probability: number}>): number {
@@ -147,6 +148,21 @@ export async function POST(request: NextRequest) {
 
       return { finalCurrency, gachaPurchase };
     });
+
+    // 퀘스트 진행도 업데이트 (가챠 구매)
+    try {
+      // 플랫폼 연동 상태 확인
+      const platformLink = await prisma.platformLink.findUnique({
+        where: { gameUuid: parsedGameUuid }
+      });
+      const isLinked = !!platformLink;
+      
+      await mysqlGameStore.updateGachaQuestProgress(parsedGameUuid, isLinked);
+      console.log('✅ 가챠 퀘스트 진행도 업데이트 완료');
+    } catch (error) {
+      console.error('❌ 가챠 퀘스트 진행도 업데이트 실패:', error);
+      // 퀘스트 업데이트 실패해도 구매는 성공으로 처리
+    }
 
     console.log('✅ 가챠 구매 완료:', {
       userId: parsedGameUuid,

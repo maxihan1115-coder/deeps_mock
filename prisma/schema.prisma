@@ -250,4 +250,5 @@ enum QuestType {
   WEEKLY
   MONTHLY
   SINGLE
+  PURCHASE
 }

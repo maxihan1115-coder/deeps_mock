@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Coins, Gem } from 'lucide-react';
 import DiamondPurchaseModal from '@/components/DiamondPurchaseModal';
+import GoldPurchaseModal from '@/components/GoldPurchaseModal';
 
 interface CurrencyDisplayProps {
   gameUuid: number;
@@ -16,7 +17,8 @@ interface CurrencyBalance {
 export default function CurrencyDisplay({ gameUuid }: CurrencyDisplayProps) {
   const [balance, setBalance] = useState<CurrencyBalance>({ gold: 0, diamond: 0 });
   const [isLoading, setIsLoading] = useState(true);
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showDiamondPurchaseModal, setShowDiamondPurchaseModal] = useState(false);
+  const [showGoldPurchaseModal, setShowGoldPurchaseModal] = useState(false);
 
   const fetchBalance = useCallback(async () => {
     setIsLoading(true);
@@ -75,8 +77,12 @@ export default function CurrencyDisplay({ gameUuid }: CurrencyDisplayProps) {
 
   return (
     <div className="flex gap-2">
-      {/* 골드 */}
-      <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 rounded-md border border-yellow-200">
+      {/* 골드 (클릭 가능) */}
+      <div 
+        className="flex items-center gap-1 px-2 py-1 bg-yellow-100 rounded-md border border-yellow-200 cursor-pointer hover:bg-yellow-200 transition-colors"
+        onClick={() => setShowGoldPurchaseModal(true)}
+        title="골드 구매"
+      >
         <Coins className="w-4 h-4 text-yellow-600" />
         <span className="text-sm font-medium text-yellow-700">
           {balance.gold.toLocaleString()}
@@ -86,7 +92,7 @@ export default function CurrencyDisplay({ gameUuid }: CurrencyDisplayProps) {
       {/* 다이아 (클릭 가능) */}
       <div 
         className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-md border border-blue-200 cursor-pointer hover:bg-blue-200 transition-colors"
-        onClick={() => setShowPurchaseModal(true)}
+        onClick={() => setShowDiamondPurchaseModal(true)}
         title="다이아몬드 구매"
       >
         <Gem className="w-4 h-4 text-blue-600" />
@@ -95,10 +101,18 @@ export default function CurrencyDisplay({ gameUuid }: CurrencyDisplayProps) {
         </span>
       </div>
 
+      {/* 골드 구매 모달 */}
+      <GoldPurchaseModal
+        isOpen={showGoldPurchaseModal}
+        onClose={() => setShowGoldPurchaseModal(false)}
+        gameUuid={gameUuid}
+        onPurchaseSuccess={handlePurchaseSuccess}
+      />
+
       {/* 다이아몬드 구매 모달 */}
       <DiamondPurchaseModal
-        isOpen={showPurchaseModal}
-        onClose={() => setShowPurchaseModal(false)}
+        isOpen={showDiamondPurchaseModal}
+        onClose={() => setShowDiamondPurchaseModal(false)}
         gameUuid={gameUuid}
         onPurchaseSuccess={handlePurchaseSuccess}
       />

@@ -3829,3 +3829,11 @@
 [2025-09-04T03:13:42.996Z] 🔑 Auth type: Authorization Bearer
 [2025-09-04T03:13:42.996Z] ✅ Token validation result: INVALID
 [2025-09-04T03:13:42.996Z] ❌ Auth failed - invalid token
+[2025-09-22T00:33:23.168Z] 🔐 [withAuthToken] GET /api/quest/list
+[2025-09-22T00:33:23.169Z] ❌ No auth token found in headers
+[2025-09-22T00:33:25.895Z] 🔐 [withAuthToken] GET /api/quest/list
+[2025-09-22T00:33:25.909Z] ❌ No auth token found in headers
+[2025-09-22T01:24:01.210Z] 🔐 [withAuthToken] POST /api/quest/check
+[2025-09-22T01:24:01.226Z] 🔑 Auth type: Authorization Bearer
+[2025-09-22T01:24:01.226Z] ✅ Token validation result: INVALID
+[2025-09-22T01:24:01.228Z] ❌ Auth failed - invalid token

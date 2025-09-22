@@ -29,6 +29,15 @@ class MySQLGameStore {
       { id: '10', title: 'PLAY_GAMES_20', description: '20게임 플레이', type: 'DAILY', maxProgress: 20, reward: 100 },
       { id: '12', title: 'DAILY_LOGIN', description: '7일 연속 출석체크', type: 'SINGLE', maxProgress: 7, reward: 10 },
       { id: '13', title: 'GOLD_EARN_5000', description: '5000골드 획득 (게임 회원 가입 후 30분 제한), 플랫폼 연동이 되지 않아도 퀘스트 진행도가 업데이트 됩니다.', type: 'SINGLE', maxProgress: 5000, reward: 100 },
+      // 아이템 구매 퀘스트 (14~21)
+      { id: '14', title: 'GACHA_5_TIMES_WEEK', description: '룰렛 5회 진행 (계정 생성 후 일주일간만 카운트)', type: 'PURCHASE', maxProgress: 5, reward: 50 },
+      { id: '15', title: 'GACHA_5_TIMES_LINKED', description: '룰렛 5회 진행 (플랫폼 연동 이후 카운트)', type: 'PURCHASE', maxProgress: 5, reward: 50 },
+      { id: '16', title: 'ITEM6_3_TIMES_WEEK', description: '테스트 아이템6 3회 구매 (계정 생성 후 일주일간만 카운트)', type: 'PURCHASE', maxProgress: 3, reward: 30 },
+      { id: '17', title: 'ITEM6_3_TIMES_LINKED', description: '테스트 아이템6 3회 구매 (플랫폼 연동 이후 카운트)', type: 'PURCHASE', maxProgress: 3, reward: 30 },
+      { id: '18', title: 'GOLD_5000_WEEK', description: '골드 5000 구매 (계정 생성 후 일주일간만 카운트, 게임플레이 골드 제외)', type: 'PURCHASE', maxProgress: 5000, reward: 100 },
+      { id: '19', title: 'GOLD_5000_LINKED', description: '골드 5000 구매 (플랫폼 연동 이후 카운트, 게임플레이 골드 제외)', type: 'PURCHASE', maxProgress: 5000, reward: 100 },
+      { id: '20', title: 'DIAMOND_5000_WEEK', description: '다이아 5000 구매 (계정 생성 후 일주일간만 카운트, 룰렛 다이아 제외)', type: 'PURCHASE', maxProgress: 5000, reward: 100 },
+      { id: '21', title: 'DIAMOND_5000_LINKED', description: '다이아 5000 구매 (플랫폼 연동 이후 카운트, 룰렛 다이아 제외)', type: 'PURCHASE', maxProgress: 5000, reward: 100 },
     ] as const;
 
     for (const q of catalog) {
@@ -84,7 +93,13 @@ class MySQLGameStore {
     }
     
     const progressByCatalog = new Map(progresses.map(p => [p.catalogId, p]));
-    const typeMapping: Record<string, Quest['type']> = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' };
+    const typeMapping: Record<QuestType, Quest['type']> = { 
+      SINGLE: 'single', 
+      DAILY: 'daily', 
+      WEEKLY: 'weekly', 
+      MONTHLY: 'monthly', 
+      PURCHASE: 'single' 
+    };
     return catalog
       .filter(c => c.id !== '11') // 11번 퀘스트(HARD_DROP_10) 숨김 처리
       .map(c => {
@@ -98,11 +113,19 @@ class MySQLGameStore {
           isFailed = now > thirtyMinutesLater && !p?.isCompleted;
         }
         
+        // 일주일 제한 퀘스트들 (14, 16, 18, 20) 확인
+        const weekLimitedQuests = ['14', '16', '18', '20'];
+        if (weekLimitedQuests.includes(c.id) && userCreatedAt) {
+          const now = new Date();
+          const oneWeekLater = new Date(userCreatedAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+          isFailed = now > oneWeekLater && !p?.isCompleted;
+        }
+        
         return {
           id: c.id,
           title: c.title,
           description: c.description,
-          type: typeMapping[c.type] || 'single',
+          type: typeMapping[c.type as QuestType] || 'single',
           progress: p?.progress ?? 0,
           maxProgress: c.maxProgress,
           reward: c.reward,
@@ -148,12 +171,12 @@ class MySQLGameStore {
         isCompleted: finalProgress >= catalog.maxProgress,
       },
     });
-    const typeMapping = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    const typeMapping = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly', PURCHASE: 'single' } as const;
     return {
       id: catalog.id,
       title: catalog.title,
       description: catalog.description,
-      type: typeMapping[catalog.type] as Quest['type'],
+      type: typeMapping[catalog.type as keyof typeof typeMapping] as Quest['type'],
       progress: updated.progress,
       maxProgress: catalog.maxProgress,
       reward: catalog.reward,
@@ -211,12 +234,12 @@ class MySQLGameStore {
       },
     });
 
-    const typeMapping = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    const typeMapping = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly', PURCHASE: 'single' } as const;
     return {
       id: catalog.id,
       title: catalog.title,
       description: catalog.description,
-      type: typeMapping[catalog.type] as Quest['type'],
+      type: typeMapping[catalog.type as keyof typeof typeMapping] as Quest['type'],
       progress: updated.progress,
       maxProgress: catalog.maxProgress,
       reward: catalog.reward,
@@ -263,12 +286,12 @@ class MySQLGameStore {
       },
     });
 
-    const typeMapping = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly' } as const;
+    const typeMapping = { SINGLE: 'single', DAILY: 'daily', WEEKLY: 'weekly', MONTHLY: 'monthly', PURCHASE: 'single' } as const;
     return {
       id: catalog.id,
       title: catalog.title,
       description: catalog.description,
-      type: typeMapping[catalog.type] as Quest['type'],
+      type: typeMapping[catalog.type as keyof typeof typeMapping] as Quest['type'],
       progress: updated.progress,
       maxProgress: catalog.maxProgress,
       reward: catalog.reward,
@@ -629,6 +652,52 @@ class MySQLGameStore {
         },
       },
     });
+  }
+
+  // 아이템 구매 퀘스트 진행도 업데이트 메서드들
+  async updateGachaQuestProgress(gameUuid: number, isLinked: boolean): Promise<void> {
+    const questIds = isLinked ? ['15'] : ['14']; // 플랫폼 연동 여부에 따라 다른 퀘스트
+    await this.incrementQuestProgress(gameUuid, questIds, 1);
+  }
+
+  async updateItemPurchaseQuestProgress(gameUuid: number, itemName: string, isLinked: boolean): Promise<void> {
+    // 테스트 아이템6 구매인 경우만 카운트
+    if (itemName === '테스트 아이템6') {
+      const questIds = isLinked ? ['17'] : ['16'];
+      await this.incrementQuestProgress(gameUuid, questIds, 1);
+    }
+  }
+
+  async updateGoldPurchaseQuestProgress(gameUuid: number, amount: number, isLinked: boolean): Promise<void> {
+    const questIds = isLinked ? ['19'] : ['18'];
+    await this.incrementQuestProgress(gameUuid, questIds, amount);
+  }
+
+  async updateDiamondPurchaseQuestProgress(gameUuid: number, amount: number, isLinked: boolean): Promise<void> {
+    const questIds = isLinked ? ['21'] : ['20'];
+    await this.incrementQuestProgress(gameUuid, questIds, amount);
+  }
+
+  private async incrementQuestProgress(gameUuid: number, questIds: string[], increment: number): Promise<void> {
+    for (const questId of questIds) {
+      await prisma.questProgress.upsert({
+        where: {
+          userId_catalogId: {
+            userId: gameUuid,
+            catalogId: questId,
+          },
+        },
+        update: {
+          progress: { increment },
+          updatedAt: new Date(),
+        },
+        create: {
+          userId: gameUuid,
+          catalogId: questId,
+          progress: increment,
+        },
+      });
+    }
   }
 }
 

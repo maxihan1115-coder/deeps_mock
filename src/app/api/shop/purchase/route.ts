@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createSuccessResponse, createErrorResponse, getErrorStatusCode, API_ERROR_CODES } from '@/lib/api-errors';
 import { CurrencyType } from '@prisma/client';
+import { mysqlGameStore } from '@/lib/mysql-store';
 
 export async function POST(request: NextRequest) {
   try {
@@ -117,6 +118,28 @@ export async function POST(request: NextRequest) {
 
       return { updatedCurrency, purchase };
     });
+
+    // 퀘스트 진행도 업데이트 (상점 아이템 구매)
+    try {
+      // 플랫폼 연동 상태 확인
+      const platformLink = await prisma.platformLink.findUnique({
+        where: { gameUuid: parsedUserId }
+      });
+      const isLinked = !!platformLink;
+      
+      // 아이템 구매 퀘스트 업데이트
+      await mysqlGameStore.updateItemPurchaseQuestProgress(parsedUserId, item.name, isLinked);
+      
+      // 골드 구매 퀘스트 업데이트 (골드로 구매한 경우)
+      if (item.currency === CurrencyType.GOLD) {
+        await mysqlGameStore.updateGoldPurchaseQuestProgress(parsedUserId, item.price, isLinked);
+      }
+      
+      console.log('✅ 상점 구매 퀘스트 진행도 업데이트 완료');
+    } catch (error) {
+      console.error('❌ 상점 구매 퀘스트 진행도 업데이트 실패:', error);
+      // 퀘스트 업데이트 실패해도 구매는 성공으로 처리
+    }
 
     console.log(`✅ 아이템 구매 완료: 사용자 ${parsedUserId}, 아이템 ${item.name}, 가격: ${item.price} ${item.currency}`);
 

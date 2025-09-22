@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Quest } from '@/types';
-import { Trophy, Calendar, Clock, Target, Star, RefreshCw, UserX, Award } from 'lucide-react';
+import { Trophy, Calendar, Clock, Target, Star, RefreshCw, UserX, Award, ShoppingCart } from 'lucide-react';
 
 interface QuestPanelProps {
   userId: string;
@@ -17,6 +17,7 @@ interface QuestPanelProps {
 export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false); // 새로고침 상태 추가
   // 카탈로그 방식: 별도 초기화 불필요
   const [error, setError] = useState<string | null>(null);
   const [isLinked, setIsLinked] = useState<boolean | null>(null);
@@ -74,6 +75,17 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     }
   }, [gameUuid, userId]);
 
+  // 새로고침 핸들러 추가
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return; // 이미 새로고침 중이면 중복 실행 방지
+    
+    setIsRefreshing(true);
+    try {
+      await fetchQuests();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, fetchQuests]);
 
   // claimValue 포맷팅 함수
   const formatClaimValue = (claimValue: string | number | object): string => {
@@ -159,6 +171,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     if (id >= 1 && id <= 8) return 'general';
     if (id === 9 || id === 10) return 'daily';
     if (id === 12) return 'attendance';
+    if (id >= 14 && id <= 21) return 'purchase'; // 아이템 구매 퀘스트
     if (id === 13) return 'other';
     return 'ranking'; // 추후 추가될 랭킹형 퀘스트
   };
@@ -202,7 +215,10 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
         
         {isFailed && (
           <p className="text-xs text-red-500 font-medium">
-            30분 내에 완료하지 못했습니다
+            {quest.id === '13' 
+              ? '30분 내에 완료하지 못했습니다'
+              : '일주일 내에 완료하지 못했습니다'
+            }
           </p>
         )}
         
@@ -320,10 +336,23 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     return (
       <Card className="w-full max-w-4xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="w-5 h-5" />
-            퀘스트
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5" />
+              퀘스트
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2"
+              title="퀘스트 새로고침"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">새로고침</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="text-center text-gray-500">
@@ -338,10 +367,23 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   return (
     <Card className="w-full max-w-4xl">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trophy className="w-5 h-5" />
-          퀘스트
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="w-5 h-5" />
+            퀘스트
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2"
+            title="퀘스트 새로고침"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">새로고침</span>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* 연동 상태 표시 */}
@@ -391,7 +433,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
           </div>
         ) : (
           <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="general" className="flex items-center gap-1">
                 <Star className="w-3 h-3" />
                 <span className="hidden sm:inline">일반</span>
@@ -407,6 +449,10 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
               <TabsTrigger value="ranking" className="flex items-center gap-1">
                 <Award className="w-3 h-3" />
                 <span className="hidden sm:inline">랭킹형</span>
+              </TabsTrigger>
+              <TabsTrigger value="purchase" className="flex items-center gap-1">
+                <ShoppingCart className="w-3 h-3" />
+                <span className="hidden sm:inline">아이템 구매</span>
               </TabsTrigger>
               <TabsTrigger value="other" className="flex items-center gap-1">
                 <UserX className="w-3 h-3" />
@@ -451,6 +497,18 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
                 </div>
               ) : (
                 getQuestsByCategory('ranking').map(renderQuest)
+              )}
+            </TabsContent>
+            
+            <TabsContent value="purchase" className="space-y-3 mt-4">
+              {getQuestsByCategory('purchase').length === 0 ? (
+                <div className="text-center text-gray-500 py-4">
+                  아이템 구매 퀘스트가 없습니다.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {getQuestsByCategory('purchase').map(renderQuest)}
+                </div>
               )}
             </TabsContent>
             

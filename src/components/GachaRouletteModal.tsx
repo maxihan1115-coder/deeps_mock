@@ -89,6 +89,7 @@ export default function GachaRouletteModal({
         setTimeout(() => {
           setIsSpinning(false);
           setResult(data.payload);
+          setIsLocked(false); // 결과 표시 직후 자동 잠금 해제
         }, 3000); // 3초간 스핀
 
       } else {
@@ -114,12 +115,14 @@ export default function GachaRouletteModal({
   const handleClose = () => {
     setResult(null);
     setCurrentHighlight(0);
+    setIsLocked(false);
     onClose();
   };
 
   const handlePlayAgain = () => {
     setResult(null);
     setCurrentHighlight(0);
+    setIsLocked(false);
   };
 
   const getDiamondColor = (diamonds: number) => {
