@@ -1,5 +1,8 @@
-# Node.js 18 Alpine 이미지 사용
+# Node.js 18 Alpine 이미지 사용 (메모리 최적화)
 FROM node:18-alpine AS base
+
+# 메모리 및 스왑 설정
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # 의존성 설치 단계
 FROM base AS deps
@@ -13,8 +16,8 @@ COPY package.json package-lock.json* ./
 # prisma 스키마를 먼저 복사 (postinstall에서 prisma generate가 실행되므로 필요)
 COPY prisma ./prisma/
 
-# 의존성 설치 (postinstall 포함)
-RUN npm ci
+# 의존성 설치 (postinstall 포함, 메모리 제한 설정)
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm ci
 
 # 빌드 단계
 FROM base AS builder
@@ -22,11 +25,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Prisma 클라이언트 생성 (보강)
-RUN npx prisma generate
+# Prisma 클라이언트 생성 (메모리 제한 설정)
+RUN NODE_OPTIONS="--max-old-space-size=2048" npx prisma generate
 
-# Next.js 빌드
-RUN npm run build
+# Next.js 빌드 (메모리 제한 설정)
+RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 # 프로덕션 단계
 FROM base AS runner

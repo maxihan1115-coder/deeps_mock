@@ -68,8 +68,8 @@ const RouletteWheel = forwardRef<RouletteWheelRef, RouletteWheelProps>(
         const targetIndex = rearrangedRewards.indexOf(targetReward);
         
         if (targetIndex !== -1) {
-          // 2바퀴 이상 + 서버 응답값이 12시 포인터에 위치하도록 회전 (시계 방향)
-          const baseRotations = 720; // 2바퀴
+          // 5바퀴 이상 + 서버 응답값이 12시 포인터에 위치하도록 회전 (시계 방향)
+          const baseRotations = 1800; // 5바퀴
           const sectionSize = 360 / rearrangedRewards.length;
           // 시계 방향으로 회전하므로 - 사용
           const finalRotation = baseRotations - (targetIndex * sectionSize);
@@ -84,22 +84,22 @@ const RouletteWheel = forwardRef<RouletteWheelRef, RouletteWheelProps>(
           console.log('');
           
           const wheel = wheelRef.current;
-          wheel.style.transition = 'transform 3.5s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+          wheel.style.transition = 'transform 6.01s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
           wheel.style.transform = `rotate(${finalRotation}deg)`;
         } else {
           console.error('Target reward not found in rearranged rewards:', targetReward);
           // fallback: 랜덤 회전
-          const baseRotations = 720;
+          const baseRotations = 1800; // 5바퀴
           const randomExtra = Math.random() * 360;
           const finalRotation = baseRotations + randomExtra;
           
           const wheel = wheelRef.current;
-          wheel.style.transition = 'transform 3.5s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+          wheel.style.transition = 'transform 6.01s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
           wheel.style.transform = `rotate(${finalRotation}deg)`;
         }
       } else {
         // 서버 응답이 없으면 랜덤 회전
-        const baseRotations = 720;
+        const baseRotations = 1800; // 5바퀴
         const randomExtra = Math.random() * 360;
         const finalRotation = baseRotations + randomExtra;
         
@@ -112,7 +112,7 @@ const RouletteWheel = forwardRef<RouletteWheelRef, RouletteWheelProps>(
       setTimeout(() => {
         isSpinningRef.current = false;
         onSpinComplete?.(serverResponse);
-      }, 3500);
+      }, 6010);
     };
 
     // 특정 보상으로 회전하는 함수
@@ -128,8 +128,8 @@ const RouletteWheel = forwardRef<RouletteWheelRef, RouletteWheelProps>(
         return;
       }
 
-      // 2바퀴 이상 + 서버 응답값이 12시 포인터에 위치하도록 회전 (시계 방향)
-      const baseRotations = 720; // 2바퀴
+      // 5바퀴 이상 + 서버 응답값이 12시 포인터에 위치하도록 회전 (시계 방향)
+      const baseRotations = 1800; // 5바퀴
       const sectionSize = 360 / rearrangedRewards.length;
       // 시계 방향으로 회전하므로 - 사용
       const finalRotation = baseRotations - (targetIndex * sectionSize);
@@ -142,7 +142,7 @@ const RouletteWheel = forwardRef<RouletteWheelRef, RouletteWheelProps>(
       setTimeout(() => {
         isSpinningRef.current = false;
         onSpinComplete?.();
-      }, 3500);
+      }, 6010);
     };
 
     // ref를 통해 외부에서 호출할 수 있도록 expose
