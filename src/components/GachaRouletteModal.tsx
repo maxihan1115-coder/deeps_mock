@@ -163,7 +163,6 @@ export default function GachaRouletteModal({
 
             {/* 구매 정보 */}
             <div className="text-center space-y-2">
-              <p className="text-lg font-semibold">{gachaItem.name}</p>
               <p className="text-gray-600">{gachaItem.description}</p>
               <div className="flex justify-center items-center gap-2">
                 <span className="text-2xl">💎</span>
