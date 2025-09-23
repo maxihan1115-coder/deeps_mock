@@ -46,7 +46,7 @@ async function insertGachaItem() {
       data: {
         id: 'gacha-roulette',
         name: '🎰 다이아몬드 룰렛',
-        description: '500~10000 다이아몬드 중 랜덤 획득! 운이 좋다면 대박!',
+        description: '500 ~ 10000 다이아몬드 를 랜덤으로 획득 합니다.',
         price: 1000, // 구매 가격 (다이아몬드)
         currency: 'DIAMOND',
         isActive: true,

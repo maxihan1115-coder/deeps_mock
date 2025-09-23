@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, Gem } from 'lucide-react';
+import RouletteWheel, { RouletteWheelRef } from './RouletteWheel';
 
 interface GachaRouletteModalProps {
   isOpen: boolean;
@@ -37,25 +37,17 @@ export default function GachaRouletteModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLocked, setIsLocked] = useState(false); // 한번 클릭 후 재활성화 방지
   const [result, setResult] = useState<GachaResult | null>(null);
-  const [currentHighlight, setCurrentHighlight] = useState(0);
   const [showInsufficientModal, setShowInsufficientModal] = useState(false);
+  const rouletteRef = useRef<RouletteWheelRef>(null);
 
-  // 룰렛 아이템들 (11개)
-  const rouletteItems = gachaItem.gachaRewards.map(reward => ({
-    diamonds: reward.diamonds,
-    probability: reward.probability
-  }));
-
-  // 룰렛 스핀 애니메이션
-  useEffect(() => {
-    if (isSpinning) {
-      const interval = setInterval(() => {
-        setCurrentHighlight(prev => (prev + 1) % rouletteItems.length);
-      }, 100);
-
-      return () => clearInterval(interval);
-    }
-  }, [isSpinning, rouletteItems.length]);
+  // 룰렛 보상 데이터
+  const rewards = gachaItem.gachaRewards.map(reward => reward.diamonds);
+  
+  // 룰렛 색상 배열 (11개) - 스크린샷에 맞게 수정
+  const colors = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9', '#F8C471'
+  ];
 
   const handlePurchase = async () => {
     if (isProcessing || isLocked) return;
@@ -83,16 +75,13 @@ export default function GachaRouletteModal({
       if (data.success) {
         console.log('✅ 가챠 구매 성공:', data.payload);
         
-        // 스핀 애니메이션 후 결과 표시
-        setTimeout(() => {
-          setIsSpinning(false);
-          setResult(data.payload);
-          setIsLocked(false); // 결과 표시 직후 자동 잠금 해제
-        }, 3000); // 3초간 스핀
+        // 서버 응답을 룰렛 회전과 함께 전달
+        rouletteRef.current?.spinRandom(data.payload);
 
       } else {
         console.error('❌ 가챠 구매 실패:', data);
         setIsSpinning(false);
+        setIsLocked(false);
         
         // 다이아몬드 부족 에러인지 확인
         const errorMessage = data.payload || data.error || '';
@@ -105,9 +94,20 @@ export default function GachaRouletteModal({
     } catch (error) {
       console.error('❌ 가챠 구매 중 오류:', error);
       setIsSpinning(false);
+      setIsLocked(false);
       alert('가챠 구매 중 오류가 발생했습니다.');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  // 룰렛 회전 완료 콜백
+  const handleSpinComplete = (serverResponse?: GachaResult) => {
+    setIsSpinning(false);
+    setIsLocked(false);
+    // 회전 완료 후 결과 표시 (서버 응답을 직접 받음)
+    if (serverResponse) {
+      setResult(serverResponse);
     }
   };
 
@@ -115,7 +115,6 @@ export default function GachaRouletteModal({
     // 헤더 잔액 갱신 (확인 버튼 클릭 시)
     (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance?.();
     setResult(null);
-    setCurrentHighlight(0);
     setIsLocked(false);
     onClose();
   };
@@ -124,7 +123,6 @@ export default function GachaRouletteModal({
     // 헤더 잔액 갱신 (다시 구매 클릭 시)
     (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance?.();
     setResult(null);
-    setCurrentHighlight(0);
     setIsLocked(false);
   };
 
@@ -153,30 +151,14 @@ export default function GachaRouletteModal({
 
         {!result ? (
           <div className="space-y-6">
-            {/* 룰렛 그리드 */}
-            <div className="grid grid-cols-4 gap-3 p-4 bg-gray-100 rounded-lg">
-              {rouletteItems.map((item, index) => (
-                <Card 
-                  key={index}
-                  className={`transition-all duration-200 ${
-                    isSpinning && currentHighlight === index 
-                      ? 'ring-4 ring-yellow-400 shadow-lg scale-105' 
-                      : 'hover:shadow-md'
-                  }`}
-                >
-                  <CardContent className="p-3 text-center">
-                    <div className={`text-2xl mb-1 ${getDiamondColor(item.diamonds)} bg-clip-text text-transparent`}>
-                      {getDiamondEmoji(item.diamonds)}
-                    </div>
-                    <div className="text-sm font-bold">
-                      {item.diamonds.toLocaleString()}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {item.probability}%
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            {/* 룰렛 휠 */}
+            <div className="flex justify-center">
+              <RouletteWheel
+                ref={rouletteRef}
+                rewards={rewards}
+                colors={colors}
+                onSpinComplete={handleSpinComplete}
+              />
             </div>
 
             {/* 구매 정보 */}
