@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Quest } from '@/types';
-import { Trophy, Calendar, Clock, Target, Star, RefreshCw, UserX, Award, ShoppingCart } from 'lucide-react';
+import { Trophy, Calendar, Clock, Target, Star, RefreshCw, UserX, Award, ShoppingCart, Info } from 'lucide-react';
 
 interface QuestPanelProps {
   userId: string;
@@ -21,6 +21,40 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   // 카탈로그 방식: 별도 초기화 불필요
   const [error, setError] = useState<string | null>(null);
   const [isLinked, setIsLinked] = useState<boolean | null>(null);
+
+  // 탭별 설명 데이터
+  const tabDescriptions = {
+    general: {
+      title: "플랫폼 연동_인게임",
+      description: "플랫폼 연동 시 카운팅 되는 게임 퀘스트",
+      icon: Star
+    },
+    daily: {
+      title: "일일 퀘스트", 
+      description: "매일 초기화되는 퀘스트입니다. 초기화 시간은 자정 입니다.",
+      icon: RefreshCw
+    },
+    attendance: {
+      title: "출석체크 퀘스트",
+      description: "출석체크를 통해 완료할 수 있는 퀘스트.",
+      icon: Calendar
+    },
+    ranking: {
+      title: "랭킹형 퀘스트",
+      description: "랭킹으로 퀘스트 달성여부를 체크(미구현)",
+      icon: Award
+    },
+    purchase: {
+      title: "구매 퀘스트",
+      description: "아이템 구매를 통해 퀘스트 달성 여부 체크",
+      icon: ShoppingCart
+    },
+    other: {
+      title: "기타 퀘스트",
+      description: "특별한 조건을 만족해야 완료할 수 있는 퀘스트입니다.",
+      icon: UserX
+    }
+  };
 
   // 플랫폼 연동 상태 확인
   const checkPlatformLinkStatus = useCallback(async () => {
@@ -372,17 +406,26 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             <Trophy className="w-5 h-5" />
             퀘스트
           </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-2"
-            title="퀘스트 새로고침"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">새로고침</span>
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* 플랫폼 연동 상태 표시 */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">플랫폼 연동 여부:</span>
+              <span className={`text-sm font-medium ${isLinked === true ? 'text-green-600' : 'text-red-600'}`}>
+                {isLinked === true ? '연동 됨' : isLinked === false ? '미연동' : '확인 중...'}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2"
+              title="퀘스트 새로고침"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">새로고침</span>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -399,17 +442,6 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
           </div>
         )}
         
-        {isLinked === true && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-green-800">연동 완료</span>
-            </div>
-            <p className="text-xs text-green-700 mt-1">
-              퀘스트 진행도가 실시간으로 저장됩니다.
-            </p>
-          </div>
-        )}
 
         {error && (
           <div className="text-center space-y-3 mb-4">
@@ -461,9 +493,21 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             </TabsList>
             
             <TabsContent value="general" className="space-y-3 mt-4">
+              {/* 탭별 설명 영역 */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">{tabDescriptions.general.title}</span>
+                </div>
+                <p className="text-xs text-blue-700 mt-1">
+                  {tabDescriptions.general.description}
+                </p>
+              </div>
+
+
               {getQuestsByCategory('general').length === 0 ? (
                 <div className="text-center text-gray-500 py-4">
-                  일반 퀘스트가 없습니다.
+                    플랫폼 연동_인게임 퀘스트가 없습니다.
                 </div>
               ) : (
                 getQuestsByCategory('general').map(renderQuest)
@@ -471,6 +515,18 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             </TabsContent>
             
             <TabsContent value="daily" className="space-y-3 mt-4">
+              {/* 탭별 설명 영역 */}
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm font-medium text-orange-800">{tabDescriptions.daily.title}</span>
+                </div>
+                <p className="text-xs text-orange-700 mt-1">
+                  {tabDescriptions.daily.description}
+                </p>
+              </div>
+
+
               {getQuestsByCategory('daily').length === 0 ? (
                 <div className="text-center text-gray-500 py-4">
                   초기화 퀘스트가 없습니다.
@@ -481,6 +537,18 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             </TabsContent>
             
             <TabsContent value="attendance" className="space-y-3 mt-4">
+              {/* 탭별 설명 영역 */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-medium text-purple-800">{tabDescriptions.attendance.title}</span>
+                </div>
+                <p className="text-xs text-purple-700 mt-1">
+                  {tabDescriptions.attendance.description}
+                </p>
+              </div>
+
+
               {getQuestsByCategory('attendance').length === 0 ? (
                 <div className="text-center text-gray-500 py-4">
                   출석체크 퀘스트가 없습니다.
@@ -491,6 +559,18 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             </TabsContent>
             
             <TabsContent value="ranking" className="space-y-3 mt-4">
+              {/* 탭별 설명 영역 */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-yellow-600" />
+                  <span className="text-sm font-medium text-yellow-800">{tabDescriptions.ranking.title}</span>
+                </div>
+                <p className="text-xs text-yellow-700 mt-1">
+                  {tabDescriptions.ranking.description}
+                </p>
+              </div>
+
+
               {getQuestsByCategory('ranking').length === 0 ? (
                 <div className="text-center text-gray-500 py-4">
                   랭킹형 퀘스트가 없습니다.
@@ -501,6 +581,18 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             </TabsContent>
             
             <TabsContent value="purchase" className="space-y-3 mt-4">
+              {/* 탭별 설명 영역 */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">{tabDescriptions.purchase.title}</span>
+                </div>
+                <p className="text-xs text-green-700 mt-1">
+                  {tabDescriptions.purchase.description}
+                </p>
+              </div>
+
+
               {getQuestsByCategory('purchase').length === 0 ? (
                 <div className="text-center text-gray-500 py-4">
                   아이템 구매 퀘스트가 없습니다.
@@ -513,6 +605,18 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             </TabsContent>
             
             <TabsContent value="other" className="space-y-3 mt-4">
+              {/* 탭별 설명 영역 */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm font-medium text-gray-800">{tabDescriptions.other.title}</span>
+                </div>
+                <p className="text-xs text-gray-700 mt-1">
+                  {tabDescriptions.other.description}
+                </p>
+              </div>
+
+
               {getQuestsByCategory('other').length === 0 ? (
                 <div className="text-center text-gray-500 py-4">
                   기타 퀘스트가 없습니다.

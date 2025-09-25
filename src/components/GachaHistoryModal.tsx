@@ -107,72 +107,80 @@ export default function GachaHistoryModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
+      <DialogContent className="max-w-5xl max-h-[85vh] w-full mx-4">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
-            <History className="w-6 h-6" />
+          <DialogTitle className="text-xl md:text-2xl font-bold text-center flex items-center justify-center gap-2">
+            <History className="w-5 h-5 md:w-6 md:h-6" />
             가챠 구매 내역
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6 overflow-hidden">
           {/* 통계 카드 */}
           {stats && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
               <Card>
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-600">{stats.totalPurchases}</div>
-                  <div className="text-sm text-gray-600">총 구매 횟수</div>
+                <CardContent className="p-3 md:p-4 text-center">
+                  <div className="font-bold text-blue-600 whitespace-nowrap" style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}>
+                    {stats.totalPurchases}
+                  </div>
+                  <div className="text-xs md:text-sm text-gray-600 whitespace-nowrap">총 구매 횟수</div>
                 </CardContent>
               </Card>
               
               <Card>
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-red-600">
+                <CardContent className="p-3 md:p-4 text-center">
+                  <div className="font-bold text-red-600 whitespace-nowrap" style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}>
                     {stats.totalSpent.toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-600">총 사용 다이아</div>
+                  <div className="text-xs md:text-sm text-gray-600 whitespace-nowrap">총 사용 다이아</div>
                 </CardContent>
               </Card>
               
               <Card>
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-green-600">
+                <CardContent className="p-3 md:p-4 text-center">
+                  <div className="font-bold text-green-600 whitespace-nowrap" style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}>
                     {stats.totalEarned.toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-600">총 획득 다이아</div>
+                  <div className="text-xs md:text-sm text-gray-600 whitespace-nowrap">총 획득 다이아</div>
                 </CardContent>
               </Card>
               
               <Card>
-                <CardContent className="p-4 text-center">
-                  <div className={`text-2xl font-bold flex items-center justify-center gap-1 ${getNetGainColor(stats.netGain)}`}>
+                <CardContent className="p-3 md:p-4 text-center">
+                  <div className={`font-bold flex items-center justify-center gap-1 ${getNetGainColor(stats.netGain)} whitespace-nowrap`} style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}>
                     {getNetGainIcon(stats.netGain)}
-                    {stats.netGain > 0 ? '+' : ''}{stats.netGain.toLocaleString()}
+                    <span>
+                      {stats.netGain > 0 ? '+' : ''}{stats.netGain.toLocaleString()}
+                    </span>
                   </div>
-                  <div className="text-sm text-gray-600">순이익</div>
+                  <div className="text-xs md:text-sm text-gray-600 whitespace-nowrap">순이익</div>
                 </CardContent>
               </Card>
             </div>
           )}
 
           {/* 구매 내역 */}
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div className="space-y-2 md:space-y-3 max-h-80 md:max-h-96 overflow-y-auto">
             {history.length > 0 ? (
               history.map((item) => (
                 <Card key={item.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Gem className="w-4 h-4 text-blue-600" />
-                          <span className="font-semibold">{item.gachaItem.name}</span>
-                          <Badge variant="outline" className="text-xs">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Gem className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                            <span className="font-semibold whitespace-nowrap" style={{ fontSize: 'clamp(0.625rem, 1.5vw, 0.875rem)' }}>
+                              {item.gachaItem.name}
+                            </span>
+                          </div>
+                          <Badge variant="outline" className="text-xs w-fit">
                             {formatDate(item.createdAt)}
                           </Badge>
                         </div>
                         
-                        <div className="flex items-center gap-4 text-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs md:text-sm">
                           <div className="flex items-center gap-1 text-red-600">
                             <span>사용:</span>
                             <span className="font-bold">{item.diamondCost.toLocaleString()}</span>
@@ -193,13 +201,13 @@ export default function GachaHistoryModal({
                         </div>
                       </div>
                       
-                      <div className="text-right">
+                      <div className="flex justify-end md:text-right">
                         {item.earnedDiamonds > item.diamondCost ? (
-                          <Badge className="bg-green-100 text-green-800">수익</Badge>
+                          <Badge className="bg-green-100 text-green-800 text-xs">수익</Badge>
                         ) : item.earnedDiamonds < item.diamondCost ? (
-                          <Badge className="bg-red-100 text-red-800">손실</Badge>
+                          <Badge className="bg-red-100 text-red-800 text-xs">손실</Badge>
                         ) : (
-                          <Badge className="bg-gray-100 text-gray-800">무손익</Badge>
+                          <Badge className="bg-gray-100 text-gray-800 text-xs">무손익</Badge>
                         )}
                       </div>
                     </div>
@@ -216,8 +224,8 @@ export default function GachaHistoryModal({
           </div>
 
           {/* 닫기 버튼 */}
-          <div className="flex justify-center">
-            <Button onClick={onClose} variant="outline" className="px-8">
+          <div className="flex justify-center pt-2">
+            <Button onClick={onClose} variant="outline" className="px-6 md:px-8">
               닫기
             </Button>
           </div>
