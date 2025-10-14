@@ -41,7 +41,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     },
     ranking: {
       title: "랭킹형 퀘스트",
-      description: "랭킹으로 퀘스트 달성여부를 체크(미구현)",
+      description: "시즌 랭킹에 따른 퀘스트 달성 여부를 체크합니다.",
       icon: Award
     },
     purchase: {
@@ -206,8 +206,9 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     if (id === 9 || id === 10) return 'daily';
     if (id === 12) return 'attendance';
     if (id >= 14 && id <= 21) return 'purchase'; // 아이템 구매 퀘스트
+    if (id >= 22 && id <= 25) return 'ranking'; // 랭킹 퀘스트 (22~25)
     if (id === 13) return 'other';
-    return 'ranking'; // 추후 추가될 랭킹형 퀘스트
+    return 'other'; // 기타 퀘스트
   };
 
   // 퀘스트 필터링 함수
@@ -429,18 +430,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* 연동 상태 표시 */}
-        {isLinked === false && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm font-medium text-yellow-800">미연동 상태</span>
-            </div>
-            <p className="text-xs text-yellow-700 mt-1">
-              플랫폼 연동을 완료하면 퀘스트 진행도가 저장됩니다.
-            </p>
-          </div>
-        )}
+        {/* 연동 상태 표시 (랭킹형 탭 요구에 따라 문구 제거) */}
         
 
         {error && (
@@ -559,21 +549,26 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             </TabsContent>
             
             <TabsContent value="ranking" className="space-y-3 mt-4">
-              {/* 탭별 설명 영역 */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <Info className="w-4 h-4 text-yellow-600" />
-                  <span className="text-sm font-medium text-yellow-800">{tabDescriptions.ranking.title}</span>
+              {/* 탭별 설명 영역 - 문구 제거 */}
+
+
+              {/* 현재 시즌 랭킹 정보 */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">현재 시즌 랭킹</span>
                 </div>
-                <p className="text-xs text-yellow-700 mt-1">
-                  {tabDescriptions.ranking.description}
+                <p className="text-xs text-blue-700">
+                  시즌이 종료되면 랭킹에 따른 퀘스트가 자동으로 달성됩니다. (종료일: 2025년 10월 15일 11:00 KST)
                 </p>
               </div>
 
-
               {getQuestsByCategory('ranking').length === 0 ? (
                 <div className="text-center text-gray-500 py-4">
-                  랭킹형 퀘스트가 없습니다.
+                  <div className="space-y-2">
+                    <p>시즌 랭킹 퀘스트가 없습니다.</p>
+                    <p className="text-sm">시즌이 종료되면 랭킹에 따른 퀘스트가 표시됩니다.</p>
+                  </div>
                 </div>
               ) : (
                 getQuestsByCategory('ranking').map(renderQuest)

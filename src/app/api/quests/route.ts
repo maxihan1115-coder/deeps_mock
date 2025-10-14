@@ -152,9 +152,10 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('퀘스트 조회 중 오류:', error);
+    console.error('에러 스택:', error instanceof Error ? error.stack : 'No stack trace');
     const errorResponse = createErrorResponse(
       API_ERROR_CODES.SERVICE_UNAVAILABLE,
-      '퀘스트 조회 중 오류가 발생했습니다.'
+      `퀘스트 조회 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`
     );
     return NextResponse.json(
       errorResponse,

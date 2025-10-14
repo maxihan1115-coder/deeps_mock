@@ -38,6 +38,11 @@ class MySQLGameStore {
       { id: '19', title: 'GOLD_5000_LINKED', description: '골드 5000 구매 (플랫폼 연동 이후 카운트, 게임플레이 골드 제외)', type: 'PURCHASE', maxProgress: 5000, reward: 100 },
       { id: '20', title: 'DIAMOND_5000_WEEK', description: '다이아 5000 구매 (계정 생성 후 일주일간만 카운트, 룰렛 다이아 제외)', type: 'PURCHASE', maxProgress: 5000, reward: 100 },
       { id: '21', title: 'DIAMOND_5000_LINKED', description: '다이아 5000 구매 (플랫폼 연동 이후 카운트, 룰렛 다이아 제외)', type: 'PURCHASE', maxProgress: 5000, reward: 100 },
+      // 랭킹 퀘스트 (22~25)
+      { id: '22', title: 'SEASON_RANK_1ST', description: '시즌 랭킹 1등 달성', type: 'RANKING', maxProgress: 1, reward: 1000 },
+      { id: '23', title: 'SEASON_RANK_2ND', description: '시즌 랭킹 2등 달성', type: 'RANKING', maxProgress: 1, reward: 800 },
+      { id: '24', title: 'SEASON_RANK_3RD', description: '시즌 랭킹 3등 달성', type: 'RANKING', maxProgress: 1, reward: 600 },
+      { id: '25', title: 'SEASON_RANK_TOP10', description: '시즌 랭킹 4~10등 달성', type: 'RANKING', maxProgress: 1, reward: 400 },
     ] as const;
 
     for (const q of catalog) {
@@ -98,7 +103,8 @@ class MySQLGameStore {
       DAILY: 'daily', 
       WEEKLY: 'weekly', 
       MONTHLY: 'monthly', 
-      PURCHASE: 'single' 
+      PURCHASE: 'single',
+      RANKING: 'single' 
     };
     return catalog
       .filter(c => c.id !== '11') // 11번 퀘스트(HARD_DROP_10) 숨김 처리
@@ -550,34 +556,18 @@ class MySQLGameStore {
 
   // 하이스코어 관련 메서드
   async saveHighScore(userId: number, score: number, level: number, lines: number): Promise<void> {
-    // 사용자별로 1건만 유지하며, 최고 점수만 기록
-    const existing = await prisma.highScore.findFirst({
-      where: { userId },
-      orderBy: { score: 'desc' },
+    // 유니크([userId]) 기반 업서트 + 점수 비교를 트랜잭션으로 보호
+    await prisma.$transaction(async (tx) => {
+      const current = await tx.highScore.findUnique({ where: { userId } });
+      if (!current) {
+        await tx.highScore.create({ data: { userId, score, level, lines } });
+        return;
+      }
+      if (score > current.score) {
+        await tx.highScore.update({ where: { userId }, data: { score, level, lines } });
+      }
+      // 낮거나 같으면 변경 없음
     });
-
-    if (!existing) {
-      const created = await prisma.highScore.create({
-        data: { userId, score, level, lines },
-      });
-      // 혹시 존재하는 중복 레코드 정리
-      await prisma.highScore.deleteMany({ where: { userId, NOT: { id: created.id } } });
-      return;
-    }
-
-    // 새 점수가 더 높을 때만 업데이트
-    if (score > existing.score) {
-      const updated = await prisma.highScore.update({
-        where: { id: existing.id },
-        data: { score, level, lines },
-      });
-      // 중복 레코드 정리
-      await prisma.highScore.deleteMany({ where: { userId, NOT: { id: updated.id } } });
-      return;
-    }
-
-    // 점수가 낮거나 같으면 기존 최고 점수 유지, 그리고 중복 레코드가 있다면 정리
-    await prisma.highScore.deleteMany({ where: { userId, NOT: { id: existing.id } } });
   }
 
   async getHighScore(userId: number): Promise<{ score: number; level: number; lines: number } | null> {

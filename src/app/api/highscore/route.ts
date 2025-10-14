@@ -80,51 +80,70 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 현재 최고 점수 조회 (인덱스 활용으로 최적화)
-    const currentHighScore = await prisma.highScore.findFirst({
-      where: { userId: gameUuid }, // 숫자 UUID 사용
-      orderBy: { score: 'desc' },
-      select: { score: true, level: true, lines: true, createdAt: true } // 필요한 필드만 선택
+    // 트랜잭션: HighScore 업서트 + Ranking 업서트 (동시 호출 안전)
+    const result = await prisma.$transaction(async (tx) => {
+      const currentHigh = await tx.highScore.findUnique({
+        where: { userId: gameUuid },
+        select: { score: true, level: true, lines: true, createdAt: true }
+      });
+
+      let finalHigh = currentHigh;
+      let isNewRecord = false;
+
+      if (!currentHigh) {
+        finalHigh = await tx.highScore.create({
+          data: { userId: gameUuid, score, level, lines },
+          select: { score: true, level: true, lines: true, createdAt: true }
+        });
+        isNewRecord = true;
+      } else if (score > currentHigh.score) {
+        finalHigh = await tx.highScore.update({
+          where: { userId: gameUuid },
+          data: { score, level, lines },
+          select: { score: true, level: true, lines: true, createdAt: true }
+        });
+        isNewRecord = true;
+      }
+
+      // 랭킹 업서트
+      const user = await tx.user.findUnique({ where: { uuid: gameUuid }, select: { id: true } });
+      if (user) {
+        const periodStartDate = new Date('2025-01-01T00:00:00+09:00');
+        const periodEndDate = new Date('2025-10-15T11:00:00+09:00');
+        const existingRanking = await tx.ranking.findFirst({
+          where: { userId: user.id, rankingPeriod: 'season', periodStartDate }
+        });
+        if (!existingRanking) {
+          await tx.ranking.create({
+            data: { userId: user.id, gameUuid, score, level, lines, rankingPeriod: 'season', periodStartDate, periodEndDate, rankPosition: 0 }
+          });
+        } else if (score > existingRanking.score) {
+          await tx.ranking.update({ where: { id: existingRanking.id }, data: { score, level, lines } });
+        }
+      }
+
+      return { finalHigh, isNewRecord };
     });
-
-    // 새로운 점수가 최고 점수보다 높거나 같으면 저장
-    if (!currentHighScore || score >= currentHighScore.score) {
-      const newHighScore = await prisma.highScore.create({
-        data: {
-          userId: gameUuid, // 숫자 UUID 사용
-          score,
-          level,
-          lines,
-        },
-        select: { score: true, level: true, lines: true, createdAt: true } // 필요한 필드만 선택
-      });
-
-      return NextResponse.json({
-        success: true,
-        isNewRecord: !currentHighScore || score > currentHighScore.score,
-        highScore: {
-          score: newHighScore.score,
-          level: newHighScore.level,
-          lines: newHighScore.lines,
-          createdAt: newHighScore.createdAt,
-        },
-      });
-    }
 
     return NextResponse.json({
       success: true,
-      isNewRecord: false,
-      highScore: currentHighScore ? {
-        score: currentHighScore.score,
-        level: currentHighScore.level,
-        lines: currentHighScore.lines,
-        createdAt: currentHighScore.createdAt,
+      isNewRecord: result.isNewRecord,
+      highScore: result.finalHigh ? {
+        score: result.finalHigh.score,
+        level: result.finalHigh.level,
+        lines: result.finalHigh.lines,
+        createdAt: result.finalHigh.createdAt,
       } : null,
     });
   } catch (error) {
     console.error('High score 저장 오류:', error);
+    console.error('에러 스택:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { success: false, error: '최고 점수 저장 중 오류가 발생했습니다.' },
+      { 
+        success: false, 
+        error: '최고 점수 저장 중 오류가 발생했습니다.',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }

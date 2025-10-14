@@ -72,10 +72,59 @@ export async function POST(request: NextRequest) {
 
     console.log('🎮 게임오버 처리 시작:', { gameUuid, score, level, lines });
 
-    // 1. 하이스코어 저장
-    console.log('💾 하이스코어 저장 시작...');
-    const highScoreResult = await mysqlGameStore.saveHighScore(gameUuid, score, level, lines);
-    console.log('✅ 하이스코어 저장 완료:', highScoreResult);
+    // 1. 하이스코어 + 랭킹을 트랜잭션으로 저장 (동시 호출 안전)
+    await prisma.$transaction(async (tx) => {
+      // HighScore 업서트(유니크 userId)
+      const current = await tx.highScore.findUnique({ where: { userId: gameUuid } });
+      if (!current) {
+        try {
+          await tx.highScore.create({ data: { userId: gameUuid, score, level, lines } });
+        } catch (e) {
+          // 유니크 충돌(P2002) 발생 시 동시 다른 트랜잭션이 먼저 생성한 것 → UPDATE로 폴백
+          if ((e as { code?: string })?.code === 'P2002') {
+            await tx.highScore.update({ where: { userId: gameUuid }, data: { score, level, lines } });
+          } else {
+            throw e;
+          }
+        }
+      } else if (score > current.score) {
+        await tx.highScore.update({ where: { userId: gameUuid }, data: { score, level, lines } });
+      }
+
+      // Ranking 업서트(유니크 userId+period+start)
+      const user = await tx.user.findUnique({ where: { uuid: gameUuid }, select: { id: true } });
+      if (!user) return;
+      const periodStartDate = new Date('2025-01-01T00:00:00+09:00');
+      const periodEndDate = new Date('2025-10-15T11:00:00+09:00');
+      const existingRanking = await tx.ranking.findFirst({
+        where: { userId: user.id, rankingPeriod: 'season', periodStartDate }
+      });
+      if (!existingRanking) {
+        try {
+          await tx.ranking.create({
+            data: { userId: user.id, gameUuid: gameUuid, score, level, lines, rankingPeriod: 'season', periodStartDate, periodEndDate, rankPosition: 0 }
+          });
+        } catch (e) {
+          // 동시 생성 충돌 시 UPDATE 폴백
+          if ((e as { code?: string })?.code === 'P2002') {
+            await tx.ranking.update({
+              where: { id: (await tx.ranking.findFirst({ where: { userId: user.id, rankingPeriod: 'season', periodStartDate }, select: { id: true } }))!.id },
+              data: { score, level, lines }
+            });
+          } else {
+            throw e;
+          }
+        }
+      } else if (score > existingRanking.score) {
+        await tx.ranking.update({ where: { id: existingRanking.id }, data: { score, level, lines } });
+      }
+    });
+
+    // 트랜잭션 이후 최신 하이스코어 조회하여 응답에 포함
+    const highScoreResult = await prisma.highScore.findUnique({
+      where: { userId: gameUuid },
+      select: { score: true, level: true, lines: true, createdAt: true }
+    });
 
     // 2. 골드 지급 (점수의 1/10)
     const earnedGold = Math.floor(score / 10);
@@ -186,7 +235,7 @@ export async function POST(request: NextRequest) {
 
     // 4. 응답 데이터 구성
     const responseData = {
-      highScore: highScoreResult,
+      highScore: highScoreResult || null,
       questUpdates: questResults,
       earnedGold: earnedGold,
       goldResult: goldResult,

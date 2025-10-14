@@ -43,6 +43,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   // 게임 결과 모달 상태
   const [showGameResultModal, setShowGameResultModal] = useState(false);
   const [isProcessingGameOver, setIsProcessingGameOver] = useState(false);
+  const isProcessingGameOverRef = useRef(false);
   const [gameResult, setGameResult] = useState({
     score: 0,
     level: 1,
@@ -275,6 +276,12 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   // 게임오버 처리 통합 함수
   const handleGameOver = useCallback(async (score: number, level: number, lines: number) => {
     try {
+      if (isProcessingGameOverRef.current) {
+        return;
+      }
+      isProcessingGameOverRef.current = true;
+      // 이전 결과 모달이 열려 있다면 닫기
+      setShowGameResultModal(false);
       setIsProcessingGameOver(true);
       console.log('🎮 게임오버 API 호출 시작:', { gameUuid: userId, score, level, lines });
       
@@ -354,6 +361,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       onGameOverRef.current();
     } finally {
       setIsProcessingGameOver(false);
+      isProcessingGameOverRef.current = false;
     }
   }, [userId, onHighScoreUpdate, saveHighScore]);
 
@@ -403,6 +411,9 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           // 게임 오버 체크
           if (!isValidPosition(newState.currentBlock, newState.board)) {
             newState.isGameOver = true;
+            // 오버레이를 즉시 표시(중복 호출 가드도 즉시 세팅)
+            isProcessingGameOverRef.current = true;
+            setIsProcessingGameOver(true);
             
             // 게임오버 처리를 다음 렌더 사이클로 지연
             const gameOverScore = newState.score;
@@ -528,6 +539,9 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             // 게임 오버 체크
             if (!isValidPosition(newState.currentBlock, newState.board)) {
               newState.isGameOver = true;
+              // 오버레이 즉시 표시
+              isProcessingGameOverRef.current = true;
+              setIsProcessingGameOver(true);
               
               // 게임오버 처리를 다음 렌더 사이클로 지연
               const gameOverScore = newState.score;
@@ -538,7 +552,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                 if (typeof handleGameOver === 'function') {
                   handleGameOver(gameOverScore, gameOverLevel, gameOverLines);
                 }
-              }, 0);
+              }, 100);
             }
           }
           break;
@@ -974,7 +988,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
 
           {/* 게임 종료 처리 중 로딩 오버레이 */}
           {isProcessingGameOver && (
-            <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center rounded-lg">
+            <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center rounded-lg z-50">
               <div className="text-center space-y-4 px-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
                 <h2 className="text-xl sm:text-2xl font-bold text-white">
