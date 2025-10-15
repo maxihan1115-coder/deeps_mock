@@ -73,22 +73,26 @@ export async function POST(request: NextRequest) {
     console.log('🎮 게임오버 처리 시작:', { gameUuid, score, level, lines });
 
     // 1. 하이스코어 + 랭킹을 트랜잭션으로 저장 (동시 호출 안전)
+    let isNewHighScore = false;
     await prisma.$transaction(async (tx) => {
       // HighScore 업서트(유니크 userId)
       const current = await tx.highScore.findUnique({ where: { userId: gameUuid } });
       if (!current) {
         try {
           await tx.highScore.create({ data: { userId: gameUuid, score, level, lines } });
+          isNewHighScore = true; // 첫 기록이므로 새로운 최고 기록
         } catch (e) {
           // 유니크 충돌(P2002) 발생 시 동시 다른 트랜잭션이 먼저 생성한 것 → UPDATE로 폴백
           if ((e as { code?: string })?.code === 'P2002') {
             await tx.highScore.update({ where: { userId: gameUuid }, data: { score, level, lines } });
+            isNewHighScore = true; // 첫 기록이므로 새로운 최고 기록
           } else {
             throw e;
           }
         }
       } else if (score > current.score) {
         await tx.highScore.update({ where: { userId: gameUuid }, data: { score, level, lines } });
+        isNewHighScore = true; // 기존 기록보다 높으므로 새로운 최고 기록
       }
 
       // Ranking 업서트(유니크 userId+period+start)
@@ -125,6 +129,38 @@ export async function POST(request: NextRequest) {
       where: { userId: gameUuid },
       select: { score: true, level: true, lines: true, createdAt: true }
     });
+
+    // 랭킹 정보 조회
+    const user = await prisma.user.findUnique({ where: { uuid: gameUuid }, select: { id: true } });
+    let rankingInfo = null;
+    if (user) {
+      const periodStartDate = new Date('2025-01-01T00:00:00+09:00');
+      const currentRanking = await prisma.ranking.findFirst({
+        where: { userId: user.id, rankingPeriod: 'season', periodStartDate },
+        select: { score: true, level: true, lines: true }
+      });
+
+      if (currentRanking) {
+        // 현재 순위 계산 (같은 점수 이상인 사용자 수)
+        const currentRank = await prisma.ranking.count({
+          where: { 
+            rankingPeriod: 'season', 
+            periodStartDate,
+            score: { gte: currentRanking.score }
+          }
+        });
+
+        // 전체 플레이어 수
+        const totalPlayers = await prisma.ranking.count({
+          where: { rankingPeriod: 'season', periodStartDate }
+        });
+
+        rankingInfo = {
+          currentRank,
+          totalPlayers
+        };
+      }
+    }
 
     // 2. 골드 지급 (점수의 1/10)
     const earnedGold = Math.floor(score / 10);
@@ -236,6 +272,8 @@ export async function POST(request: NextRequest) {
     // 4. 응답 데이터 구성
     const responseData = {
       highScore: highScoreResult || null,
+      isNewHighScore: isNewHighScore,
+      rankingInfo: rankingInfo,
       questUpdates: questResults,
       earnedGold: earnedGold,
       goldResult: goldResult,

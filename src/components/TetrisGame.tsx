@@ -42,13 +42,23 @@ interface TetrisGameProps {
 export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver, onHighScoreUpdate, onPlatformLinkStatusChange, onGameStateChange }: TetrisGameProps) {
   // 게임 결과 모달 상태
   const [showGameResultModal, setShowGameResultModal] = useState(false);
+  const [showFailureModal, setShowFailureModal] = useState(false);
+  const [failureMessage, setFailureMessage] = useState('');
   const [isProcessingGameOver, setIsProcessingGameOver] = useState(false);
   const isProcessingGameOverRef = useRef(false);
   const [gameResult, setGameResult] = useState({
     score: 0,
     level: 1,
     lines: 0,
-    earnedGold: 0
+    earnedGold: 0,
+    isNewHighScore: false,
+    isRankingUpdated: false,
+    rankingInfo: undefined as {
+      currentRank: number;
+      previousRank?: number;
+      rankChange?: number;
+      totalPlayers: number;
+    } | undefined
   });
   const BOARD_WIDTH = 10;
   const BOARD_HEIGHT = 20;
@@ -113,65 +123,6 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       return false;
     }
   }, [userId, onPlatformLinkStatusChange]);
-
-  // 하이스코어 저장 (폴백용 - 게임오버 API 실패 시 사용)
-  const saveHighScore = useCallback(async (score: number, level: number, lines: number) => {
-    // 데이터 유효성 검사
-    if (typeof score !== 'number' || typeof level !== 'number' || typeof lines !== 'number') {
-      console.error('하이스코어 저장 실패: 잘못된 데이터 타입');
-      return;
-    }
-    
-    if (!Number.isFinite(score) || !Number.isFinite(level) || !Number.isFinite(lines)) {
-      console.error('하이스코어 저장 실패: 무한값 또는 NaN');
-      return;
-    }
-    
-    if (score < 0 || level < 0 || lines < 0) {
-      console.error('하이스코어 저장 실패: 음수 값');
-      return;
-    }
-    
-    try {
-      const requestBody = {
-        gameUuid: userId,
-        score,
-        level,
-        lines
-      };
-      
-      const response = await fetch('/api/highscore', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('하이스코어 저장 실패:', response.status, errorText);
-        return;
-      }
-      
-      const result = await response.json();
-      
-      // 하이스코어 업데이트 콜백 호출
-      if (onHighScoreUpdate && result.highScore) {
-        onHighScoreUpdate(result.highScore.score, result.highScore.level, result.highScore.lines);
-      }
-    } catch (error) {
-      console.error('하이스코어 저장 오류:', error);
-    }
-  }, [userId, onHighScoreUpdate]);
-
-
-  // 퀘스트 진행도는 게임 종료 시 서버에서 자동으로 업데이트됩니다.
-
-
-  // 퀘스트 체크는 게임 종료 시 서버에서 자동으로 처리됩니다.
-
-
 
   // 컴포넌트 마운트 시 플랫폼 연동 상태 확인
   useEffect(() => {
@@ -280,13 +231,17 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         return;
       }
       isProcessingGameOverRef.current = true;
-      // 이전 결과 모달이 열려 있다면 닫기
+      
+      // 즉시 로딩 표시 (키 입력 차단됨)
       setShowGameResultModal(false);
+      setShowFailureModal(false);
       setIsProcessingGameOver(true);
+      
       console.log('🎮 게임오버 API 호출 시작:', { gameUuid: userId, score, level, lines });
       
       // 게임오버 API 호출 (하이스코어 저장 + 퀘스트 업데이트 통합 처리)
-      const response = await fetch('/api/game/over', {
+      const baseUrl = (typeof window !== 'undefined' ? window.location.origin : '') || (process.env.NEXT_PUBLIC_APP_URL || '');
+      const response = await fetch(`${baseUrl}/api/game/over`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -299,20 +254,17 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         })
       });
 
+      // 로딩 해제
+      setIsProcessingGameOver(false);
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('게임오버 API 호출 실패:', response.status, errorText);
-        // API 실패 시 기존 방식으로 폴백
-        await saveHighScore(score, level, lines);
         
-        // 실패 시에도 모달 표시 (골드 없이)
-        setGameResult({
-          score,
-          level,
-          lines,
-          earnedGold: 0
-        });
-        setShowGameResultModal(true);
+        // 실패 모달 표시
+        setFailureMessage(`서버 처리 실패 (${response.status}): ${errorText}`);
+        setShowFailureModal(true);
+        
       } else {
         const result = await response.json();
         console.log('✅ 게임오버 API 호출 성공:', result);
@@ -322,20 +274,27 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           onHighScoreUpdate(result.payload.highScore.score, result.payload.highScore.level, result.payload.highScore.lines);
         }
         
-        // 게임 결과 모달 표시
-        const earnedGold = result.payload?.earnedGold || 0;
+        // 성공 모달 표시 (HISCORE/RANKING 업데이트 여부 포함)
         setGameResult({
           score,
           level,
           lines,
-          earnedGold
+          earnedGold: result.payload?.earnedGold || 0,
+          isNewHighScore: result.payload?.isNewHighScore || false,
+          isRankingUpdated: !!result.payload?.rankingUpdated,
+          rankingInfo: result.payload?.rankingInfo ? {
+            currentRank: result.payload.rankingInfo.currentRank,
+            previousRank: result.payload.rankingInfo.previousRank,
+            rankChange: result.payload.rankingInfo.rankChange,
+            totalPlayers: result.payload.rankingInfo.totalPlayers
+          } : undefined
         });
         setShowGameResultModal(true);
         
-            // 재화 잔액 업데이트
-            if (typeof (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance === 'function') {
-              (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
-            }
+        // 재화 잔액 업데이트
+        if (typeof (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance === 'function') {
+          (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
+        }
       }
       
       // 게임오버 콜백 호출
@@ -343,27 +302,20 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       
     } catch (error) {
       console.error('게임오버 처리 중 오류:', error);
-      // 오류 발생 시 기존 방식으로 폴백
-      try {
-        await saveHighScore(score, level, lines);
-        
-        // 실패 시에도 모달 표시 (골드 없이)
-        setGameResult({
-          score,
-          level,
-          lines,
-          earnedGold: 0
-        });
-        setShowGameResultModal(true);
-      } catch (fallbackError) {
-        console.error('폴백 처리도 실패:', fallbackError);
-      }
+      
+      // 로딩 해제
+      setIsProcessingGameOver(false);
+      
+      // 네트워크 오류 등 예외 상황
+      setFailureMessage(`네트워크 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      setShowFailureModal(true);
+      
+      // 게임오버 콜백 호출
       onGameOverRef.current();
     } finally {
-      setIsProcessingGameOver(false);
       isProcessingGameOverRef.current = false;
     }
-  }, [userId, onHighScoreUpdate, saveHighScore]);
+  }, [userId, onHighScoreUpdate]);
 
   // 게임 상태 업데이트
   const updateGame = useCallback(async () => {
@@ -411,20 +363,16 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           // 게임 오버 체크
           if (!isValidPosition(newState.currentBlock, newState.board)) {
             newState.isGameOver = true;
-            // 오버레이를 즉시 표시(중복 호출 가드도 즉시 세팅)
-            isProcessingGameOverRef.current = true;
+            // 오버레이를 즉시 표시 (가드는 handleGameOver 진입 시 설정)
             setIsProcessingGameOver(true);
             
-            // 게임오버 처리를 다음 렌더 사이클로 지연
+            // 게임오버 즉시 처리
             const gameOverScore = newState.score;
             const gameOverLevel = newState.level;
             const gameOverLines = newState.lines;
-            
-            setTimeout(() => {
-              if (typeof handleGameOver === 'function') {
-                handleGameOver(gameOverScore, gameOverLevel, gameOverLines);
-              }
-            }, 0);
+            if (typeof handleGameOver === 'function') {
+              handleGameOver(gameOverScore, gameOverLevel, gameOverLines);
+            }
           }
         }
       } else {
@@ -439,6 +387,12 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
 
   // 키보드 이벤트 처리
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // 로딩 중이면 모든 키 입력 차단
+    if (isProcessingGameOver) {
+      event.preventDefault();
+      return;
+    }
+    
     if (gameState.isGameOver || gameState.isPaused) return;
 
     // 게임 관련 키인지 확인
@@ -539,20 +493,16 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             // 게임 오버 체크
             if (!isValidPosition(newState.currentBlock, newState.board)) {
               newState.isGameOver = true;
-              // 오버레이 즉시 표시
-              isProcessingGameOverRef.current = true;
+              // 오버레이 즉시 표시 (가드는 handleGameOver 진입 시 설정)
               setIsProcessingGameOver(true);
               
-              // 게임오버 처리를 다음 렌더 사이클로 지연
+              // 게임오버 즉시 처리
               const gameOverScore = newState.score;
               const gameOverLevel = newState.level;
               const gameOverLines = newState.lines;
-              
-              setTimeout(() => {
-                if (typeof handleGameOver === 'function') {
-                  handleGameOver(gameOverScore, gameOverLevel, gameOverLines);
-                }
-              }, 100);
+              if (typeof handleGameOver === 'function') {
+                handleGameOver(gameOverScore, gameOverLevel, gameOverLines);
+              }
             }
           }
           break;
@@ -560,7 +510,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       
       return newState;
     });
-  }, [gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, handleGameOver]);
+  }, [isProcessingGameOver, gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, handleGameOver]);
 
   // 게임 시작
   const startGame = () => {
@@ -706,6 +656,8 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         // 게임 오버 체크
         if (!isValidPosition(newState.currentBlock, newState.board)) {
           newState.isGameOver = true;
+          // 오버레이 즉시 표시
+          setIsProcessingGameOver(true);
           setTimeout(() => handleGameOver(newState.score, newState.level, newState.lines), 100);
         }
         
@@ -994,8 +946,12 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                 <h2 className="text-xl sm:text-2xl font-bold text-white">
                   점수 집계 중...
                 </h2>
-                <p className="text-sm text-gray-300">
-                  골드 지급 및 퀘스트 업데이트를 진행하고 있습니다
+                <div className="text-sm text-gray-300 space-y-1">
+                  <div>점수: {gameState.score.toLocaleString()}</div>
+                  <div>레벨: {gameState.level} | 라인: {gameState.lines}</div>
+                </div>
+                <p className="text-xs text-gray-400">
+                  하이스코어 및 랭킹 확인 중...
                 </p>
               </div>
             </div>
@@ -1253,12 +1209,37 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         </CardContent>
       </Card>
 
+
           {/* 게임 결과 모달 */}
           <GameResultModal
             isOpen={showGameResultModal}
             onClose={() => setShowGameResultModal(false)}
             gameResult={gameResult}
           />
+
+          {/* 실패 모달 */}
+          {showFailureModal && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 text-center max-w-sm mx-4">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-red-800 mb-2">처리 실패</h3>
+                <p className="text-red-700 mb-4 text-sm">{failureMessage}</p>
+                <Button 
+                  onClick={() => setShowFailureModal(false)}
+                  className="w-full"
+                  variant="outline"
+                >
+                  확인
+                </Button>
+              </div>
+            </div>
+          )}
     </div>
   );
 }

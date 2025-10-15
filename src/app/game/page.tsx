@@ -194,7 +194,7 @@ function GamePageContent() {
                 </TabsTrigger>
                 <TabsTrigger value="ranking" className="flex items-center gap-2">
                   <Trophy className="w-4 h-4" />
-                  랭킹
+                  시즌 랭킹
                 </TabsTrigger>
               </TabsList>
 
@@ -315,7 +315,7 @@ function GamePageContent() {
 
               <TabsContent value="ranking" className="space-y-0">
                 <div className="flex justify-center">
-                  <RankingList currentUserId={currentUser?.id} />
+                  <RankingList currentUserId={currentUser?.uuid} />
                 </div>
               </TabsContent>
             </Tabs>
