@@ -8,6 +8,7 @@ import {
 } from '@/lib/api-errors';
 import { prisma } from '@/lib/prisma';
 import { Quest } from '@/types';
+import { isSeasonActive } from '@/lib/season-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,6 +73,10 @@ export async function POST(request: NextRequest) {
 
     console.log('🎮 게임오버 처리 시작:', { gameUuid, score, level, lines });
 
+    // 시즌 상태 체크 (트랜잭션 외부에서)
+    const seasonActive = await isSeasonActive();
+    console.log(`🏁 시즌 상태 체크: ${seasonActive ? '활성' : '종료'} (사용자: ${gameUuid}, 점수: ${score})`);
+
     // 1. 하이스코어 + 랭킹을 트랜잭션으로 저장 (동시 호출 안전)
     let isNewHighScore = false;
     await prisma.$transaction(async (tx) => {
@@ -95,32 +100,36 @@ export async function POST(request: NextRequest) {
         isNewHighScore = true; // 기존 기록보다 높으므로 새로운 최고 기록
       }
 
-      // Ranking 업서트(유니크 userId+period+start)
-      const user = await tx.user.findUnique({ where: { uuid: gameUuid }, select: { id: true } });
-      if (!user) return;
-      const periodStartDate = new Date('2025-01-01T00:00:00+09:00');
-      const periodEndDate = new Date('2025-10-15T11:00:00+09:00');
-      const existingRanking = await tx.ranking.findFirst({
-        where: { userId: user.id, rankingPeriod: 'season', periodStartDate }
-      });
-      if (!existingRanking) {
-        try {
-          await tx.ranking.create({
-            data: { userId: user.id, gameUuid: gameUuid, score, level, lines, rankingPeriod: 'season', periodStartDate, periodEndDate, rankPosition: 0 }
-          });
-        } catch (e) {
-          // 동시 생성 충돌 시 UPDATE 폴백
-          if ((e as { code?: string })?.code === 'P2002') {
-            await tx.ranking.update({
-              where: { id: (await tx.ranking.findFirst({ where: { userId: user.id, rankingPeriod: 'season', periodStartDate }, select: { id: true } }))!.id },
-              data: { score, level, lines }
+      // Ranking 업서트(유니크 userId+period+start) - 시즌이 활성 상태일 때만
+      if (seasonActive) {
+        const user = await tx.user.findUnique({ where: { uuid: gameUuid }, select: { id: true } });
+        if (!user) return;
+        const periodStartDate = new Date('2025-01-01T00:00:00+09:00');
+        const periodEndDate = new Date('2025-10-15T11:00:00+09:00');
+        const existingRanking = await tx.ranking.findFirst({
+          where: { userId: user.id, rankingPeriod: 'season', periodStartDate }
+        });
+        if (!existingRanking) {
+          try {
+            await tx.ranking.create({
+              data: { userId: user.id, gameUuid: gameUuid, score, level, lines, rankingPeriod: 'season', periodStartDate, periodEndDate, rankPosition: 0 }
             });
-          } else {
-            throw e;
+          } catch (e) {
+            // 동시 생성 충돌 시 UPDATE 폴백
+            if ((e as { code?: string })?.code === 'P2002') {
+              await tx.ranking.update({
+                where: { id: (await tx.ranking.findFirst({ where: { userId: user.id, rankingPeriod: 'season', periodStartDate }, select: { id: true } }))!.id },
+                data: { score, level, lines }
+              });
+            } else {
+              throw e;
+            }
           }
+        } else if (score > existingRanking.score) {
+          await tx.ranking.update({ where: { id: existingRanking.id }, data: { score, level, lines } });
         }
-      } else if (score > existingRanking.score) {
-        await tx.ranking.update({ where: { id: existingRanking.id }, data: { score, level, lines } });
+      } else {
+        console.log(`🏁 시즌이 종료된 상태입니다. 랭킹 업데이트를 건너뜁니다. (사용자: ${gameUuid}, 점수: ${score})`);
       }
     });
 
@@ -130,10 +139,10 @@ export async function POST(request: NextRequest) {
       select: { score: true, level: true, lines: true, createdAt: true }
     });
 
-    // 랭킹 정보 조회
+    // 랭킹 정보 조회 (시즌이 활성 상태일 때만)
     const user = await prisma.user.findUnique({ where: { uuid: gameUuid }, select: { id: true } });
     let rankingInfo = null;
-    if (user) {
+    if (user && seasonActive) {
       const periodStartDate = new Date('2025-01-01T00:00:00+09:00');
       const currentRanking = await prisma.ranking.findFirst({
         where: { userId: user.id, rankingPeriod: 'season', periodStartDate },

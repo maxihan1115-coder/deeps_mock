@@ -52,38 +52,57 @@ export async function POST(request: NextRequest) {
     // 3. 랭킹 퀘스트 달성 체크
     const questAchievements = [];
     
+    console.log(`🎯 랭킹 퀘스트 달성 체크 시작: ${rankings.length}명 대상`);
+    
     for (const ranking of rankings) {
       const { userId, rankPosition } = ranking;
+      console.log(`\n📊 순위 ${rankPosition} - 사용자 ID: ${userId}`);
       
       // 1등 퀘스트 체크
       if (rankPosition === 1) {
+        console.log(`🥇 1등 퀘스트 체크 시작`);
         const completed = await checkAndCompleteQuest(userId, '22', 'SEASON_RANK_1ST');
         if (completed) {
           questAchievements.push({ userId, questId: '22', rank: rankPosition });
+          console.log(`✅ 1등 퀘스트 달성 완료`);
+        } else {
+          console.log(`❌ 1등 퀘스트 달성 실패`);
         }
       }
       
       // 2등 퀘스트 체크
       if (rankPosition === 2) {
+        console.log(`🥈 2등 퀘스트 체크 시작`);
         const completed = await checkAndCompleteQuest(userId, '23', 'SEASON_RANK_2ND');
         if (completed) {
           questAchievements.push({ userId, questId: '23', rank: rankPosition });
+          console.log(`✅ 2등 퀘스트 달성 완료`);
+        } else {
+          console.log(`❌ 2등 퀘스트 달성 실패`);
         }
       }
       
       // 3등 퀘스트 체크
       if (rankPosition === 3) {
+        console.log(`🥉 3등 퀘스트 체크 시작`);
         const completed = await checkAndCompleteQuest(userId, '24', 'SEASON_RANK_3RD');
         if (completed) {
           questAchievements.push({ userId, questId: '24', rank: rankPosition });
+          console.log(`✅ 3등 퀘스트 달성 완료`);
+        } else {
+          console.log(`❌ 3등 퀘스트 달성 실패`);
         }
       }
       
       // 4~10등 퀘스트 체크
       if (rankPosition >= 4 && rankPosition <= 10) {
+        console.log(`🏅 4~10등 퀘스트 체크 시작 (순위: ${rankPosition})`);
         const completed = await checkAndCompleteQuest(userId, '25', 'SEASON_RANK_TOP10');
         if (completed) {
           questAchievements.push({ userId, questId: '25', rank: rankPosition });
+          console.log(`✅ 4~10등 퀘스트 달성 완료`);
+        } else {
+          console.log(`❌ 4~10등 퀘스트 달성 실패`);
         }
       }
     }

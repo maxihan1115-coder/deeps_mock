@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { isSeasonActive } from '@/lib/season-utils';
 
 // 최고 점수 조회
 export async function GET(request: NextRequest) {
@@ -80,6 +81,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 시즌 상태 체크 (트랜잭션 외부에서)
+    const seasonActive = await isSeasonActive();
+    console.log(`🏁 시즌 상태 체크: ${seasonActive ? '활성' : '종료'} (사용자: ${gameUuid}, 점수: ${score})`);
+
     // 트랜잭션: HighScore 업서트 + Ranking 업서트 (동시 호출 안전)
     const result = await prisma.$transaction(async (tx) => {
       const currentHigh = await tx.highScore.findUnique({
@@ -105,21 +110,25 @@ export async function POST(request: NextRequest) {
         isNewRecord = true;
       }
 
-      // 랭킹 업서트
-      const user = await tx.user.findUnique({ where: { uuid: gameUuid }, select: { id: true } });
-      if (user) {
-        const periodStartDate = new Date('2025-01-01T00:00:00+09:00');
-        const periodEndDate = new Date('2025-10-15T11:00:00+09:00');
-        const existingRanking = await tx.ranking.findFirst({
-          where: { userId: user.id, rankingPeriod: 'season', periodStartDate }
-        });
-        if (!existingRanking) {
-          await tx.ranking.create({
-            data: { userId: user.id, gameUuid, score, level, lines, rankingPeriod: 'season', periodStartDate, periodEndDate, rankPosition: 0 }
+      // 랭킹 업서트 (시즌이 활성 상태일 때만)
+      if (seasonActive) {
+        const user = await tx.user.findUnique({ where: { uuid: gameUuid }, select: { id: true } });
+        if (user) {
+          const periodStartDate = new Date('2025-01-01T00:00:00+09:00');
+          const periodEndDate = new Date('2025-10-15T11:00:00+09:00');
+          const existingRanking = await tx.ranking.findFirst({
+            where: { userId: user.id, rankingPeriod: 'season', periodStartDate }
           });
-        } else if (score > existingRanking.score) {
-          await tx.ranking.update({ where: { id: existingRanking.id }, data: { score, level, lines } });
+          if (!existingRanking) {
+            await tx.ranking.create({
+              data: { userId: user.id, gameUuid, score, level, lines, rankingPeriod: 'season', periodStartDate, periodEndDate, rankPosition: 0 }
+            });
+          } else if (score > existingRanking.score) {
+            await tx.ranking.update({ where: { id: existingRanking.id }, data: { score, level, lines } });
+          }
         }
+      } else {
+        console.log(`🏁 시즌이 종료된 상태입니다. 랭킹 업데이트를 건너뜁니다. (사용자: ${gameUuid}, 점수: ${score})`);
       }
 
       return { finalHigh, isNewRecord };
