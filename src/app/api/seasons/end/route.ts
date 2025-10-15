@@ -57,26 +57,34 @@ export async function POST(request: NextRequest) {
       
       // 1등 퀘스트 체크
       if (rankPosition === 1) {
-        await checkAndCompleteQuest(userId, '22', 'SEASON_RANK_1ST');
-        questAchievements.push({ userId, questId: '22', rank: rankPosition });
+        const completed = await checkAndCompleteQuest(userId, '22', 'SEASON_RANK_1ST');
+        if (completed) {
+          questAchievements.push({ userId, questId: '22', rank: rankPosition });
+        }
       }
       
       // 2등 퀘스트 체크
       if (rankPosition === 2) {
-        await checkAndCompleteQuest(userId, '23', 'SEASON_RANK_2ND');
-        questAchievements.push({ userId, questId: '23', rank: rankPosition });
+        const completed = await checkAndCompleteQuest(userId, '23', 'SEASON_RANK_2ND');
+        if (completed) {
+          questAchievements.push({ userId, questId: '23', rank: rankPosition });
+        }
       }
       
       // 3등 퀘스트 체크
       if (rankPosition === 3) {
-        await checkAndCompleteQuest(userId, '24', 'SEASON_RANK_3RD');
-        questAchievements.push({ userId, questId: '24', rank: rankPosition });
+        const completed = await checkAndCompleteQuest(userId, '24', 'SEASON_RANK_3RD');
+        if (completed) {
+          questAchievements.push({ userId, questId: '24', rank: rankPosition });
+        }
       }
       
       // 4~10등 퀘스트 체크
       if (rankPosition >= 4 && rankPosition <= 10) {
-        await checkAndCompleteQuest(userId, '25', 'SEASON_RANK_TOP10');
-        questAchievements.push({ userId, questId: '25', rank: rankPosition });
+        const completed = await checkAndCompleteQuest(userId, '25', 'SEASON_RANK_TOP10');
+        if (completed) {
+          questAchievements.push({ userId, questId: '25', rank: rankPosition });
+        }
       }
     }
 
@@ -116,7 +124,7 @@ export async function POST(request: NextRequest) {
 // 퀘스트 달성 체크 및 완료 처리
 async function checkAndCompleteQuest(userId: string, questId: string, questTitle: string) {
   try {
-    // 사용자의 게임 UUID 찾기
+    // 사용자의 게임 UUID 찾기 (userId는 User.id, questProgress는 User.uuid 사용)
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { uuid: true },
@@ -127,14 +135,24 @@ async function checkAndCompleteQuest(userId: string, questId: string, questTitle
       return;
     }
 
-    // 퀘스트 진행도 확인
+    console.log(`🔍 퀘스트 달성 체크: ${questTitle} - User.id: ${userId}, User.uuid: ${user.uuid}`);
+
+    // 퀘스트 진행도 확인 (questProgress는 user.uuid 사용)
     const questProgress = await prisma.questProgress.findUnique({
       where: {
         userId_catalogId: {
-          userId: user.uuid,
+          userId: user.uuid, // Int 타입
           catalogId: questId,
         },
       },
+    });
+
+    console.log(`📊 퀘스트 진행도 조회 결과:`, {
+      questId,
+      userId: user.uuid,
+      exists: !!questProgress,
+      isCompleted: questProgress?.isCompleted,
+      progress: questProgress?.progress
     });
 
     if (questProgress && !questProgress.isCompleted) {
@@ -142,7 +160,7 @@ async function checkAndCompleteQuest(userId: string, questId: string, questTitle
       await prisma.questProgress.update({
         where: {
           userId_catalogId: {
-            userId: user.uuid,
+            userId: user.uuid, // Int 타입
             catalogId: questId,
           },
         },
@@ -153,9 +171,27 @@ async function checkAndCompleteQuest(userId: string, questId: string, questTitle
         },
       });
 
-      console.log(`퀘스트 완료: ${questTitle} - 사용자: ${userId}`);
+      console.log(`✅ 퀘스트 완료: ${questTitle} - 사용자: ${userId} (uuid: ${user.uuid})`);
+      return true;
+    } else if (!questProgress) {
+      // 퀘스트 진행도가 없으면 새로 생성
+      await prisma.questProgress.create({
+        data: {
+          userId: user.uuid, // Int 타입
+          catalogId: questId,
+          progress: 1,
+          isCompleted: true,
+        },
+      });
+
+      console.log(`✅ 퀘스트 새로 완료: ${questTitle} - 사용자: ${userId} (uuid: ${user.uuid})`);
+      return true;
+    } else {
+      console.log(`ℹ️ 퀘스트 이미 완료됨: ${questTitle} - 사용자: ${userId} (uuid: ${user.uuid})`);
+      return false;
     }
   } catch (error) {
-    console.error(`퀘스트 달성 체크 실패: ${questTitle} - ${userId}`, error);
+    console.error(`❌ 퀘스트 달성 체크 실패: ${questTitle} - ${userId}`, error);
+    return false;
   }
 }
