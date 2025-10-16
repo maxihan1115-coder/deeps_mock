@@ -297,7 +297,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
                 size="sm"
                 variant="outline"
                 className="text-xs h-6 px-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                onClick={() => window.open('https://www.boradeeps.cc/quest', '_blank')}
+                onClick={() => window.open('https://www.boradeeps.cc/?bappId=10006', '_blank')}
               >
                 보상받기
               </Button>
