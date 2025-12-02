@@ -17,7 +17,7 @@ COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
 # 의존성 설치 (postinstall 포함, 메모리 제한 설정)
-RUN NODE_OPTIONS="--max-old-space-size=2048" npm ci
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm ci --legacy-peer-deps
 
 # 빌드 단계
 FROM base AS builder
