@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { LogOut, User, Gamepad2, Trophy, Link, Calendar, Award, ShoppingBag } from 'lucide-react';
 import CurrencyDisplay from '@/components/CurrencyDisplay';
 import ShopModal from '@/components/ShopModal';
+import USDCBalanceCard from '@/components/USDCBalanceCard';
 
 export default function GamePage() {
   return (
@@ -41,7 +42,7 @@ function GamePageContent() {
   } | null>(null);
   const [activeTab, setActiveTab] = useState("game");
   const [gameSubTab, setGameSubTab] = useState("tetris");
-  const [gameState, setGameState] = useState<{score: number; level: number; lines: number; nextBlock: {shape: number[][]; color: string} | null} | null>(null);
+  const [gameState, setGameState] = useState<{ score: number; level: number; lines: number; nextBlock: { shape: number[][]; color: string } | null } | null>(null);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [showShopModal, setShowShopModal] = useState(false);
 
@@ -69,13 +70,13 @@ function GamePageContent() {
   };
 
   // 점수 업데이트 (사용하지 않음)
-  const handleScoreUpdate = useCallback(() => {}, []);
+  const handleScoreUpdate = useCallback(() => { }, []);
 
   // 레벨 업데이트 (사용하지 않음)
-  const handleLevelUpdate = useCallback(() => {}, []);
+  const handleLevelUpdate = useCallback(() => { }, []);
 
   // 라인 업데이트 (사용하지 않음)
-  const handleLinesUpdate = useCallback(() => {}, []);
+  const handleLinesUpdate = useCallback(() => { }, []);
 
   // 게임 오버 처리
   const handleGameOver = useCallback(() => {
@@ -90,7 +91,7 @@ function GamePageContent() {
   }, []);
 
   // 게임 상태 변경 핸들러
-  const handleGameStateChange = useCallback((newGameState: {score: number; level: number; lines: number; nextBlock: {shape: number[][]; color: string} | null}, newIsGameStarted: boolean) => {
+  const handleGameStateChange = useCallback((newGameState: { score: number; level: number; lines: number; nextBlock: { shape: number[][]; color: string } | null }, newIsGameStarted: boolean) => {
     setGameState(newGameState);
     setIsGameStarted(newIsGameStarted);
   }, []);
@@ -117,13 +118,13 @@ function GamePageContent() {
                 BORA TETRIS
               </h1>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <User className="w-4 h-4 text-gray-500" />
                 <span className="text-sm font-medium">{currentUser.username}</span>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Badge variant="outline" className="text-xs font-mono">
                   UUID: {currentUser.uuid}
@@ -143,7 +144,7 @@ function GamePageContent() {
 
               {/* 재화 표시 */}
               <CurrencyDisplay gameUuid={currentUser.uuid} />
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -161,22 +162,22 @@ function GamePageContent() {
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 lg:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-4 lg:mb-8 bg-gray-100 p-1 rounded-xl">
-            <TabsTrigger 
-              value="game" 
+            <TabsTrigger
+              value="game"
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:scale-105 rounded-lg font-medium"
             >
               <Gamepad2 className="w-4 h-4" />
               게임
             </TabsTrigger>
-            <TabsTrigger 
-              value="quests" 
+            <TabsTrigger
+              value="quests"
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:scale-105 rounded-lg font-medium"
             >
               <Trophy className="w-4 h-4" />
               퀘스트
             </TabsTrigger>
-            <TabsTrigger 
-              value="platform" 
+            <TabsTrigger
+              value="platform"
               className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:scale-105 rounded-lg font-medium"
             >
               <Link className="w-4 h-4" />
@@ -202,45 +203,45 @@ function GamePageContent() {
                 {/* 모바일 전용 버튼들 - 테트리스 텍스트 위에 위치 */}
                 <div className="block lg:hidden mb-4">
                   <div className="flex gap-2 justify-center">
-                        {/* 출석체크 모달 */}
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="flex items-center gap-2">
-                              <Calendar className="w-4 h-4" />
-                              출석체크
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-sm mx-auto">
-                            <DialogHeader>
-                              <DialogTitle>출석체크</DialogTitle>
-                            </DialogHeader>
-                            <AttendanceCheck 
-                              userId={currentUser.id} 
-                              gameUuid={currentUser.uuid} 
-                            />
-                          </DialogContent>
-                        </Dialog>
+                    {/* 출석체크 모달 */}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          출석체크
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-sm mx-auto">
+                        <DialogHeader>
+                          <DialogTitle>출석체크</DialogTitle>
+                        </DialogHeader>
+                        <AttendanceCheck
+                          userId={currentUser.id}
+                          gameUuid={currentUser.uuid}
+                        />
+                      </DialogContent>
+                    </Dialog>
 
-                        {/* 최고 점수 모달 */}
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="flex items-center gap-2">
-                              <Award className="w-4 h-4" />
-                              최고점수
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-sm mx-auto">
-                            <DialogHeader>
-                              <DialogTitle>최고 점수</DialogTitle>
-                            </DialogHeader>
-                            <HighScoreDisplay
-                              gameUuid={currentUser.uuid}
-                            />
-                          </DialogContent>
-                        </Dialog>
+                    {/* 최고 점수 모달 */}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex items-center gap-2">
+                          <Award className="w-4 h-4" />
+                          최고점수
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-sm mx-auto">
+                        <DialogHeader>
+                          <DialogTitle>최고 점수</DialogTitle>
+                        </DialogHeader>
+                        <HighScoreDisplay
+                          gameUuid={currentUser.uuid}
+                        />
+                      </DialogContent>
+                    </Dialog>
 
-                      </div>
-                    </div>
+                  </div>
+                </div>
 
 
                 {/* 모바일 게임정보 영역 - 작은 다음블록 UI */}
@@ -299,10 +300,13 @@ function GamePageContent() {
 
                   {/* 데스크톱 사이드바 */}
                   <div className="hidden lg:flex lg:flex-col lg:gap-6 w-full lg:w-auto">
+                    {/* USDC 잔액 */}
+                    <USDCBalanceCard gameUuid={currentUser.uuid} />
+
                     {/* 출석체크 */}
-                    <AttendanceCheck 
-                      userId={currentUser.id} 
-                      gameUuid={currentUser.uuid} 
+                    <AttendanceCheck
+                      userId={currentUser.id}
+                      gameUuid={currentUser.uuid}
                     />
 
                     {/* 최고 점수 */}
@@ -350,12 +354,12 @@ function GamePageContent() {
         isOpen={showShopModal}
         onClose={() => setShowShopModal(false)}
         gameUuid={currentUser?.uuid || 0}
-            onPurchaseSuccess={() => {
-              // 재화 잔액 업데이트
-              if (typeof (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance === 'function') {
-                (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
-              }
-            }}
+        onPurchaseSuccess={() => {
+          // 재화 잔액 업데이트
+          if (typeof (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance === 'function') {
+            (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
+          }
+        }}
       />
     </div>
   );
