@@ -12,10 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { LogOut, User, Gamepad2, Trophy, Link, Calendar, Award, ShoppingBag } from 'lucide-react';
+import { LogOut, User, Gamepad2, Trophy, Link, Calendar, Award, ShoppingBag, CreditCard } from 'lucide-react';
 import CurrencyDisplay from '@/components/CurrencyDisplay';
 import ShopModal from '@/components/ShopModal';
 import USDCBalanceCard from '@/components/USDCBalanceCard';
+import TopUpModal from '@/components/TopUpModal';
 
 export default function GamePage() {
   return (
@@ -45,6 +46,7 @@ function GamePageContent() {
   const [gameState, setGameState] = useState<{ score: number; level: number; lines: number; nextBlock: { shape: number[][]; color: string } | null } | null>(null);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [showShopModal, setShowShopModal] = useState(false);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
 
   // URL 파라미터에서 사용자 정보 확인
   useEffect(() => {
@@ -144,6 +146,17 @@ function GamePageContent() {
 
               {/* 재화 표시 */}
               <CurrencyDisplay gameUuid={currentUser.uuid} />
+
+              {/* USDC 충전 버튼 */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTopUpModal(true)}
+                className="border-blue-300 hover:border-blue-400 hover:bg-blue-50 text-blue-600"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                충전
+              </Button>
 
               <Button
                 variant="outline"
@@ -360,6 +373,13 @@ function GamePageContent() {
             (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
           }
         }}
+      />
+
+      {/* 충전 모달 */}
+      <TopUpModal
+        isOpen={showTopUpModal}
+        onClose={() => setShowTopUpModal(false)}
+        gameUuid={currentUser?.uuid || 0}
       />
     </div>
   );

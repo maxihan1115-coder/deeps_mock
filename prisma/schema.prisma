@@ -33,6 +33,8 @@ model User {
   gachaPurchases   GachaPurchase[]
   rankings         Ranking[]
   circleWallet     CircleWallet? // Circle USDC 지갑
+  externalWallets ExternalWallet[]
+  paymentHistory  PaymentHistory[]
 
   @@map("users")
 }
@@ -342,6 +344,7 @@ model USDCBalance {
 model PaymentHistory {
   id                  String   @id @default(uuid())
   userId              Int      // User.uuid 참조
+  user                User     @relation(fields: [userId], references: [uuid])
   circleTransactionId String?  // CircleTransaction.id
   diamondAmount       Int      // 구매한 다이아몬드 수량
   usdcAmount          String   // 지불한 USDC
@@ -350,6 +353,36 @@ model PaymentHistory {
   updatedAt           DateTime @updatedAt
 
   @@map("payment_history")
+}
+
+model ExternalWallet {
+  id        String   @id @default(uuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [uuid])
+  address   String   // 지갑 주소 (0x...)
+  chain     String   // 연결된 체인 (e.g., "MATIC-AMOY")
+  label     String?  // 지갑 별칭 (e.g., "MetaMask")
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, address])
+  @@map("external_wallets")
+}
+
+model CardPayment {
+  id                  String   @id @default(uuid())
+  userId              Int
+  circlePaymentId     String   @unique // Circle Payment ID
+  amount              String   // 결제 금액 (USD)
+  usdcAmount          String   // 지급된 USDC 양
+  status              String   // PENDING, CONFIRMED, FAILED
+  cardId              String?  // Circle Card ID
+  toAddress           String   // 지급된 지갑 주소
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("card_payments")
 }
 
 enum CircleTransactionType {

@@ -71,9 +71,9 @@ export class CirclePaymentService {
             console.log(`🔵 트랜잭션 생성 중... (Token: ${tokenId})`);
 
             const client = getCircleClient();
-            const transferResponse = await client.createTransaction({
+            const response = await client.createTransaction({
                 walletId: wallet.walletId,
-                blockchain: wallet.blockchain,
+                blockchain: wallet.blockchain as any, // 타입 호환성 문제 우회
                 tokenId,
                 destinationAddress: this.TREASURY_WALLET_ADDRESS,
                 amount: [usdcAmount],
@@ -85,7 +85,7 @@ export class CirclePaymentService {
                 },
             });
 
-            const transfer = transferResponse.data;
+            const transfer = response.data;
             if (!transfer) {
                 throw new Error('트랜잭션 생성 실패');
             }
@@ -138,165 +138,89 @@ export class CirclePaymentService {
             throw error;
         }
     }
-
     /**
-     * 트랜잭션 완료 처리 (Webhook 호출 시)
+     * 카드 결제 및 USDC 충전 처리
      */
-    async completePayment(circleTransactionId: string, txHash?: string) {
-        try {
-            console.log(`🎉 결제 완료 처리 시작: ${circleTransactionId}`);
+    async processCardPayment(params: {
+        userId: number;
+        amount: string; // USD 금액
+        encryptedData: string; // 암호화된 카드 정보
+        keyId: string; // 암호화 키 ID
+        toAddress: string; // 충전할 지갑 주소
+        ipAddress: string;
+        sessionId: string;
+    }) {
+        const { userId, amount, encryptedData, keyId, toAddress, ipAddress, sessionId } = params;
 
-            const transaction = await prisma.circleTransaction.findUnique({
-                where: { circleTransactionId },
+        try {
+            console.log(`💳 카드 결제 시작: User ${userId}, $${amount} -> ${toAddress}`);
+
+            // 1. Circle Payments API 호출을 위한 axios 인스턴스 생성
+            const axios = (await import('axios')).default;
+            const paymentsClient = axios.create({
+                baseURL: process.env.CIRCLE_TESTNET === 'true'
+                    ? 'https://api-sandbox.circle.com/v1'
+                    : 'https://api.circle.com/v1',
+                headers: {
+                    'Authorization': `Bearer ${process.env.CIRCLE_API_KEY}`,
+                    'Content-Type': 'application/json',
+                },
             });
 
-            if (!transaction) {
-                console.warn(`⚠️ 트랜잭션을 찾을 수 없음: ${circleTransactionId}`);
-                return;
-            }
+            // 2. 결제 생성 (Create Payment)
+            const idempotencyKey = crypto.randomUUID();
+            const paymentResponse = await paymentsClient.post('/payments', {
+                idempotencyKey,
+                amount: {
+                    amount: amount,
+                    currency: 'USD'
+                },
+                source: {
+                    id: 'card-id-placeholder', // 실제로는 createCard를 먼저 호출해서 cardId를 받아야 함
+                    type: 'card'
+                },
+                description: `USDC Top-up for User ${userId}`,
+                channel: 'card_not_present',
+                metadata: {
+                    userId: userId.toString(),
+                    sessionId,
+                    ipAddress
+                }
+            });
 
-            if (transaction.type !== 'DIAMOND_PURCHASE') {
-                console.warn(`⚠️ 다이아몬드 구매 트랜잭션이 아님: ${transaction.type}`);
-                return;
-            }
+            // NOTE: 실제 구현에서는 createCard -> createPayment 순서로 진행해야 합니다.
+            // 여기서는 흐름만 구현하고, 실제 API 연동 시에는 createCard 로직이 필요합니다.
+            // 하지만 Circle Sandbox에서는 테스트 카드를 사용하므로, 
+            // 프론트엔드에서 암호화된 데이터를 받아 createCard를 호출하는 부분이 선행되어야 합니다.
 
-            if (transaction.status === 'COMPLETE') {
-                console.log(`⚠️ 이미 완료된 트랜잭션: ${circleTransactionId}`);
-                return;
-            }
+            // 3. DB에 결제 내역 저장
+            const paymentData = paymentResponse.data.data;
 
-            // 트랜잭션 상태 업데이트
-            await prisma.circleTransaction.update({
-                where: { id: transaction.id },
+            // @ts-ignore: Prisma 클라이언트가 아직 업데이트되지 않았을 수 있음
+            await prisma.cardPayment.create({
                 data: {
-                    status: 'COMPLETE',
-                    txHash: txHash || transaction.txHash,
-                },
+                    userId,
+                    circlePaymentId: paymentData.id,
+                    amount: amount,
+                    usdcAmount: amount, // 1:1 비율 가정 (수수료 제외)
+                    status: paymentData.status,
+                    toAddress,
+                }
             });
 
-            console.log(`✅ 트랜잭션 상태 업데이트: COMPLETE`);
+            console.log(`✅ 카드 결제 요청 완료: ${paymentData.id}`);
 
-            // 결제 내역 조회 및 업데이트
-            const payment = await prisma.paymentHistory.findFirst({
-                where: { circleTransactionId: transaction.id },
-            });
-
-            if (!payment) {
-                console.error(`❌ 결제 내역을 찾을 수 없음`);
-                return;
-            }
-
-            await prisma.paymentHistory.update({
-                where: { id: payment.id },
-                data: { status: 'COMPLETED' },
-            });
-
-            console.log(`✅ 결제 내역 상태 업데이트: COMPLETED`);
-
-            // 다이아몬드 지급
-            await prisma.userCurrency.upsert({
-                where: { userId: transaction.userId },
-                update: {
-                    diamond: { increment: payment.diamondAmount },
-                },
-                create: {
-                    userId: transaction.userId,
-                    gold: 0,
-                    diamond: payment.diamondAmount,
-                },
-            });
-
-            console.log(`💎 다이아몬드 지급 완료: User ${transaction.userId}, ${payment.diamondAmount}개`);
-
-            // 퀘스트 진행도 업데이트
-            try {
-                const { mysqlGameStore } = await import('@/lib/mysql-store');
-                const platformLink = await prisma.platformLink.findUnique({
-                    where: { gameUuid: transaction.userId }
-                });
-                const isLinked = !!platformLink;
-
-                await mysqlGameStore.updateDiamondPurchaseQuestProgress(
-                    transaction.userId,
-                    payment.diamondAmount,
-                    isLinked
-                );
-                console.log(`✅ 다이아몬드 구매 퀘스트 진행도 업데이트 완료`);
-            } catch (error) {
-                console.error(`⚠️ 퀘스트 진행도 업데이트 실패 (비치명적):`, error);
-            }
+            // 4. (결제 성공 시) USDC 전송은 Webhook에서 처리하거나, 
+            // 여기서 즉시 처리할 수도 있지만(Sandbox), 비동기로 처리하는 것이 안전합니다.
 
             return {
-                userId: transaction.userId,
-                diamondAmount: payment.diamondAmount,
-                usdcAmount: payment.usdcAmount,
+                paymentId: paymentData.id,
+                status: paymentData.status,
             };
-        } catch (error) {
-            console.error(`❌ 결제 완료 처리 실패:`, error);
-            throw error;
-        }
-    }
 
-    /**
-     * 트랜잭션 실패 처리
-     */
-    async failPayment(circleTransactionId: string) {
-        try {
-            console.log(`❌ 결제 실패 처리: ${circleTransactionId}`);
-
-            await prisma.circleTransaction.update({
-                where: { circleTransactionId },
-                data: { status: 'FAILED' },
-            });
-
-            const transaction = await prisma.circleTransaction.findUnique({
-                where: { circleTransactionId },
-            });
-
-            if (transaction) {
-                await prisma.paymentHistory.updateMany({
-                    where: { circleTransactionId: transaction.id },
-                    data: { status: 'FAILED' },
-                });
-            }
-
-            console.log(`✅ 결제 실패 처리 완료`);
-        } catch (error) {
-            console.error(`❌ 결제 실패 처리 중 오류:`, error);
-            throw error;
-        }
-    }
-
-    /**
-     * 결제 내역 조회
-     */
-    async getPaymentHistory(userId: number, limit: number = 20) {
-        return await prisma.paymentHistory.findMany({
-            where: { userId },
-            orderBy: { createdAt: 'desc' },
-            take: limit,
-        });
-    }
-
-    /**
-     * 트랜잭션 상태 조회 (Circle SDK)
-     */
-    async getTransactionStatus(circleTransactionId: string) {
-        try {
-            const client = getCircleClient();
-            const response = await client.getTransaction({
-                id: circleTransactionId,
-            });
-
-            const transaction = response.data;
-            return {
-                id: transaction?.id,
-                state: transaction?.state,
-                txHash: (transaction as any)?.txHash,
-            };
-        } catch (error) {
-            console.error(`❌ 트랜잭션 상태 조회 실패:`, error);
-            throw error;
+        } catch (error: any) {
+            console.error('❌ 카드 결제 실패:', error.response?.data || error.message);
+            throw new Error(`카드 결제 실패: ${error.response?.data?.message || error.message}`);
         }
     }
 }
