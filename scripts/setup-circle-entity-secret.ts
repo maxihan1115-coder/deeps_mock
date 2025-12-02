@@ -39,16 +39,16 @@ async function setupEntitySecret() {
     try {
         await registerEntitySecretCiphertext({
             apiKey: apiKey,
-            entitySecret: entitySecret,
+            entitySecret: entitySecret as unknown as string,
             recoveryFileDownloadPath: recoveryPath,
         });
 
         console.log('✅ Entity Secret이 Circle에 성공적으로 등록되었습니다!\n');
-        console.log(`   Recovery 파일 저장 위치: ${recoveryPath}\n`);
+        console.log(`   Recovery 파일 저장 위치: ${recoveryPath} \n`);
 
         // 5. .env 파일 업데이트 안내
         console.log('📝 다음 내용을 .env 파일에 추가하세요:\n');
-        console.log(`CIRCLE_ENTITY_SECRET="${entitySecret}"\n`);
+        console.log(`CIRCLE_ENTITY_SECRET = "${entitySecret}"\n`);
 
         console.log('⚠️  중요 사항:');
         console.log('1. Entity Secret은 안전하게 보관하세요');

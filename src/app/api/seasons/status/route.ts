@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // 시즌 상태 조회
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   try {
     // 현재 시즌 정보 (임시로 하드코딩, 나중에 데이터베이스에서 관리)
@@ -15,7 +16,7 @@ export async function GET(_request: NextRequest) {
     // TODO: 나중에 데이터베이스에서 시즌 상태를 관리하도록 변경
     // 현재는 환경변수나 설정 파일에서 관리
     const seasonStatus = process.env.SEASON_STATUS || 'active';
-    
+
     if (seasonStatus === 'ended') {
       currentSeason.isActive = false;
       currentSeason.status = 'ended';

@@ -22,7 +22,7 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [todayAttended, setTodayAttended] = useState(false);
-  
+
   // 플랫폼 연동 관련 상태
   const [isLinked, setIsLinked] = useState(false);
   const [linkedDate, setLinkedDate] = useState<string | null>(null);
@@ -64,7 +64,7 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
   // 날짜가 출석 가능한지 확인 (플랫폼 연동 날짜 이후)
   const isDateAvailableForAttendance = (date: Date) => {
     if (!isLinked || !linkedDate) return false;
-    
+
     const dateString = date.toISOString().split('T')[0];
     return dateString >= linkedDate;
   };
@@ -75,10 +75,10 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
     try {
       const response = await fetch(`/api/attendance?gameUuid=${gameUuid}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setAttendanceRecords(data.payload);
-        
+
         // 오늘 출석 여부 확인
         const today = new Date().toISOString().split('T')[0];
         const todayRecord = data.payload.find((record: AttendanceRecord) => record.date === today);
@@ -94,34 +94,34 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
   // 연속 출석일 계산
   const calculateConsecutiveDays = (records: AttendanceRecord[]): number => {
     if (records.length === 0) return 0;
-    
+
     // 최신 날짜부터 정렬 (내림차순)
     const sorted = [...records].sort((a, b) => b.date.localeCompare(a.date));
-    
+
     let consecutive = 0;
     const today = new Date();
-    
+
     // 오늘 날짜를 YYYY-MM-DD 형식으로 변환
     const todayStr = today.toISOString().split('T')[0];
-    
+
     // 오늘 출석했는지 확인
     const hasTodayAttendance = sorted.some(record => record.date === todayStr);
     if (!hasTodayAttendance) {
       // 오늘 출석하지 않았으면 연속 출석은 0
       return 0;
     }
-    
+
     consecutive = 1; // 오늘 출석했으므로 1부터 시작
-    
+
     // 어제부터 역순으로 연속 출석 확인
     const checkDate = new Date(today);
     for (let i = 1; i < sorted.length; i++) {
       checkDate.setDate(checkDate.getDate() - 1);
       const expectedDateStr = checkDate.toISOString().split('T')[0];
-      
+
       // 해당 날짜에 출석 기록이 있는지 확인
       const hasAttendanceOnDate = sorted.some(record => record.date === expectedDateStr);
-      
+
       if (hasAttendanceOnDate) {
         // 연속 출석
         consecutive++;
@@ -130,7 +130,7 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
         break;
       }
     }
-    
+
     return consecutive;
   };
 
@@ -146,7 +146,7 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setTodayAttended(true);
         fetchAttendanceRecords(); // 목록 새로고침
@@ -166,6 +166,7 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
         fetchAttendanceRecords();
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, gameUuid]);
 
 
@@ -234,20 +235,19 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">연속 출석</span>
-            <Badge 
-              variant={calculateConsecutiveDays(attendanceRecords) >= 7 ? "default" : "outline"} 
-              className={`text-xs ${
-                calculateConsecutiveDays(attendanceRecords) >= 7 
-                  ? 'bg-green-600 text-white' 
-                  : calculateConsecutiveDays(attendanceRecords) > 0 
-                    ? 'bg-blue-100 text-blue-700' 
+            <Badge
+              variant={calculateConsecutiveDays(attendanceRecords) >= 7 ? "default" : "outline"}
+              className={`text-xs ${calculateConsecutiveDays(attendanceRecords) >= 7
+                  ? 'bg-green-600 text-white'
+                  : calculateConsecutiveDays(attendanceRecords) > 0
+                    ? 'bg-blue-100 text-blue-700'
                     : 'bg-gray-100 text-gray-600'
-              }`}
+                }`}
             >
               {calculateConsecutiveDays(attendanceRecords)}일 연속
             </Badge>
           </div>
-          
+
           {/* 연속 출석 진행도 */}
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-gray-600">
@@ -255,19 +255,18 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
               <span>{calculateConsecutiveDays(attendanceRecords)}/7</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  calculateConsecutiveDays(attendanceRecords) >= 7 
-                    ? 'bg-green-500' 
+              <div
+                className={`h-2 rounded-full transition-all duration-300 ${calculateConsecutiveDays(attendanceRecords) >= 7
+                    ? 'bg-green-500'
                     : 'bg-blue-500'
-                }`}
-                style={{ 
-                  width: `${Math.min((calculateConsecutiveDays(attendanceRecords) / 7) * 100, 100)}%` 
+                  }`}
+                style={{
+                  width: `${Math.min((calculateConsecutiveDays(attendanceRecords) / 7) * 100, 100)}%`
                 }}
               ></div>
             </div>
           </div>
-          
+
         </div>
 
         {/* 오늘 출석체크 버튼 */}
@@ -276,7 +275,7 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
             const today = new Date();
             const todayAvailable = isDateAvailableForAttendance(today);
             const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
-            
+
             if (todayAttended) {
               return (
                 <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -285,8 +284,8 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
                     <span className="text-sm font-medium">오늘 출석 완료!</span>
                   </div>
                   <div className="text-xs text-green-600">
-                    {consecutiveDays >= 7 
-                      ? '🎉 7일 연속 출석 달성!' 
+                    {consecutiveDays >= 7
+                      ? '🎉 7일 연속 출석 달성!'
                       : `${consecutiveDays}일 연속 출석 중`
                     }
                   </div>
@@ -300,8 +299,8 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
                       <X className="w-2 h-2 text-white" />
                     </div>
                     <span className="text-sm font-medium">
-                      {linkedDate ? 
-                        `${linkedDate} 이후 출석 가능` : 
+                      {linkedDate ?
+                        `${linkedDate} 이후 출석 가능` :
                         '출석 불가능한 날짜'
                       }
                     </span>
@@ -325,7 +324,7 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
                     오늘 출석하기
                   </Button>
                   <div className="text-center text-xs text-gray-600">
-                    {consecutiveDays > 0 
+                    {consecutiveDays > 0
                       ? `출석하면 ${nextConsecutive}일 연속!`
                       : '출석하면 연속 출석 시작!'
                     }

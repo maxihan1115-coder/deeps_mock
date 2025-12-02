@@ -38,23 +38,24 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
   useEffect(() => {
     console.log('🔍 AccountLink 컴포넌트 마운트 - 연동 상태 확인 시작');
     checkLinkStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 빈 의존성 배열로 마운트 시에만 실행
 
   // 플랫폼 연동 상태 확인 (platform-link/status API 사용)
   const checkLinkStatus = async () => {
     try {
       console.log('🔍 플랫폼 연동 상태 확인 중 (platform-link/status API 기준)...');
-      
+
       const response = await fetch(`/api/platform-link/status?gameUuid=${userUuid}`);
       const data = await response.json();
-      
+
       console.log('📊 platform-link/status 응답:', data);
-      
+
       if (data.success) {
         const { isLinked: linked, startDate } = data.payload;
         setIsLinked(linked);
         setLinkDate(startDate);
-        
+
         if (linked) {
           console.log('🔗 연동 상태: 연동됨, 연동일자:', startDate);
         } else {
@@ -83,7 +84,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
       // 서버를 통해 BORA 플랫폼 API 호출
       const response = await fetch(`/api/account-link/request-code?uuid=${userUuid}`);
       const data = await response.json();
-      
+
       console.log('📡 API 응답:', data);
 
       if (data.success) {
@@ -100,7 +101,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
             clearInterval(checkInterval);
           }
         }, 5000); // 5초마다 확인
-        
+
         // 10분 후 자동으로 확인 중지
         setTimeout(() => {
           clearInterval(checkInterval);
@@ -122,7 +123,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
     if (!requestCode) return;
 
     const link = `https://www.boradeeps.cc/?requestCode=${requestCode}`;
-    
+
     try {
       await navigator.clipboard.writeText(link);
       setIsCopied(true);
@@ -161,7 +162,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
       const data = await resp.json();
       console.log('📡 탈퇴 응답:', data);
       if (data?.success === true && data?.payload === true) {
-        try { localStorage.removeItem('userInfo'); } catch {}
+        try { localStorage.removeItem('userInfo'); } catch { }
         router.push('/');
         return;
       }
@@ -233,7 +234,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
                 </div>
               )}
             </div>
-            
+
             <Dialog>
               <DialogTrigger asChild>
                 <Button
@@ -292,7 +293,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
                 플랫폼 연동을 통해 퀘스트 진행도를 저장하고 보상을 받으세요.
               </p>
             </div>
-            
+
             <Button
               onClick={requestTempCode}
               disabled={isLoading}
@@ -330,7 +331,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
                   {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 </Button>
               </div>
-              
+
               <div className="p-2 bg-gray-50 border rounded text-xs font-mono break-all">
                 https://www.boradeeps.cc/?requestCode={requestCode}
               </div>
@@ -345,12 +346,12 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
                 <ExternalLink className="w-4 h-4 mr-2" />
                 🚀 외부 브라우저에서 열기
               </Button>
-              
+
               {/* 디버깅용 정보 표시 */}
               <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded border">
                 🔍 Debug: requestCode = {requestCode ? '✅ 설정됨' : '❌ null'}, isLinked = {isLinked === null ? '🔄 확인중' : isLinked ? '✅ 연동됨' : '❌ 미연동'}
               </div>
-              
+
               <Button
                 onClick={() => {
                   console.log('🔄 새 코드 요청 - requestCode 초기화');

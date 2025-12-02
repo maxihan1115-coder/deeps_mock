@@ -27,10 +27,10 @@ export async function POST(request: Request) {
             success: true,
             payload: result,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('카드 결제 API 오류:', error);
         return NextResponse.json(
-            { success: false, error: 'PAYMENT_FAILED', payload: error.message },
+            { success: false, error: 'PAYMENT_FAILED', payload: (error as Error).message || 'Unknown error' },
             { status: 500 }
         );
     }

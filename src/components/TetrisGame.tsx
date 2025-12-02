@@ -36,7 +36,7 @@ interface TetrisGameProps {
   onGameOver: () => void;
   onHighScoreUpdate: (score: number, level: number, lines: number) => void;
   onPlatformLinkStatusChange?: (isLinked: boolean) => void;
-  onGameStateChange?: (gameState: {score: number; level: number; lines: number; nextBlock: {shape: number[][]; color: string} | null}, isGameStarted: boolean) => void;
+  onGameStateChange?: (gameState: { score: number; level: number; lines: number; nextBlock: { shape: number[][]; color: string } | null }, isGameStarted: boolean) => void;
 }
 
 export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLinesUpdate, onGameOver, onHighScoreUpdate, onPlatformLinkStatusChange, onGameStateChange }: TetrisGameProps) {
@@ -62,22 +62,22 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   });
   const BOARD_WIDTH = 10;
   const BOARD_HEIGHT = 20;
-  
+
   // onScoreUpdate를 ref로 저장하여 최신 값 참조
   const onScoreUpdateRef = useRef(onScoreUpdate);
   onScoreUpdateRef.current = onScoreUpdate;
-  
+
   // onLevelUpdate와 onLinesUpdate를 ref로 저장
   const onLevelUpdateRef = useRef(onLevelUpdate);
   onLevelUpdateRef.current = onLevelUpdate;
-  
+
   const onLinesUpdateRef = useRef(onLinesUpdate);
   onLinesUpdateRef.current = onLinesUpdate;
-  
+
   // onGameOver를 ref로 저장
   const onGameOverRef = useRef(onGameOver);
   onGameOverRef.current = onGameOver;
-  
+
   const [gameState, setGameState] = useState<TetrisGameState>({
     board: Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0)),
     currentBlock: null,
@@ -91,7 +91,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
 
   const [gameInterval, setGameInterval] = useState<NodeJS.Timeout | null>(null);
   const [isGameStarted, setIsGameStarted] = useState(false);
-  
+
   // 퀘스트 관련 상태
   const [isLinked, setIsLinked] = useState(false);
   const [hardDropsUsed, setHardDropsUsed] = useState(0);
@@ -147,7 +147,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
     const shapeIndex = Math.floor(Math.random() * TETRIS_SHAPES.length);
     const shape = TETRIS_SHAPES[shapeIndex];
     const color = COLORS[shapeIndex];
-    
+
     return {
       shape,
       color,
@@ -163,11 +163,11 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         if (block.shape[y][x]) {
           const newX = block.x + x;
           const newY = block.y + y;
-          
+
           if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) {
             return false;
           }
-          
+
           if (newY >= 0 && board[newY][newX] >= 1) { // 1 이상이면 블록이 있는 것
             return false;
           }
@@ -180,7 +180,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   // 블록을 보드에 고정
   const placeBlock = useCallback((block: TetrisBlock, board: number[][]): number[][] => {
     const newBoard = board.map(row => [...row]);
-    
+
     for (let y = 0; y < block.shape.length; y++) {
       for (let x = 0; x < block.shape[y].length; x++) {
         if (block.shape[y][x]) {
@@ -194,7 +194,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         }
       }
     }
-    
+
     return newBoard;
   }, []);
 
@@ -208,12 +208,12 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       }
       return true;
     });
-    
+
     // 제거된 라인만큼 빈 라인 추가
     while (newBoard.length < BOARD_HEIGHT) {
       newBoard.unshift(Array(BOARD_WIDTH).fill(0));
     }
-    
+
     return { newBoard, linesCleared };
   }, []);
 
@@ -231,14 +231,14 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         return;
       }
       isProcessingGameOverRef.current = true;
-      
+
       // 즉시 로딩 표시 (키 입력 차단됨)
       setShowGameResultModal(false);
       setShowFailureModal(false);
       setIsProcessingGameOver(true);
-      
+
       console.log('🎮 게임오버 API 호출 시작:', { gameUuid: userId, score, level, lines });
-      
+
       // 게임오버 API 호출 (하이스코어 저장 + 퀘스트 업데이트 통합 처리)
       const baseUrl = (typeof window !== 'undefined' ? window.location.origin : '') || (process.env.NEXT_PUBLIC_APP_URL || '');
       const response = await fetch(`${baseUrl}/api/game/over`, {
@@ -260,20 +260,20 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       if (!response.ok) {
         const errorText = await response.text();
         console.error('게임오버 API 호출 실패:', response.status, errorText);
-        
+
         // 실패 모달 표시
         setFailureMessage(`서버 처리 실패 (${response.status}): ${errorText}`);
         setShowFailureModal(true);
-        
+
       } else {
         const result = await response.json();
         console.log('✅ 게임오버 API 호출 성공:', result);
-        
+
         // 하이스코어 업데이트 콜백 호출
         if (onHighScoreUpdate && result.payload?.highScore) {
           onHighScoreUpdate(result.payload.highScore.score, result.payload.highScore.level, result.payload.highScore.lines);
         }
-        
+
         // 성공 모달 표시 (HISCORE/RANKING 업데이트 여부 포함)
         setGameResult({
           score,
@@ -290,26 +290,26 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           } : undefined
         });
         setShowGameResultModal(true);
-        
+
         // 재화 잔액 업데이트
         if (typeof (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance === 'function') {
           (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
         }
       }
-      
+
       // 게임오버 콜백 호출
       onGameOverRef.current();
-      
+
     } catch (error) {
       console.error('게임오버 처리 중 오류:', error);
-      
+
       // 로딩 해제
       setIsProcessingGameOver(false);
-      
+
       // 네트워크 오류 등 예외 상황
       setFailureMessage(`네트워크 오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
       setShowFailureModal(true);
-      
+
       // 게임오버 콜백 호출
       onGameOverRef.current();
     } finally {
@@ -325,47 +325,47 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       }
 
       const newState = { ...prevState };
-      
+
       if (newState.currentBlock) {
         // 블록을 아래로 이동
         const movedBlock = { ...newState.currentBlock, y: newState.currentBlock.y + 1 };
-        
+
         if (isValidPosition(movedBlock, newState.board)) {
           newState.currentBlock = movedBlock;
         } else {
           // 블록을 보드에 고정
           newState.board = placeBlock(newState.currentBlock, newState.board);
-          
+
           // 라인 제거 및 점수 계산
           const { newBoard, linesCleared } = clearLines(newState.board);
           newState.board = newBoard;
-          
+
           if (linesCleared > 0) {
             const scoreGain = calculateScore(linesCleared, newState.level);
             newState.score += scoreGain;
             newState.lines += linesCleared;
             newState.level = Math.floor(newState.lines / 10) + 1;
-            
+
             // 상태 업데이트를 다음 렌더 사이클로 지연
             setTimeout(() => {
               onScoreUpdateRef.current(newState.score);
               onLevelUpdateRef.current(newState.level);
               onLinesUpdateRef.current(newState.lines);
             }, 0);
-            
+
             // 퀘스트 체크는 게임 종료 시 서버에서 자동으로 처리됩니다.
           }
-          
+
           // 다음 블록 생성
           newState.currentBlock = newState.nextBlock || createNewBlock();
           newState.nextBlock = createNewBlock();
-          
+
           // 게임 오버 체크
           if (!isValidPosition(newState.currentBlock, newState.board)) {
             newState.isGameOver = true;
             // 오버레이를 즉시 표시 (가드는 handleGameOver 진입 시 설정)
             setIsProcessingGameOver(true);
-            
+
             // 게임오버 즉시 처리
             const gameOverScore = newState.score;
             const gameOverLevel = newState.level;
@@ -380,7 +380,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         newState.currentBlock = createNewBlock();
         newState.nextBlock = createNewBlock();
       }
-      
+
       return newState;
     });
   }, [isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, handleGameOver]);
@@ -392,7 +392,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       event.preventDefault();
       return;
     }
-    
+
     if (gameState.isGameOver || gameState.isPaused) return;
 
     // 게임 관련 키인지 확인
@@ -406,7 +406,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       if (!prevState.currentBlock) return prevState;
 
       const newState = { ...prevState };
-      
+
       switch (event.key) {
         case 'ArrowLeft':
           const leftBlock = { ...prevState.currentBlock, x: prevState.currentBlock.x - 1 };
@@ -452,50 +452,50 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
 
             // 블록을 보드에 고정
             newState.board = placeBlock(currentBlock, prevState.board);
-            
+
             // 라인 제거 및 점수 계산
             const { newBoard, linesCleared } = clearLines(newState.board);
             newState.board = newBoard;
-            
+
             if (linesCleared > 0) {
               const scoreGain = calculateScore(linesCleared, newState.level);
               newState.score += scoreGain;
               newState.lines += linesCleared;
               newState.level = Math.floor(newState.lines / 10) + 1;
-              
+
               // 상태 업데이트를 다음 렌더 사이클로 지연
               setTimeout(() => {
                 onScoreUpdateRef.current(newState.score);
                 onLevelUpdateRef.current(newState.level);
                 onLinesUpdateRef.current(newState.lines);
               }, 0);
-              
+
               // 퀘스트 체크는 게임 종료 시 서버에서 자동으로 처리됩니다.
             }
 
             // 하드 드롭 보너스 점수 (떨어진 거리 * 2)
             if (dropDistance > 0) {
               newState.score += dropDistance * 2;
-              
+
               // 점수 업데이트를 다음 렌더 사이클로 지연
               setTimeout(() => {
                 onScoreUpdateRef.current(newState.score);
               }, 0);
-              
+
               // 하드 드롭 카운트 업데이트
               setHardDropsUsed(prev => prev + 1);
             }
-            
+
             // 다음 블록 생성
             newState.currentBlock = newState.nextBlock || createNewBlock();
             newState.nextBlock = createNewBlock();
-            
+
             // 게임 오버 체크
             if (!isValidPosition(newState.currentBlock, newState.board)) {
               newState.isGameOver = true;
               // 오버레이 즉시 표시 (가드는 handleGameOver 진입 시 설정)
               setIsProcessingGameOver(true);
-              
+
               // 게임오버 즉시 처리
               const gameOverScore = newState.score;
               const gameOverLevel = newState.level;
@@ -507,7 +507,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           }
           break;
       }
-      
+
       return newState;
     });
   }, [isProcessingGameOver, gameState.isGameOver, gameState.isPaused, isValidPosition, placeBlock, clearLines, calculateScore, createNewBlock, handleGameOver]);
@@ -526,7 +526,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       isGameOver: false,
       isPaused: false,
     }));
-    
+
     // 첫 게임 퀘스트는 게임 종료 시 서버에서 자동으로 체크됩니다.
   };
 
@@ -566,6 +566,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         setGameInterval(null);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGameStarted, gameState.isPaused, gameState.isGameOver, gameState.level, updateGame]);
 
   // 터치 이벤트 처리
@@ -575,7 +576,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   // 터치 시작
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (gameState.isGameOver || gameState.isPaused) return;
-    
+
     const touch = e.touches[0];
     setTouchStart({ x: touch.clientX, y: touch.clientY });
     setTouchEnd({ x: touch.clientX, y: touch.clientY }); // 초기값 설정
@@ -584,7 +585,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   // 터치 이동
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (gameState.isGameOver || gameState.isPaused) return;
-    
+
     e.preventDefault(); // 스크롤 방지
     const touch = e.touches[0];
     setTouchEnd({ x: touch.clientX, y: touch.clientY });
@@ -597,19 +598,19 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       setTouchEnd(null);
       return;
     }
-    
+
     const deltaX = touchEnd.x - touchStart.x;
     const deltaY = touchEnd.y - touchStart.y;
     const minSwipeDistance = 20; // 최소 스와이프 거리 (30px -> 20px로 감소)
     const maxTapDistance = 15; // 최대 탭 거리 (10px -> 15px로 증가)
-    
+
     // 수직 스와이프 (아래로) - 하드 드롭
     if (Math.abs(deltaY) > Math.abs(deltaX) && deltaY > minSwipeDistance) {
       e.preventDefault();
       // 하드 드롭 로직 (키보드 스페이스바와 동일)
       setGameState(prevState => {
         if (!prevState.currentBlock) return prevState;
-        
+
         const newState = { ...prevState };
         let dropDistance = 0;
         const currentBlock = { ...prevState.currentBlock };
@@ -622,37 +623,37 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
 
         // 블록을 보드에 고정
         newState.board = placeBlock(currentBlock, prevState.board);
-        
+
         // 라인 제거 및 점수 계산
         const { newBoard, linesCleared } = clearLines(newState.board);
         newState.board = newBoard;
-        
+
         if (linesCleared > 0) {
           const scoreGain = calculateScore(linesCleared, newState.level);
           newState.score += scoreGain;
           newState.lines += linesCleared;
           newState.level = Math.floor(newState.lines / 10) + 1;
-          
+
           // 상태 업데이트를 다음 렌더 사이클로 지연
           setTimeout(() => {
             onScoreUpdateRef.current(newState.score);
             onLevelUpdateRef.current(newState.level);
             onLinesUpdateRef.current(newState.lines);
           }, 0);
-          
+
           // 퀘스트 체크는 게임 종료 시 서버에서 자동으로 처리됩니다.
         }
-        
+
         // 하드 드롭 점수 추가
         if (dropDistance > 0) {
           newState.score += dropDistance * 2;
           setTimeout(() => onScoreUpdateRef.current(newState.score), 0);
         }
-        
+
         // 새 블록 생성 (기존 nextBlock을 currentBlock으로, 새로운 블록을 nextBlock으로)
         newState.currentBlock = newState.nextBlock || createNewBlock();
         newState.nextBlock = createNewBlock();
-        
+
         // 게임 오버 체크
         if (!isValidPosition(newState.currentBlock, newState.board)) {
           newState.isGameOver = true;
@@ -660,22 +661,22 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           setIsProcessingGameOver(true);
           setTimeout(() => handleGameOver(newState.score, newState.level, newState.lines), 100);
         }
-        
+
         return newState;
       });
     }
     // 수평 스와이프 (좌우) - 블록 이동
     else if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
       e.preventDefault();
-      
+
       setGameState(prevState => {
         if (!prevState.currentBlock) return prevState;
-        
+
         const newState = { ...prevState };
-        
+
         // 스와이프 거리에 따라 이동 거리 결정 (더 빠른 이동)
         const moveDistance = Math.min(Math.floor(Math.abs(deltaX) / 20), 3); // 최대 3칸까지
-        
+
         if (deltaX > 0) {
           // 오른쪽 스와이프
           for (let i = 1; i <= moveDistance; i++) {
@@ -697,19 +698,19 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             }
           }
         }
-        
+
         return newState;
       });
     }
     // 짧은 터치 - 블록 회전
     else if (Math.abs(deltaX) < maxTapDistance && Math.abs(deltaY) < maxTapDistance) {
       e.preventDefault();
-      
+
       setGameState(prevState => {
         if (!prevState.currentBlock) return prevState;
-        
+
         const newState = { ...prevState };
-        
+
         // 블록 회전 로직 (키보드 위쪽 화살표와 동일)
         const rotatedShape = prevState.currentBlock.shape[0].map((_, i) =>
           prevState.currentBlock!.shape.map(row => row[row.length - 1 - i])
@@ -718,13 +719,14 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         if (isValidPosition(rotatedBlock, prevState.board)) {
           newState.currentBlock = rotatedBlock;
         }
-        
+
         return newState;
       });
     }
-    
+
     setTouchStart(null);
     setTouchEnd(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState.isGameOver, gameState.isPaused, touchStart, touchEnd, isValidPosition, placeBlock, clearLines, calculateScore, handleGameOver]);
 
   // 키보드 이벤트 리스너
@@ -758,7 +760,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   // 보드 렌더링
   const renderBoard = () => {
     const displayBoard = gameState.board.map(row => [...row]);
-    
+
     // 현재 블록을 보드에 표시 (게임이 시작된 경우에만)
     if (isGameStarted && gameState.currentBlock) {
       for (let y = 0; y < gameState.currentBlock.shape.length; y++) {
@@ -775,14 +777,14 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
     }
 
     return (
-      <div 
+      <div
         className="inline-block border-2 border-gray-300 bg-gray-100 touch-none select-none"
         style={{ touchAction: 'none', userSelect: 'none' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div 
+        <div
           className={`grid ${!isGameStarted ? 'opacity-50' : ''}`}
           style={{
             gridTemplateColumns: `repeat(10, ${getCellSizePx()}px)`,
@@ -793,32 +795,41 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
             width: `${10 * getCellSizePx()}px`,
             height: `${BOARD_HEIGHT * getCellSizePx()}px`
           }}>
-        {displayBoard.map((row, y) =>
-          row.map((cell, x) => {
-            // 현재 블록의 색상 확인
-            let cellColor = 'white';
-            if (cell) {
-              if (isGameStarted && gameState.currentBlock) {
-                // 현재 블록이 있는 위치인지 확인
-                const isCurrentBlock = (() => {
-                  for (let by = 0; by < gameState.currentBlock.shape.length; by++) {
-                    for (let bx = 0; bx < gameState.currentBlock.shape[by].length; bx++) {
-                      if (gameState.currentBlock.shape[by][bx]) {
-                        const boardX = gameState.currentBlock.x + bx;
-                        const boardY = gameState.currentBlock.y + by;
-                        if (boardX === x && boardY === y) {
-                          return true;
+          {displayBoard.map((row, y) =>
+            row.map((cell, x) => {
+              // 현재 블록의 색상 확인
+              let cellColor = 'white';
+              if (cell) {
+                if (isGameStarted && gameState.currentBlock) {
+                  // 현재 블록이 있는 위치인지 확인
+                  const isCurrentBlock = (() => {
+                    for (let by = 0; by < gameState.currentBlock.shape.length; by++) {
+                      for (let bx = 0; bx < gameState.currentBlock.shape[by].length; bx++) {
+                        if (gameState.currentBlock.shape[by][bx]) {
+                          const boardX = gameState.currentBlock.x + bx;
+                          const boardY = gameState.currentBlock.y + by;
+                          if (boardX === x && boardY === y) {
+                            return true;
+                          }
                         }
                       }
                     }
+                    return false;
+                  })();
+
+                  if (isCurrentBlock) {
+                    cellColor = gameState.currentBlock.color;
+                  } else {
+                    // 고정된 블록의 색상 (cell 값이 2 이상이면 블록 타입 인덱스)
+                    if (cell >= 2) {
+                      const blockIndex = cell - 2;
+                      cellColor = COLORS[blockIndex] || '#3b82f6';
+                    } else if (cell === 1) {
+                      cellColor = '#3b82f6'; // 기본 파란색 (기존 블록)
+                    }
                   }
-                  return false;
-                })();
-                
-                if (isCurrentBlock) {
-                  cellColor = gameState.currentBlock.color;
                 } else {
-                  // 고정된 블록의 색상 (cell 값이 2 이상이면 블록 타입 인덱스)
+                  // 고정된 블록의 색상
                   if (cell >= 2) {
                     const blockIndex = cell - 2;
                     cellColor = COLORS[blockIndex] || '#3b82f6';
@@ -826,33 +837,24 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                     cellColor = '#3b82f6'; // 기본 파란색 (기존 블록)
                   }
                 }
-              } else {
-                // 고정된 블록의 색상
-                if (cell >= 2) {
-                  const blockIndex = cell - 2;
-                  cellColor = COLORS[blockIndex] || '#3b82f6';
-                } else if (cell === 1) {
-                  cellColor = '#3b82f6'; // 기본 파란색 (기존 블록)
-                }
               }
-            }
-            
-            return (
-              <div
-                key={`${y}-${x}`}
-                style={{
-                  backgroundColor: cellColor,
-                  boxSizing: 'border-box',
-                  width: `${getCellSizePx()}px`,
-                  height: `${getCellSizePx()}px`,
-                  display: 'block',
-                  margin: 0,
-                  padding: 0
-                }}
-              />
-            );
-          })
-        )}
+
+              return (
+                <div
+                  key={`${y}-${x}`}
+                  style={{
+                    backgroundColor: cellColor,
+                    boxSizing: 'border-box',
+                    width: `${getCellSizePx()}px`,
+                    height: `${getCellSizePx()}px`,
+                    display: 'block',
+                    margin: 0,
+                    padding: 0
+                  }}
+                />
+              );
+            })
+          )}
         </div>
       </div>
     );
@@ -868,13 +870,13 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
     const padding = isCompact ? 4 : 16;
 
     return (
-      <div 
+      <div
         className="border border-gray-300 bg-gray-100 flex justify-center items-center"
         style={{
           padding: `${padding}px`
         }}
       >
-        <div 
+        <div
           className="grid"
           style={{
             gridTemplateColumns: `repeat(${maxCols}, ${cellSize}px)`,
@@ -915,12 +917,12 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           <CardTitle className="text-center text-lg lg:text-xl">BORA TETRIS</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 lg:space-y-4 relative px-2 lg:px-6">
-          
+
           {/* 게임 보드 중앙 정렬 컨테이너 */}
           <div className="flex justify-center">
             {renderBoard()}
           </div>
-          
+
           {/* 게임 시작 전 오버레이 */}
           {!isGameStarted && !isProcessingGameOver && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center rounded-lg">
@@ -956,7 +958,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
               </div>
             </div>
           )}
-          
+
           {/* 모바일 터치 컨트롤 버튼 */}
           {isGameStarted && (
             <div className="mt-2 lg:mt-4">
@@ -1048,7 +1050,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                   </Button>
                   {/* 빈 공간 */}
                   <div></div>
-                  
+
                   {/* 좌측 버튼 */}
                   <Button
                     variant="outline"
@@ -1064,7 +1066,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                   >
                     <ArrowLeft className="w-6 h-6" />
                   </Button>
-                  
+
                   {/* 하향 버튼 */}
                   <Button
                     variant="outline"
@@ -1080,7 +1082,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                   >
                     <ArrowDown className="w-6 h-6" />
                   </Button>
-                  
+
                   {/* 우측 버튼 */}
                   <Button
                     variant="outline"
@@ -1100,7 +1102,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
               </div>
             </div>
           )}
-          
+
           {/* 컨트롤 안내 */}
           {isGameStarted && (
             <div className="text-xs text-gray-500 text-center space-y-1 mt-2">
@@ -1123,11 +1125,10 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           <div className="p-3 rounded-lg border">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">플랫폼 연동:</span>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                isLinked 
-                  ? 'bg-green-100 text-green-800' 
+              <span className={`px-2 py-1 rounded-full text-xs font-medium ${isLinked
+                  ? 'bg-green-100 text-green-800'
                   : 'bg-yellow-100 text-yellow-800'
-              }`}>
+                }`}>
                 {isLinked ? '연동됨' : '미연동'}
               </span>
             </div>
@@ -1192,7 +1193,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                   {gameState.isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
                   {gameState.isPaused ? '계속' : '일시정지'}
                 </Button>
-                
+
                 <Button
                   onClick={restartGame}
                   className="w-full"
@@ -1201,7 +1202,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                   <RotateCw className="w-4 h-4 mr-2" />
                   재시작
                 </Button>
-                
+
               </>
             )}
           </div>
@@ -1210,36 +1211,36 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       </Card>
 
 
-          {/* 게임 결과 모달 */}
-          <GameResultModal
-            isOpen={showGameResultModal}
-            onClose={() => setShowGameResultModal(false)}
-            gameResult={gameResult}
-          />
+      {/* 게임 결과 모달 */}
+      <GameResultModal
+        isOpen={showGameResultModal}
+        onClose={() => setShowGameResultModal(false)}
+        gameResult={gameResult}
+      />
 
-          {/* 실패 모달 */}
-          {showFailureModal && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 text-center max-w-sm mx-4">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                  </div>
-                </div>
-                <h3 className="text-lg font-semibold text-red-800 mb-2">처리 실패</h3>
-                <p className="text-red-700 mb-4 text-sm">{failureMessage}</p>
-                <Button 
-                  onClick={() => setShowFailureModal(false)}
-                  className="w-full"
-                  variant="outline"
-                >
-                  확인
-                </Button>
+      {/* 실패 모달 */}
+      {showFailureModal && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 text-center max-w-sm mx-4">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
               </div>
             </div>
-          )}
+            <h3 className="text-lg font-semibold text-red-800 mb-2">처리 실패</h3>
+            <p className="text-red-700 mb-4 text-sm">{failureMessage}</p>
+            <Button
+              onClick={() => setShowFailureModal(false)}
+              className="w-full"
+              variant="outline"
+            >
+              확인
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ interface QuestPanelProps {
   gameUuid: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,7 +31,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
       icon: Star
     },
     daily: {
-      title: "일일 퀘스트", 
+      title: "일일 퀘스트",
       description: "매일 초기화되는 퀘스트입니다. 초기화 시간은 자정 입니다.",
       icon: RefreshCw
     },
@@ -61,7 +62,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     try {
       const response = await fetch(`/api/platform-link/status?gameUuid=${gameUuid}`);
       const data = await response.json();
-      
+
       if (data.success && data.payload?.isLinked) {
         setIsLinked(true);
       } else {
@@ -71,18 +72,18 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
       console.error('플랫폼 연동 상태 확인 실패:', error);
       setIsLinked(false);
     }
-  }, [gameUuid, userId]);
+  }, [gameUuid]);
 
   // 퀘스트 목록 가져오기
   const fetchQuests = useCallback(async () => {
     try {
       const response = await fetch(`/api/quests?gameUuid=${gameUuid}`);
       const data = await response.json();
-      
+
       if (data.success) {
         const questsData = data.payload || [];
         setError(null);
-        
+
         // 미완료 퀘스트를 위에, 완료된 퀘스트를 아래에 정렬
         const sortedQuests = questsData.sort((a: Quest, b: Quest) => {
           // 미완료 퀘스트가 위에 오도록 정렬
@@ -91,7 +92,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
           // 완료 상태가 같으면 ID 순으로 정렬
           return parseInt(a.id) - parseInt(b.id);
         });
-        
+
         setQuests(sortedQuests);
       } else {
         console.error('퀘스트 목록 가져오기 실패:', data.error);
@@ -107,12 +108,12 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [gameUuid, userId]);
+  }, [gameUuid]);
 
   // 새로고침 핸들러 추가
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return; // 이미 새로고침 중이면 중복 실행 방지
-    
+
     setIsRefreshing(true);
     try {
       await fetchQuests();
@@ -140,7 +141,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
         return claimValue;
       }
     }
-    
+
     // 숫자인 경우 그대로 반환
     return claimValue.toString();
   };
@@ -219,10 +220,10 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   // 퀘스트 렌더링 함수
   const renderQuest = (quest: Quest) => {
     const isFailed = isQuestFailed(quest);
-    
+
     return (
-      <div 
-        key={quest.id} 
+      <div
+        key={quest.id}
         className={`border rounded-lg p-3 space-y-2 ${isFailed ? 'bg-gray-100 opacity-60' : ''}`}
       >
         <div className="flex items-start justify-between">
@@ -243,31 +244,31 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             )}
           </div>
         </div>
-        
+
         <p className={`text-xs ${isFailed ? 'text-gray-500' : 'text-gray-600'}`}>
           {quest.description}
         </p>
-        
+
         {isFailed && (
           <p className="text-xs text-red-500 font-medium">
-            {quest.id === '13' 
+            {quest.id === '13'
               ? '30분 내에 완료하지 못했습니다'
               : '일주일 내에 완료하지 못했습니다'
             }
           </p>
         )}
-        
+
         <div className="space-y-1">
           <div className="flex justify-between text-xs">
             <span>진행도</span>
             <span>{quest.progress} / {quest.maxProgress}</span>
           </div>
-          <Progress 
-            value={(quest.progress / quest.maxProgress) * 100} 
+          <Progress
+            value={(quest.progress / quest.maxProgress) * 100}
             className={`h-2 ${isFailed ? 'bg-gray-200' : ''}`}
           />
         </div>
-        
+
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500">보상:</span>
@@ -304,7 +305,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             </div>
           )}
         </div>
-        
+
         {quest.expiresAt && (
           <div className="text-xs text-gray-500">
             만료: {new Date(quest.expiresAt).toLocaleDateString()}
@@ -348,7 +349,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
         fetchQuests()
       ]);
     };
-    
+
     if (gameUuid) {
       initializePanel();
     }
@@ -357,11 +358,11 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   // 주기적으로 퀘스트 상태 새로고침 (연동된 유저만)
   useEffect(() => {
     if (!isLinked || !gameUuid) return;
-    
+
     const refreshInterval = setInterval(() => {
       fetchQuests();
     }, 30000); // 30초마다 새로고침
-    
+
     return () => {
       clearInterval(refreshInterval);
     };
@@ -431,7 +432,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* 연동 상태 표시 (랭킹형 탭 요구에 따라 문구 제거) */}
-        
+
 
         {error && (
           <div className="text-center space-y-3 mb-4">
@@ -481,7 +482,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
                 <span className="hidden sm:inline">기타</span>
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="general" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 */}
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
@@ -497,13 +498,13 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
 
               {getQuestsByCategory('general').length === 0 ? (
                 <div className="text-center text-gray-500 py-4">
-                    플랫폼 연동_인게임 퀘스트가 없습니다.
+                  플랫폼 연동_인게임 퀘스트가 없습니다.
                 </div>
               ) : (
                 getQuestsByCategory('general').map(renderQuest)
               )}
             </TabsContent>
-            
+
             <TabsContent value="daily" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 */}
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
@@ -525,7 +526,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
                 getQuestsByCategory('daily').map(renderQuest)
               )}
             </TabsContent>
-            
+
             <TabsContent value="attendance" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 */}
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
@@ -547,7 +548,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
                 getQuestsByCategory('attendance').map(renderQuest)
               )}
             </TabsContent>
-            
+
             <TabsContent value="ranking" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 - 문구 제거 */}
 
@@ -574,7 +575,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
                 getQuestsByCategory('ranking').map(renderQuest)
               )}
             </TabsContent>
-            
+
             <TabsContent value="purchase" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 */}
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
@@ -598,7 +599,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="other" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 */}
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">

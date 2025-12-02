@@ -13,7 +13,7 @@ const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '4f9644246
 const config = createConfig({
     chains: [polygonAmoy],
     transports: {
-        [polygonAmoy.id]: http(),
+        [polygonAmoy.id]: http('https://polygon-amoy.drpc.org'),
     },
     connectors: [
         injected(), // MetaMask 등 브라우저 확장 프로그램

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { circleWalletService } from '@/lib/circle/CircleWalletService';
+import { prisma } from '@/lib/prisma';
+import { getUSDCBalance } from '@/lib/blockchain/usdcBalance';
 import {
     createSuccessResponse,
     createErrorResponse,
@@ -9,7 +10,7 @@ import {
 
 /**
  * GET /api/circle/balance?gameUuid=123
- * USDC 잔액 조회
+ * 외부 지갑 주소 및 USDC 잔액 조회
  */
 export async function GET(request: NextRequest) {
     try {
@@ -32,27 +33,34 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // 지갑 조회
-        const wallet = await circleWalletService.getWalletByUserId(parsedGameUuid);
+        // 외부 지갑 조회 (ExternalWallet)
+        const externalWallet = await prisma.externalWallet.findFirst({
+            where: {
+                userId: parsedGameUuid,
+                isPrimary: true
+            }
+        });
 
-        if (!wallet) {
+        if (!externalWallet) {
+            // 외부 지갑이 없으면 기본값 반환
             return NextResponse.json(
-                createErrorResponse(
-                    API_ERROR_CODES.INVALID_INPUT,
-                    '지갑이 존재하지 않습니다. 먼저 지갑을 생성해주세요.'
-                ),
-                { status: getErrorStatusCode(API_ERROR_CODES.INVALID_INPUT) }
+                createSuccessResponse({
+                    walletId: null,
+                    address: null,
+                    usdc: '0',
+                    updatedAt: new Date().toISOString(),
+                })
             );
         }
 
-        // 실시간 잔액 조회 (Circle API)
-        const balance = await circleWalletService.getWalletBalance(wallet.walletId);
+        // 블록체인에서 USDC 잔액 조회
+        const balance = await getUSDCBalance(externalWallet.address);
 
         return NextResponse.json(
             createSuccessResponse({
-                walletId: wallet.walletId,
-                address: wallet.address,
-                usdc: balance.usdc,
+                walletId: externalWallet.id,
+                address: externalWallet.address,
+                usdc: balance,
                 updatedAt: new Date().toISOString(),
             })
         );

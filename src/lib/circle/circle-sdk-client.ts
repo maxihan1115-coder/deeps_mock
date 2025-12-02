@@ -57,7 +57,8 @@ export class CircleSDKClient {
         try {
             const response = await this.client.createWallets({
                 walletSetId: params.walletSetId,
-                blockchains: params.blockchains,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                blockchains: params.blockchains as any,
                 count: params.count || 1,
                 accountType: params.accountType || 'EOA',
             });
@@ -112,7 +113,7 @@ export class CircleSDKClient {
             const response = await this.client.createTransaction({
                 walletId: params.walletId,
                 destinationAddress: params.destinationAddress,
-                amounts: params.amounts,
+                amount: params.amounts,
                 tokenId: params.tokenId,
                 fee: {
                     type: 'level',

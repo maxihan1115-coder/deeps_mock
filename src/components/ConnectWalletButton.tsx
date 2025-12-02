@@ -7,7 +7,7 @@ import { Wallet } from 'lucide-react';
 export default function ConnectWalletButton() {
     return (
         <ConnectKitButton.Custom>
-            {({ isConnected, isConnecting, show, hide, address, ensName, chain }) => {
+            {({ isConnected, show, address, ensName }) => {
                 return (
                     <Button
                         onClick={show}

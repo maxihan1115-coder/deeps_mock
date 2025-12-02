@@ -26,12 +26,12 @@ interface GameResultModalProps {
   };
 }
 
-export default function GameResultModal({ 
-  isOpen, 
-  onClose, 
-  gameResult 
+export default function GameResultModal({
+  isOpen,
+  onClose,
+  gameResult
 }: GameResultModalProps) {
-  const { score, level, lines, earnedGold, isNewHighScore, isRankingUpdated, rankingInfo } = gameResult;
+  const { score, level, lines, earnedGold, isNewHighScore, rankingInfo } = gameResult;
 
 
   return (
@@ -42,7 +42,7 @@ export default function GameResultModal({
             게임 결과
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-2">
           {/* 새로운 최고 기록 알림 */}
           {isNewHighScore && (
@@ -120,13 +120,13 @@ export default function GameResultModal({
                     {rankingInfo.currentRank}위
                   </Badge>
                 </div>
-                
+
                 <div className="space-y-1 text-xs">
                   <div className="flex justify-between">
                     <span className="text-gray-600">현재 순위:</span>
                     <span className="font-semibold">{rankingInfo.currentRank}위</span>
                   </div>
-                  
+
                   {/* 순위 변동이 있을 때만 이전 순위와 변동 표시 */}
                   {rankingInfo.previousRank && rankingInfo.rankChange && rankingInfo.rankChange !== 0 && (
                     <>
@@ -134,21 +134,20 @@ export default function GameResultModal({
                         <span className="text-gray-600">이전 순위:</span>
                         <span className="font-semibold">{rankingInfo.previousRank}위</span>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         <span className="text-gray-600">순위 변동:</span>
-                        <span className={`font-semibold flex items-center gap-1 ${
-                          rankingInfo.rankChange > 0 
-                            ? 'text-red-600' 
+                        <span className={`font-semibold flex items-center gap-1 ${rankingInfo.rankChange > 0
+                            ? 'text-red-600'
                             : 'text-green-600'
-                        }`}>
+                          }`}>
                           <TrendingUp className={`w-3 h-3 ${rankingInfo.rankChange > 0 ? 'rotate-180' : ''}`} />
                           {Math.abs(rankingInfo.rankChange)}위
                         </span>
                       </div>
                     </>
                   )}
-                  
+
                   <div className="flex justify-between">
                     <span className="text-gray-600">전체 플레이어:</span>
                     <span className="font-semibold">{rankingInfo.totalPlayers.toLocaleString()}명</span>

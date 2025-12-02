@@ -73,6 +73,7 @@ export class CirclePaymentService {
             const client = getCircleClient();
             const response = await client.createTransaction({
                 walletId: wallet.walletId,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 blockchain: wallet.blockchain as any, // 타입 호환성 문제 우회
                 tokenId,
                 destinationAddress: this.TREASURY_WALLET_ADDRESS,
@@ -99,6 +100,7 @@ export class CirclePaymentService {
                     walletId: wallet.walletId,
                     circleTransactionId: transfer.id || '',
                     type: 'DIAMOND_PURCHASE',
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     status: (transfer.state as any) || 'PENDING',
                     amount: usdcAmount,
                     tokenId,
@@ -131,6 +133,7 @@ export class CirclePaymentService {
                 status: transfer.state || 'PENDING',
                 diamondAmount,
                 usdcAmount,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 txHash: (transfer as any).txHash,
             };
         } catch (error) {
@@ -150,6 +153,7 @@ export class CirclePaymentService {
         ipAddress: string;
         sessionId: string;
     }) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { userId, amount, encryptedData, keyId, toAddress, ipAddress, sessionId } = params;
 
         try {
@@ -196,6 +200,7 @@ export class CirclePaymentService {
             // 3. DB에 결제 내역 저장
             const paymentData = paymentResponse.data.data;
 
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore: Prisma 클라이언트가 아직 업데이트되지 않았을 수 있음
             await prisma.cardPayment.create({
                 data: {
@@ -218,10 +223,56 @@ export class CirclePaymentService {
                 status: paymentData.status,
             };
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('❌ 카드 결제 실패:', error.response?.data || error.message);
             throw new Error(`카드 결제 실패: ${error.response?.data?.message || error.message}`);
         }
+    }
+
+    /**
+     * 결제 내역 조회
+     */
+    async getPaymentHistory(userId: number, limit: number = 10) {
+        return await prisma.paymentHistory.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+            take: limit,
+        });
+    }
+
+    /**
+     * 결제 완료 처리 (Webhook)
+     */
+    async completePayment(circleTransactionId: string, _txHash?: string) {
+        // 1. CircleTransaction 업데이트
+        const transaction = await prisma.circleTransaction.update({
+            where: { circleTransactionId },
+            data: { status: 'COMPLETE' },
+        });
+
+        // 2. PaymentHistory 업데이트
+        await prisma.paymentHistory.updateMany({
+            where: { circleTransactionId: transaction.id },
+            data: { status: 'COMPLETED' },
+        });
+    }
+
+    /**
+     * 결제 실패 처리 (Webhook)
+     */
+    async failPayment(circleTransactionId: string) {
+        // 1. CircleTransaction 업데이트
+        const transaction = await prisma.circleTransaction.update({
+            where: { circleTransactionId },
+            data: { status: 'FAILED' },
+        });
+
+        // 2. PaymentHistory 업데이트
+        await prisma.paymentHistory.updateMany({
+            where: { circleTransactionId: transaction.id },
+            data: { status: 'FAILED' },
+        });
     }
 }
 

@@ -15,7 +15,7 @@ interface HighScoreDisplayProps {
   gameUuid: number; // userId → gameUuid (숫자)
 }
 
-export default function HighScoreDisplay({ 
+export default function HighScoreDisplay({
   gameUuid // userId → gameUuid (숫자)
 }: HighScoreDisplayProps) {
   const [highScore, setHighScore] = useState<HighScore | null>(null);
@@ -42,6 +42,7 @@ export default function HighScoreDisplay({
   // 컴포넌트 마운트 시 최고 점수 조회
   useEffect(() => {
     fetchHighScore();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameUuid]);
 
   // 게임 종료 시에만 최고 점수 저장 (실시간 저장 제거)

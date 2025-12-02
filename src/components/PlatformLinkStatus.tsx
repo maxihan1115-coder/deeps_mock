@@ -17,7 +17,7 @@ export default function PlatformLinkStatus({ gameUuid }: PlatformLinkStatusProps
     try {
       const response = await fetch(`/api/platform-link/status?gameUuid=${gameUuid}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setIsLinked(data.payload?.isLinked || false);
       } else {
@@ -33,10 +33,11 @@ export default function PlatformLinkStatus({ gameUuid }: PlatformLinkStatusProps
 
   useEffect(() => {
     checkPlatformLinkStatus();
-    
+
     // 주기적으로 상태 확인 (1분마다)
     const interval = setInterval(checkPlatformLinkStatus, 60000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameUuid]);
 
   if (isLoading) {
@@ -53,7 +54,7 @@ export default function PlatformLinkStatus({ gameUuid }: PlatformLinkStatusProps
       <div className="flex items-center gap-2">
         <Link className="w-4 h-4" />
         <span className="text-sm font-medium">플랫폼 연동:</span>
-        <Badge 
+        <Badge
           variant={isLinked ? "default" : "secondary"}
           className={isLinked ? "bg-green-500" : "bg-gray-400"}
         >

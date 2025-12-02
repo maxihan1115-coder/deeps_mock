@@ -56,7 +56,8 @@ export class CircleWalletService {
             // 2. Wallet 생성
             const walletResponse = await client.createWallets({
                 walletSetId: walletSet.id,
-                blockchains: [blockchain],
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                blockchains: [blockchain as any],
                 count: 1,
                 accountType: 'EOA',
             });
@@ -130,7 +131,8 @@ export class CircleWalletService {
             // USDC 토큰 찾기
             const tokenBalances = response.data?.tokenBalances || [];
             const usdcBalance = tokenBalances.find(
-                (b: { token: { symbol: string }; amount?: string }) => b.token.symbol === 'USDC'
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (b: any) => b.token?.symbol === 'USDC'
             );
 
             const balance = usdcBalance?.amount || '0';

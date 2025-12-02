@@ -30,10 +30,10 @@ interface GachaStats {
   netGain: number;
 }
 
-export default function GachaHistoryModal({ 
-  isOpen, 
-  onClose, 
-  gameUuid 
+export default function GachaHistoryModal({
+  isOpen,
+  onClose,
+  gameUuid
 }: GachaHistoryModalProps) {
   const [history, setHistory] = useState<GachaHistoryItem[]>([]);
   const [stats, setStats] = useState<GachaStats | null>(null);
@@ -43,13 +43,14 @@ export default function GachaHistoryModal({
     if (isOpen) {
       fetchGachaHistory();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, gameUuid]);
 
   const fetchGachaHistory = async () => {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/gacha/history?gameUuid=${gameUuid}`);
-      
+
       if (response.ok) {
         const data = await response.json();
         setHistory(data.payload.history);
@@ -127,7 +128,7 @@ export default function GachaHistoryModal({
                   <div className="text-xs md:text-sm text-gray-600 whitespace-nowrap">총 구매 횟수</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-3 md:p-4 text-center">
                   <div className="font-bold text-red-600 whitespace-nowrap" style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}>
@@ -136,7 +137,7 @@ export default function GachaHistoryModal({
                   <div className="text-xs md:text-sm text-gray-600 whitespace-nowrap">총 사용 다이아</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-3 md:p-4 text-center">
                   <div className="font-bold text-green-600 whitespace-nowrap" style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}>
@@ -145,7 +146,7 @@ export default function GachaHistoryModal({
                   <div className="text-xs md:text-sm text-gray-600 whitespace-nowrap">총 획득 다이아</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-3 md:p-4 text-center">
                   <div className={`font-bold flex items-center justify-center gap-1 ${getNetGainColor(stats.netGain)} whitespace-nowrap`} style={{ fontSize: 'clamp(0.75rem, 2vw, 1.25rem)' }}>
@@ -179,18 +180,18 @@ export default function GachaHistoryModal({
                             {formatDate(item.createdAt)}
                           </Badge>
                         </div>
-                        
+
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs md:text-sm">
                           <div className="flex items-center gap-1 text-red-600">
                             <span>사용:</span>
                             <span className="font-bold">{item.diamondCost.toLocaleString()}</span>
                           </div>
-                          
+
                           <div className="flex items-center gap-1 text-green-600">
                             <span>획득:</span>
                             <span className="font-bold">{item.earnedDiamonds.toLocaleString()}</span>
                           </div>
-                          
+
                           <div className={`flex items-center gap-1 ${getNetGainColor(item.earnedDiamonds - item.diamondCost)}`}>
                             <span>순이익:</span>
                             <span className="font-bold">
@@ -200,7 +201,7 @@ export default function GachaHistoryModal({
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex justify-end md:text-right">
                         {item.earnedDiamonds > item.diamondCost ? (
                           <Badge className="bg-green-100 text-green-800 text-xs">수익</Badge>

@@ -17,6 +17,7 @@ export default function USDCBalanceCard({ gameUuid }: USDCBalanceCardProps) {
 
     useEffect(() => {
         fetchBalance();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [gameUuid]);
 
     const fetchBalance = async () => {
@@ -49,10 +50,7 @@ export default function USDCBalanceCard({ gameUuid }: USDCBalanceCardProps) {
         }
     };
 
-    const shortenAddress = (address: string) => {
-        if (!address) return '';
-        return `${address.slice(0, 6)}...${address.slice(-4)}`;
-    };
+
 
     return (
         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
@@ -95,12 +93,23 @@ export default function USDCBalanceCard({ gameUuid }: USDCBalanceCardProps) {
                         {walletAddress && (
                             <div className="space-y-2">
                                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    지갑 주소
+                                    내 USDC 지갑 주소
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <code className="flex-1 text-sm bg-white dark:bg-gray-800 px-3 py-2 rounded border">
-                                        {shortenAddress(walletAddress)}
+                                    <code className="flex-1 text-xs bg-white dark:bg-gray-800 px-3 py-2 rounded border font-mono break-all">
+                                        {walletAddress}
                                     </code>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(walletAddress);
+                                            alert('주소가 복사되었습니다!');
+                                        }}
+                                        className="shrink-0"
+                                    >
+                                        복사
+                                    </Button>
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -117,15 +126,16 @@ export default function USDCBalanceCard({ gameUuid }: USDCBalanceCardProps) {
                         <div className="text-xs text-gray-500 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 p-3 rounded">
                             💡 <strong>Testnet USDC 받기:</strong>
                             <br />
+                            위의 지갑 주소를 복사하여{' '}
                             <a
                                 href="https://faucet.circle.com"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
+                                className="text-blue-600 hover:underline font-semibold"
                             >
                                 Circle Faucet
                             </a>
-                            에서 테스트 USDC를 받을 수 있습니다.
+                            에 입력하면 테스트 USDC를 받을 수 있습니다.
                         </div>
                     </>
                 )}

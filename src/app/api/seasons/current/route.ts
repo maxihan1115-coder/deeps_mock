@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // 현재 시즌 정보 조회
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   try {
     // 현재 시즌 정보 (임시로 하드코딩)
