@@ -254,7 +254,7 @@ export default function RankingList({ currentUserId }: RankingListProps) {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
+    <div className="w-full mx-auto space-y-6">
 
       {/* 시즌 일정 정보 */}
       {seasonInfo && (

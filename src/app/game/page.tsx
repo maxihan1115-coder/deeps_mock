@@ -12,12 +12,12 @@ import RankingList from '@/components/RankingList';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { LogOut, User, Gamepad2, Trophy, Link, Calendar, Award, ShoppingBag, CreditCard, Receipt } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LogOut, User, Gamepad2, Trophy, Link, Calendar, Award, Home, Play, X, Star } from 'lucide-react';
 import CurrencyDisplay from '@/components/CurrencyDisplay';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import ShopModal from '@/components/ShopModal';
-import USDCBalanceCard from '@/components/USDCBalanceCard';
+// import USDCBalanceCard from '@/components/USDCBalanceCard';
 import TopUpModal from '@/components/TopUpModal';
 import WalletGuard from '@/components/WalletGuard';
 import PurchaseHistoryModal from '@/components/PurchaseHistoryModal';
@@ -31,7 +31,7 @@ export default function GamePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">로딩 중...</p>
+          <p className="mt-2 text-gray-600">Loading...</p>
         </div>
       </div>
     }>
@@ -50,10 +50,20 @@ function GamePageContent() {
     username: string;
     uuid: number;
   } | null>(null);
-  const [activeTab, setActiveTab] = useState("game");
-  const [gameSubTab, setGameSubTab] = useState("tetris");
+
+  // 탭 상태 (기본값: 로비)
+  const [activeTab, setActiveTab] = useState("lobby");
+
+  // 게임 모달 상태
+  const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+
+  // 게임 상태 (모달 밖에서도 일부 정보 표시용, 필요 시)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [gameState, setGameState] = useState<{ score: number; level: number; lines: number; nextBlock: { shape: number[][]; color: string } | null } | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isGameStarted, setIsGameStarted] = useState(false);
+
+  // 모달 상태들
   const [showShopModal, setShowShopModal] = useState(false);
   const [showGoldShop, setShowGoldShop] = useState(false);
   const [showDiamondShop, setShowDiamondShop] = useState(false);
@@ -80,51 +90,28 @@ function GamePageContent() {
   // 로그아웃
   const handleLogout = async () => {
     try {
-      // 1. ⭐️ wagmi 브라우저 세션만 해제 (DB는 유지)
-      //    사용자가 명시적으로 해제하지 않았으므로 다음 로그인 시 지갑 정보 유지
       if (isConnected) {
         await disconnect();
       }
-
-      // 2. 로컬 스토리지 정리
       try {
         localStorage.removeItem('userInfo');
       } catch { }
-
-      // 3. 상태 초기화
       setCurrentUser(null);
-
-      // 4. 홈으로 이동
       router.push('/');
     } catch (error) {
       console.error('로그아웃 중 오류:', error);
-      // 에러가 있어도 로그아웃 진행
       router.push('/');
     }
   };
 
-  // 점수 업데이트 (사용하지 않음)
+  // 핸들러들 (TetrisGame에 전달)
   const handleScoreUpdate = useCallback(() => { }, []);
-
-  // 레벨 업데이트 (사용하지 않음)
   const handleLevelUpdate = useCallback(() => { }, []);
-
-  // 라인 업데이트 (사용하지 않음)
   const handleLinesUpdate = useCallback(() => { }, []);
-
-  // 게임 오버 처리
-  const handleGameOver = useCallback(() => {
-    // 게임 오버 시 필요한 로직 추가 가능
-  }, []);
-
-  // 하이스코어 업데이트 핸들러
+  const handleGameOver = useCallback(() => { }, []);
   const handleHighScoreUpdate = useCallback((score: number, level: number, lines: number) => {
     console.log('하이스코어 업데이트:', { score, level, lines });
-    // HighScoreDisplay 컴포넌트를 강제로 리렌더링하기 위해
-    // 상태를 업데이트하거나 다른 방법을 사용할 수 있습니다
   }, []);
-
-  // 게임 상태 변경 핸들러
   const handleGameStateChange = useCallback((newGameState: { score: number; level: number; lines: number; nextBlock: { shape: number[][]; color: string } | null }, newIsGameStarted: boolean) => {
     setGameState(newGameState);
     setIsGameStarted(newIsGameStarted);
@@ -135,7 +122,7 @@ function GamePageContent() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">로딩 중...</p>
+          <p className="mt-2 text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -144,23 +131,25 @@ function GamePageContent() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors duration-300">
       <WalletGuard gameUuid={currentUser.uuid} />
+
       {/* 헤더 */}
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Gamepad2 className="w-6 h-6 text-blue-600" />
                 BORA TETRIS
               </h1>
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
+              <div className="hidden md:flex items-center space-x-2">
                 <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser.username}</span>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="hidden md:flex items-center space-x-2">
                 <Badge variant="outline" className="text-xs font-mono text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-700">
                   UUID: {currentUser.uuid}
                 </Badge>
@@ -178,140 +167,89 @@ function GamePageContent() {
                 className="border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* 메인 컨텐츠 */}
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 lg:py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4 lg:mb-8 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl transition-colors duration-300">
-            <TabsTrigger
-              value="game"
-              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:scale-105 rounded-lg font-medium"
-            >
-              <Gamepad2 className="w-4 h-4" />
-              게임
-            </TabsTrigger>
-            <TabsTrigger
-              value="quests"
-              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:scale-105 rounded-lg font-medium"
-            >
-              <Trophy className="w-4 h-4" />
-              퀘스트
-            </TabsTrigger>
-            <TabsTrigger
-              value="platform"
-              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:scale-105 rounded-lg font-medium"
-            >
-              <Link className="w-4 h-4" />
-              플랫폼 연동
-            </TabsTrigger>
-          </TabsList>
+      {/* 메인 레이아웃 (3단 구조) */}
+      <main className="max-w-[1800px] mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6">
 
-          <TabsContent value="game" className="space-y-0">
-            {/* 게임 하위 탭 */}
-            <Tabs value={gameSubTab} onValueChange={setGameSubTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="tetris" className="flex items-center gap-2">
-                  <Gamepad2 className="w-4 h-4" />
-                  TETRIS
-                </TabsTrigger>
-                <TabsTrigger value="ranking" className="flex items-center gap-2">
-                  <Trophy className="w-4 h-4" />
-                  시즌 랭킹
-                </TabsTrigger>
-              </TabsList>
+        {/* [1] 왼쪽 사이드바 (고정) - 상점 메뉴 */}
+        <aside className="hidden lg:flex flex-col gap-6 w-80 flex-shrink-0">
+          <ShopMenuCard
+            gameUuid={currentUser.uuid}
+            onOpenShop={() => setShowShopModal(true)}
+            onOpenGoldShop={() => setShowGoldShop(true)}
+            onOpenDiamondShop={() => setShowDiamondShop(true)}
+            onOpenTopUp={() => setShowTopUpModal(true)}
+            onOpenPurchaseHistory={() => setShowPurchaseHistory(true)}
+          />
+        </aside>
 
-              <TabsContent value="tetris" className="space-y-0">
-                {/* 모바일 전용 버튼들 - 테트리스 텍스트 위에 위치 */}
-                <div className="block lg:hidden mb-4">
-                  <div className="flex gap-2 justify-center">
-                    {/* 출석체크 모달 */}
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          출석체크
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-sm mx-auto">
-                        <DialogHeader>
-                          <DialogTitle>출석체크</DialogTitle>
-                        </DialogHeader>
-                        <AttendanceCheck
-                          userId={currentUser.id}
-                          gameUuid={currentUser.uuid}
-                        />
-                      </DialogContent>
-                    </Dialog>
+        {/* [2] 중앙 컨텐츠 (가변) - 탭 영역 */}
+        <section className="flex-1 min-w-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {/* GNB (탭 리스트) */}
+            <TabsList className="grid w-full grid-cols-4 mb-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-1 rounded-xl h-auto shadow-sm">
+              <TabsTrigger value="lobby" className="py-3 flex flex-col sm:flex-row items-center gap-2 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 transition-all">
+                <Home className="w-5 h-5" />
+                <span className="font-medium">Lobby</span>
+              </TabsTrigger>
+              <TabsTrigger value="quests" className="py-3 flex flex-col sm:flex-row items-center gap-2 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 transition-all">
+                <Trophy className="w-5 h-5" />
+                <span className="font-medium">Quests</span>
+              </TabsTrigger>
+              <TabsTrigger value="ranking" className="py-3 flex flex-col sm:flex-row items-center gap-2 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 transition-all">
+                <Award className="w-5 h-5" />
+                <span className="font-medium">Ranking</span>
+              </TabsTrigger>
+              <TabsTrigger value="platform" className="py-3 flex flex-col sm:flex-row items-center gap-2 data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 transition-all">
+                <Link className="w-5 h-5" />
+                <span className="font-medium">Platform</span>
+              </TabsTrigger>
+            </TabsList>
 
-                    {/* 최고 점수 모달 */}
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex items-center gap-2">
-                          <Award className="w-4 h-4" />
-                          최고점수
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-sm mx-auto">
-                        <DialogHeader>
-                          <DialogTitle>최고 점수</DialogTitle>
-                        </DialogHeader>
-                        <HighScoreDisplay
-                          gameUuid={currentUser.uuid}
-                        />
-                      </DialogContent>
-                    </Dialog>
+            {/* 탭 컨텐츠들 */}
+            <TabsContent value="lobby" className="space-y-6 animate-in fade-in-50 duration-300">
+              {/* 로비 배너 */}
+              <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-yellow-300 opacity-10 rounded-full blur-3xl"></div>
 
+                <div className="relative z-10">
+                  <h2 className="text-3xl font-bold mb-2">Welcome to BORA TETRIS!</h2>
+                  <p className="text-indigo-100 text-lg mb-6 max-w-xl">
+                    Compete with players worldwide, complete quests, and earn rewards.
+                    Start playing now to climb the leaderboard!
+                  </p>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 px-3 py-1">
+                      <Star className="w-3 h-3 mr-1 fill-current" /> Season 1 Live
+                    </Badge>
+                    <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 px-3 py-1">
+                      <Trophy className="w-3 h-3 mr-1" /> Weekly Rewards
+                    </Badge>
                   </div>
                 </div>
+              </div>
 
+              {/* 모바일 전용 UI (lg hidden) */}
+              <div className="lg:hidden space-y-6">
+                {/* GAME START 버튼 */}
+                <Button
+                  onClick={() => setIsGameModalOpen(true)}
+                  className="w-full h-20 text-2xl font-black italic bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 text-white shadow-xl border-4 border-white/20 rounded-xl"
+                >
+                  <Play className="w-8 h-8 mr-2 fill-current" />
+                  GAME START
+                </Button>
 
-                {/* 모바일 게임정보 영역 - 작은 다음블록 UI */}
-                {isGameStarted && gameState && (
-                  <div className="block lg:hidden mb-4">
-                    <div className="flex items-center justify-center p-1.5 bg-gray-50 rounded-lg border">
-                      <div className="flex items-center gap-2">
-                        <div className="text-center text-xs">
-                          <div className="text-gray-600">점수: <span className="font-bold text-gray-900">{gameState.score?.toLocaleString() || 0}</span></div>
-                          <div className="text-gray-600">레벨: <span className="font-bold text-gray-900">{gameState.level || 1}</span> | 라인: <span className="font-bold text-gray-900">{gameState.lines || 0}</span></div>
-                        </div>
-                        <div className="border-l border-gray-300 pl-2">
-                          <div className="text-xs text-gray-600 text-center">다음</div>
-                          {gameState.nextBlock && (
-                            <div className="flex justify-center">
-                              <div className="grid" style={{
-                                gridTemplateColumns: `repeat(${Math.max(...gameState.nextBlock.shape.map((row: number[]) => row.length))}, 12px)`,
-                                gridTemplateRows: `repeat(${gameState.nextBlock.shape.length}, 12px)`,
-                                gap: 0
-                              }}>
-                                {gameState.nextBlock.shape.map((row: number[], y: number) =>
-                                  row.map((cell: number, x: number) => (
-                                    <div
-                                      key={`${y}-${x}`}
-                                      className="w-3 h-3 border border-gray-300"
-                                      style={{
-                                        backgroundColor: cell ? gameState.nextBlock?.color || 'transparent' : 'transparent'
-                                      }}
-                                    />
-                                  ))
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-
-                {/* 모바일 상점 메뉴 (lg 이하에서만 표시) */}
-                <div className="lg:hidden mb-4">
+                {/* 모바일용 사이드바 컨텐츠 노출 */}
+                <div className="space-y-4">
                   <ShopMenuCard
                     gameUuid={currentUser.uuid}
                     onOpenShop={() => setShowShopModal(true)}
@@ -320,82 +258,132 @@ function GamePageContent() {
                     onOpenTopUp={() => setShowTopUpModal(true)}
                     onOpenPurchaseHistory={() => setShowPurchaseHistory(true)}
                   />
+                  <AttendanceCheck userId={currentUser.id} gameUuid={currentUser.uuid} />
+                  <HighScoreDisplay gameUuid={currentUser.uuid} />
                 </div>
-
-                {/* 게임 영역 - 3열 레이아웃 */}
-                <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 lg:justify-center lg:items-start">
-                  {/* 왼쪽 사이드바 - 상점 & 결제 */}
-                  <div className="hidden lg:flex lg:flex-col lg:gap-6 flex-shrink-0 w-full lg:w-80 lg:min-w-80">
-                    <ShopMenuCard
-                      gameUuid={currentUser.uuid}
-                      onOpenShop={() => setShowShopModal(true)}
-                      onOpenGoldShop={() => setShowGoldShop(true)}
-                      onOpenDiamondShop={() => setShowDiamondShop(true)}
-                      onOpenTopUp={() => setShowTopUpModal(true)}
-                      onOpenPurchaseHistory={() => setShowPurchaseHistory(true)}
-                    />
-                  </div>
-
-                  {/* 게임 영역 - 중앙 */}
-                  <div className="flex-shrink-0 w-full lg:w-auto flex justify-center">
-                    <TetrisGame
-                      userId={currentUser.uuid}
-                      onScoreUpdate={handleScoreUpdate}
-                      onLevelUpdate={handleLevelUpdate}
-                      onLinesUpdate={handleLinesUpdate}
-                      onGameOver={handleGameOver}
-                      onHighScoreUpdate={handleHighScoreUpdate}
-                      onGameStateChange={handleGameStateChange}
-                    />
-                  </div>
-
-                  {/* 오른쪽 사이드바 - 게임 정보 */}
-                  <div className="hidden lg:flex lg:flex-col lg:gap-6 flex-shrink-0 w-full lg:w-80 lg:min-w-80">
-                    {/* 출석체크 */}
-                    <AttendanceCheck
-                      userId={currentUser.id}
-                      gameUuid={currentUser.uuid}
-                    />
-
-                    {/* 최고 점수 */}
-                    <HighScoreDisplay
-                      gameUuid={currentUser.uuid}
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="ranking" className="space-y-0">
-                <div className="flex justify-center">
-                  <RankingList currentUserId={currentUser?.uuid} />
-                </div>
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
-
-          <TabsContent value="quests" className="space-y-0">
-            <div className="flex justify-center">
-              <div className="w-full max-w-4xl">
-                <QuestPanel
-                  userId={currentUser.id}
-                  gameUuid={currentUser.uuid}
-                />
               </div>
-            </div>
-          </TabsContent>
 
-          <TabsContent value="platform" className="space-y-0">
-            <div className="flex justify-center">
-              <div className="w-full max-w-4xl">
-                <AccountLink
-                  userUuid={currentUser.uuid}
-                  username={currentUser.username}
-                />
+              {/* 로비 하단 정보 (데스크탑용) */}
+              <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                    Current Season
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Season 1 is currently in progress. Play ranked games to earn seasonal rewards!
+                  </p>
+                  <Button variant="outline" onClick={() => setActiveTab('ranking')} className="w-full">
+                    View Ranking
+                  </Button>
+                </div>
+
+                <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-blue-500" />
+                    Daily Quests
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Complete daily quests to earn Gold and Diamonds. Check your progress now.
+                  </p>
+                  <Button variant="outline" onClick={() => setActiveTab('quests')} className="w-full">
+                    View Quests
+                  </Button>
+                </div>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+
+            <TabsContent value="quests" className="animate-in fade-in-50 duration-300">
+              <div className="flex justify-center">
+                <div className="w-full">
+                  <QuestPanel
+                    userId={currentUser.id}
+                    gameUuid={currentUser.uuid}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="ranking" className="animate-in fade-in-50 duration-300">
+              <div className="flex justify-center">
+                <RankingList currentUserId={currentUser?.uuid} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="platform" className="animate-in fade-in-50 duration-300">
+              <div className="flex justify-center">
+                <div className="w-full">
+                  <AccountLink
+                    userUuid={currentUser.uuid}
+                    username={currentUser.username}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </section>
+
+        {/* [3] 오른쪽 사이드바 (고정) - 게임 시작 & 정보 */}
+        <aside className="hidden lg:flex flex-col gap-6 w-80 flex-shrink-0">
+          {/* GAME START 버튼 (가장 잘 보이는 위치) */}
+          <Button
+            onClick={() => setIsGameModalOpen(true)}
+            className="w-full h-24 text-3xl font-black italic bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 border-4 border-white/20 rounded-2xl group"
+          >
+            <span className="drop-shadow-md flex items-center gap-2">
+              <Play className="w-8 h-8 fill-current group-hover:animate-pulse" />
+              PLAY
+            </span>
+          </Button>
+
+          <AttendanceCheck
+            userId={currentUser.id}
+            gameUuid={currentUser.uuid}
+          />
+
+          <HighScoreDisplay
+            gameUuid={currentUser.uuid}
+          />
+        </aside>
+
       </main>
+
+      {/* 게임 모달 (전체 화면에 가깝게) */}
+      <Dialog open={isGameModalOpen} onOpenChange={(open) => {
+        // 게임 중 실수로 닫기 방지 (추후 게임 상태 연동 가능)
+        setIsGameModalOpen(open);
+      }}>
+        <DialogContent
+          className="max-w-none w-[98vw] h-[96vh] p-0 bg-gray-900 border-gray-800 flex flex-col overflow-hidden focus:outline-none"
+          onInteractOutside={(e) => e.preventDefault()} // 바깥 클릭 방지
+        >
+          <DialogHeader className="sr-only">
+            <DialogTitle>Tetris Game</DialogTitle>
+          </DialogHeader>
+          <div className="absolute top-4 right-4 z-50">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsGameModalOpen(false)}
+              className="text-white/50 hover:text-white hover:bg-white/10 rounded-full w-10 h-10"
+            >
+              <X className="w-6 h-6" />
+            </Button>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <TetrisGame
+              userId={currentUser.uuid}
+              onScoreUpdate={handleScoreUpdate}
+              onLevelUpdate={handleLevelUpdate}
+              onLinesUpdate={handleLinesUpdate}
+              onGameOver={handleGameOver}
+              onHighScoreUpdate={handleHighScoreUpdate}
+              onGameStateChange={handleGameStateChange}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 상점 모달 */}
       <ShopModal
@@ -403,7 +391,6 @@ function GamePageContent() {
         onClose={() => setShowShopModal(false)}
         gameUuid={currentUser?.uuid || 0}
         onPurchaseSuccess={() => {
-          // 재화 잔액 업데이트
           if (typeof (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance === 'function') {
             (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
           }

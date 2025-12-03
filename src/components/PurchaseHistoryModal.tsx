@@ -14,10 +14,10 @@ interface PurchaseHistoryModalProps {
 export default function PurchaseHistoryModal({ isOpen, onClose, gameUuid }: PurchaseHistoryModalProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden bg-slate-900 border-slate-800">
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                        <History className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                    <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
+                        <History className="w-6 h-6 text-slate-400" />
                         Purchase History
                     </DialogTitle>
                 </DialogHeader>

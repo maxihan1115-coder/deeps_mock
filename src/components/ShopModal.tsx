@@ -133,17 +133,7 @@ export default function ShopModal({
     return currency === 'GOLD' ? <Coins className="w-4 h-4" /> : <Gem className="w-4 h-4" />;
   };
 
-  const getCurrencyColor = (currency: string) => {
-    return 'text-gray-700';
-  };
 
-  const getCardBorderColor = (currency: string) => {
-    return 'border-gray-200';
-  };
-
-  const getCardBgColor = (currency: string) => {
-    return 'bg-white dark:bg-gray-800';
-  };
 
   const handleGachaPurchase = (item: ShopItem) => {
     setSelectedGachaItem(item);
@@ -178,18 +168,18 @@ export default function ShopModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-xl max-h-[80vh] overflow-y-auto bg-slate-900 border-slate-800">
           <DialogHeader>
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <ShoppingBag className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
+                <ShoppingBag className="w-6 h-6 text-slate-400" />
                 Item Shop
               </DialogTitle>
               <Button
                 onClick={() => setShowGachaHistory(true)}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2 border-gray-300"
+                className="flex items-center gap-2 border-slate-700 text-slate-300 hover:bg-slate-800"
               >
                 <History className="w-4 h-4" />
                 History
@@ -197,20 +187,20 @@ export default function ShopModal({
             </div>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 gap-3 mt-4">
             {items.map((item) => (
-              <Card key={item.id} className={`${getCardBgColor(item.currency)} ${getCardBorderColor(item.currency)}`}>
+              <Card key={item.id} className="bg-slate-800/50 border-slate-700">
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div>
-                      <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{item.name}</h3>
+                      <h3 className="font-semibold text-lg text-white">{item.name}</h3>
                       {item.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{item.description}</p>
+                        <p className="text-sm text-slate-400 mt-1">{item.description}</p>
                       )}
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <div className={`flex items-center gap-2 ${getCurrencyColor(item.currency)} dark:text-gray-300`}>
+                      <div className="flex items-center gap-2 text-slate-200">
                         {getCurrencyIcon(item.currency)}
                         <span className="font-bold text-lg">
                           {formatPrice(item.price)}
@@ -221,7 +211,7 @@ export default function ShopModal({
                         onClick={() => item.isGacha ? handleGachaPurchase(item) : handlePurchase(item)}
                         disabled={purchasing === item.id}
                         variant="outline"
-                        className="min-w-[80px] border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                        className="min-w-[80px] border-slate-600 text-slate-300 hover:bg-slate-700"
                       >
                         {purchasing === item.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -237,8 +227,8 @@ export default function ShopModal({
           </div>
 
           {items.length === 0 && (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+            <div className="text-center py-8 text-slate-500">
+              <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-slate-700" />
               <p>No items available.</p>
             </div>
           )}
@@ -247,7 +237,7 @@ export default function ShopModal({
 
       {/* 구매 성공 모달 */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
               <Sparkles className="w-6 h-6 text-green-600" />
@@ -259,18 +249,18 @@ export default function ShopModal({
             <div className="text-center space-y-4 py-4">
               <div className="flex items-center justify-center gap-3">
                 {getCurrencyIcon(purchasedItem.item.currency)}
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                <span className="text-2xl font-bold text-white">
                   {purchasedItem.item.name}
                 </span>
               </div>
 
-              <p className="text-lg text-gray-600 dark:text-gray-400">
+              <p className="text-lg text-slate-300">
                 Purchase completed successfully!
               </p>
 
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Cost</p>
-                <div className={`flex items-center justify-center gap-2 ${getCurrencyColor(purchasedItem.item.currency)} dark:text-gray-300`}>
+              <div className="bg-slate-800 rounded-lg p-4 space-y-2">
+                <p className="text-sm text-slate-400">Cost</p>
+                <div className="flex items-center justify-center gap-2 text-slate-200">
                   {getCurrencyIcon(purchasedItem.item.currency)}
                   <span className="font-bold">
                     {formatPrice(purchasedItem.item.price)}
@@ -301,7 +291,7 @@ export default function ShopModal({
 
       {/* 에러 모달 */}
       <Dialog open={showErrorModal} onOpenChange={setShowErrorModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
               <AlertCircle className="w-6 h-6 text-red-600" />
@@ -314,11 +304,11 @@ export default function ShopModal({
               <AlertCircle className="w-12 h-12 text-red-500" />
             </div>
 
-            <p className="text-lg text-gray-700 dark:text-gray-300">
+            <p className="text-lg text-slate-300">
               {errorMessage}
             </p>
 
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-slate-500">
               If you lack currency, play the game to earn Gold or purchase Diamonds.
             </p>
           </div>

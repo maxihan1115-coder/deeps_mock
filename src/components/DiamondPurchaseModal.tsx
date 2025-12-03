@@ -59,14 +59,7 @@ export default function DiamondPurchaseModal({
   const { switchChainAsync } = useSwitchChain();
   const currentChainId = useChainId();
 
-  // USDC 잔액 조회
-  useEffect(() => {
-    if (isOpen && paymentMethod === 'usdc') {
-      fetchUSDCBalance();
-    }
-  }, [isOpen, paymentMethod, address, isConnected]);
-
-  const fetchUSDCBalance = async () => {
+  const fetchUSDCBalance = React.useCallback(async () => {
     setLoadingBalance(true);
     try {
       // 1. Circle API 잔액 조회 (캐싱 방지)
@@ -104,7 +97,14 @@ export default function DiamondPurchaseModal({
     } finally {
       setLoadingBalance(false);
     }
-  };
+  }, [gameUuid, publicClient, address]);
+
+  // USDC 잔액 조회
+  useEffect(() => {
+    if (isOpen && paymentMethod === 'usdc') {
+      fetchUSDCBalance();
+    }
+  }, [isOpen, paymentMethod, fetchUSDCBalance]);
 
   // 일반 결제 (기존 방식)
   const handleFiatPurchase = async (packageData: DiamondPackage) => {
@@ -314,21 +314,21 @@ export default function DiamondPurchaseModal({
     <>
       {/* 구매 모달 */}
       <Dialog open={isOpen && !showSuccessModal} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-xl bg-slate-900 border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Gem className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+            <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
+              <Gem className="w-6 h-6 text-slate-400" />
               Diamond Shop
             </DialogTitle>
           </DialogHeader>
 
           <Tabs value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'fiat' | 'usdc')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="fiat" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-2 bg-slate-800 text-slate-400">
+              <TabsTrigger value="fiat" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
                 <CreditCard className="w-4 h-4" />
                 Fiat
               </TabsTrigger>
-              <TabsTrigger value="usdc" className="flex items-center gap-2">
+              <TabsTrigger value="usdc" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
                 <Wallet className="w-4 h-4" />
                 USDC
               </TabsTrigger>
@@ -336,11 +336,11 @@ export default function DiamondPurchaseModal({
 
             {/* USDC 잔액 표시 */}
             {paymentMethod === 'usdc' && (
-              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="mt-4 p-4 bg-blue-900/20 rounded-lg border border-blue-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Wallet className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    <span className="font-medium text-gray-900 dark:text-white">USDC Balance</span>
+                    <Wallet className="w-5 h-5 text-blue-400" />
+                    <span className="font-medium text-white">USDC Balance</span>
                   </div>
                   <div className="flex items-center gap-3">
                     {loadingBalance ? (
@@ -402,16 +402,16 @@ export default function DiamondPurchaseModal({
       {/* 구매 성공 모달 */}
       <Dialog open={showSuccessModal} onOpenChange={handleCloseSuccessModal}>
         <DialogContent
-          className="max-w-md z-[9999]"
+          className="max-w-md z-[9999] bg-slate-900 border-slate-800"
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white text-center flex items-center justify-center gap-2">
-              <Check className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <DialogTitle className="text-lg font-semibold text-white text-center flex items-center justify-center gap-2">
+              <Check className="w-5 h-5 text-slate-400" />
               Purchase Complete
             </DialogTitle>
-            <DialogDescription className="text-center text-gray-500 dark:text-gray-400">
+            <DialogDescription className="text-center text-slate-400">
               Diamond purchase completed successfully.
             </DialogDescription>
           </DialogHeader>
@@ -424,10 +424,10 @@ export default function DiamondPurchaseModal({
             <div className="space-y-2">
               <p className="text-lg flex items-center justify-center gap-2">
                 <Gem className="w-5 h-5 text-purple-500" />
-                <span className="font-bold text-purple-600 dark:text-purple-400">
+                <span className="font-bold text-purple-400">
                   {purchasedAmount.toLocaleString()}
                 </span>
-                <span className="text-gray-900 dark:text-white">Diamonds acquired!</span>
+                <span className="text-white">Diamonds acquired!</span>
               </p>
             </div>
 
@@ -470,10 +470,10 @@ function PackageCard({
   const isInsufficientBalance = paymentMethod === 'usdc' && parseFloat(usdcBalance) < parseFloat(pkg.priceUSDC);
 
   return (
-    <Card className={`relative overflow-hidden transition-all hover:shadow-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800 ${isSuccess ? 'ring-2 ring-gray-500' : ''
+    <Card className={`relative overflow-hidden transition-all hover:shadow-lg border border-slate-700 bg-slate-800/50 ${isSuccess ? 'ring-2 ring-slate-500' : ''
       } ${isInsufficientBalance ? 'opacity-50' : ''}`}>
       {pkg.bonus && (
-        <div className="absolute top-2 right-2 bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+        <div className="absolute top-2 right-2 bg-slate-700 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
           <Sparkles className="w-3 h-3" />
           +{pkg.bonus} Bonus
         </div>
@@ -482,17 +482,17 @@ function PackageCard({
       <CardContent className="p-6">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <Gem className="w-8 h-8 text-gray-700 dark:text-gray-300" />
+            <Gem className="w-8 h-8 text-slate-300" />
             <div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-2xl font-bold text-white">
                 {totalAmount.toLocaleString()}
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Diamond</div>
+              <div className="text-sm text-slate-400">Diamond</div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="pt-4 border-t border-slate-700">
+            <div className="text-2xl font-bold text-white">
               {paymentMethod === 'fiat' ? (
                 `₩${pkg.priceKRW.toLocaleString()}`
               ) : (

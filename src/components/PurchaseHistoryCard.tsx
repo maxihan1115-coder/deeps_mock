@@ -72,11 +72,11 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'COMPLETED':
-                return <Badge variant="outline" className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600">Completed</Badge>;
+                return <Badge variant="outline" className="text-slate-300 border-slate-600">Completed</Badge>;
             case 'PENDING':
-                return <Badge variant="outline" className="text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600">Pending</Badge>;
+                return <Badge variant="outline" className="text-slate-500 border-slate-600">Pending</Badge>;
             case 'FAILED':
-                return <Badge variant="outline" className="text-red-500 dark:text-red-400 border-red-200 dark:border-red-800">Failed</Badge>;
+                return <Badge variant="outline" className="text-red-400 border-red-800">Failed</Badge>;
             default:
                 return <Badge variant="outline">{status}</Badge>;
         }
@@ -84,16 +84,16 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
 
     const getPaymentMethodBadge = (method: 'FIAT' | 'USDC') => {
         if (method === 'USDC') {
-            return <Badge variant="outline" className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600">USDC</Badge>;
+            return <Badge variant="outline" className="text-slate-300 border-slate-600">USDC</Badge>;
         }
-        return <Badge variant="outline" className="text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600">Fiat</Badge>;
+        return <Badge variant="outline" className="text-slate-300 border-slate-600">Fiat</Badge>;
     };
 
     return (
         <Card className="w-full border-0 shadow-none">
             <CardHeader className="px-0 pt-0">
                 <CardTitle className="flex items-center justify-between text-base">
-                    <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                    <div className="flex items-center gap-2 text-slate-300">
                         <Receipt className="w-4 h-4" />
                         <span>Recent Transactions</span>
                     </div>
@@ -102,7 +102,7 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
                         size="icon"
                         onClick={handleRefresh}
                         disabled={refreshing}
-                        className="h-8 w-8 text-gray-500 dark:text-gray-400"
+                        className="h-8 w-8 text-slate-400 hover:text-slate-200"
                     >
                         <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                     </Button>
@@ -115,14 +115,14 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
                         <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
                     </div>
                 ) : history.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <div className="text-center py-8 text-slate-500">
                         <Receipt className="w-12 h-12 mx-auto mb-2 opacity-30" />
                         <p className="text-sm">No transaction history</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {/* 테이블 헤더 */}
-                        <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800 pb-2">
+                        <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 border-b border-slate-800 pb-2">
                             <div className="col-span-3">Date</div>
                             <div className="col-span-2">Item</div>
                             <div className="col-span-2">Method</div>
@@ -135,15 +135,15 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
                         {history.map((record) => (
                             <div
                                 key={record.id}
-                                className="grid grid-cols-12 gap-2 items-center text-sm py-3 border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800 rounded px-2 transition-colors"
+                                className="grid grid-cols-12 gap-2 items-center text-sm py-3 border-b border-slate-800 last:border-0 hover:bg-slate-800/50 rounded px-2 transition-colors"
                             >
                                 {/* 일시 */}
-                                <div className="col-span-3 text-xs text-gray-500 dark:text-gray-400">
+                                <div className="col-span-3 text-xs text-slate-400">
                                     {formatDate(record.createdAt)}
                                 </div>
 
                                 {/* 상품 */}
-                                <div className="col-span-2 font-medium text-gray-900 dark:text-white">
+                                <div className="col-span-2 font-medium text-white">
                                     💎 {record.diamondAmount.toLocaleString()}
                                 </div>
 
@@ -153,7 +153,7 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
                                 </div>
 
                                 {/* 금액 */}
-                                <div className="col-span-2 text-sm text-gray-700 dark:text-gray-300 font-medium">
+                                <div className="col-span-2 text-sm text-slate-300 font-medium">
                                     {record.paymentMethod === 'USDC' ? (
                                         <span>
                                             {parseFloat(record.usdcAmount || '0').toFixed(2)} USDC
@@ -193,7 +193,7 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
 
                 {/* 안내 메시지 */}
                 {history.length > 0 && (
-                    <div className="mt-4 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-3 rounded border border-gray-100 dark:border-gray-700">
+                    <div className="mt-4 text-xs text-slate-400 bg-slate-800/50 p-3 rounded border border-slate-700">
                         <p>💡 Click the link icon to view the transaction on the blockchain explorer for <strong>USDC payments</strong>.</p>
                     </div>
                 )}

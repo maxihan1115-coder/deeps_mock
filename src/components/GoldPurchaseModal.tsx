@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Coins, AlertCircle, Sparkles, Check, Loader2 } from 'lucide-react';
+import { Coins, AlertCircle, Check, Loader2 } from 'lucide-react';
 
 interface GoldPurchaseModalProps {
   isOpen: boolean;
@@ -135,10 +135,10 @@ export default function GoldPurchaseModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-3xl">
+        <DialogContent className="sm:max-w-xl bg-slate-900 border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Coins className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+            <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
+              <Coins className="w-6 h-6 text-slate-400" />
               Gold Shop
             </DialogTitle>
           </DialogHeader>
@@ -150,7 +150,7 @@ export default function GoldPurchaseModal({
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading gold items...</p>
               </div>
             ) : items.length === 0 ? (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+              <div className="text-center text-slate-500 py-8">
                 No gold items available.
               </div>
             ) : (
@@ -160,23 +160,23 @@ export default function GoldPurchaseModal({
                   const pricePerGold = getPricePerGold(item.price, goldAmount);
 
                   return (
-                    <div key={item.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <div key={item.id} className="border border-slate-700 rounded-lg p-4 bg-slate-800/50 hover:bg-slate-800 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{item.name}</h3>
-                            <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
+                            <h3 className="font-semibold text-lg text-white">{item.name}</h3>
+                            <Badge variant="outline" className="text-xs border-slate-600 text-slate-400">
                               {pricePerGold} per gold
                             </Badge>
                           </div>
                           {item.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.description}</p>
+                            <p className="text-sm text-slate-400 mb-2">{item.description}</p>
                           )}
                           <div className="flex items-center gap-4 text-sm">
-                            <span className="text-gray-700 dark:text-gray-300 font-medium">
+                            <span className="text-slate-300 font-medium">
                               +{goldAmount.toLocaleString()} Gold
                             </span>
-                            <span className="text-gray-700 dark:text-gray-300 font-medium">
+                            <span className="text-slate-300 font-medium">
                               -{item.price.toLocaleString()} Diamond
                             </span>
                           </div>
@@ -207,10 +207,10 @@ export default function GoldPurchaseModal({
 
       {/* 구매 성공 모달 */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="sm:max-w-md z-50">
+        <DialogContent className="sm:max-w-md z-50 bg-slate-900 border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center justify-center gap-2">
-              <Check className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <DialogTitle className="text-lg font-semibold text-white flex items-center justify-center gap-2">
+              <Check className="w-5 h-5 text-slate-400" />
               Purchase Complete
             </DialogTitle>
           </DialogHeader>
@@ -226,21 +226,21 @@ export default function GoldPurchaseModal({
                   <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">Gold</span>
                 </div>
 
-                <p className="text-lg text-gray-600 dark:text-gray-400">
+                <p className="text-lg text-slate-300">
                   Successfully purchased Gold!
                 </p>
 
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-slate-500">
                   Used {purchasedItem.item.price.toLocaleString()} Diamonds.
                 </p>
 
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                  <h4 className="font-medium mb-2 text-gray-700 dark:text-gray-300">Current Balance</h4>
+                <div className="bg-slate-800 rounded-lg p-4">
+                  <h4 className="font-medium mb-2 text-slate-300">Current Balance</h4>
                   <div className="flex justify-between text-sm">
-                    <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                    <span className="text-yellow-400 font-medium">
                       Gold: {purchasedItem.remainingBalance.gold.toLocaleString()}
                     </span>
-                    <span className="text-blue-600 dark:text-blue-400 font-medium">
+                    <span className="text-blue-400 font-medium">
                       Diamond: {purchasedItem.remainingBalance.diamond.toLocaleString()}
                     </span>
                   </div>
@@ -272,15 +272,15 @@ export default function GoldPurchaseModal({
 
       {/* 구매 실패 모달 */}
       <Dialog open={showErrorModal} onOpenChange={() => setShowErrorModal(false)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <DialogTitle className="text-lg font-semibold text-white flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-slate-400" />
               Purchase Failed
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-center text-gray-600 dark:text-gray-400">
+            <p className="text-center text-slate-400">
               {errorMessage}
             </p>
             <Button onClick={() => setShowErrorModal(false)} className="w-full">

@@ -224,12 +224,12 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     return (
       <div
         key={quest.id}
-        className={`border dark:border-gray-700 rounded-lg p-3 space-y-2 ${isFailed ? 'bg-gray-100 dark:bg-gray-900 opacity-60' : ''}`}
+        className={`border border-slate-700 rounded-lg p-3 space-y-2 ${isFailed ? 'bg-slate-900/50 opacity-60' : 'bg-slate-800/50'}`}
       >
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             {getQuestIcon(quest.type)}
-            <span className={`font-medium text-sm ${isFailed ? 'text-gray-600 dark:text-gray-400' : 'text-gray-900 dark:text-gray-100'}`}>
+            <span className={`font-medium text-sm ${isFailed ? 'text-slate-500' : 'text-slate-200'}`}>
               {quest.title}
             </span>
           </div>
@@ -245,7 +245,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
           </div>
         </div>
 
-        <p className={`text-xs ${isFailed ? 'text-gray-500 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'}`}>
+        <p className={`text-xs ${isFailed ? 'text-slate-600' : 'text-slate-400'}`}>
           {quest.description}
         </p>
 
@@ -259,45 +259,45 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
         )}
 
         <div className="space-y-1">
-          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex justify-between text-xs text-slate-400">
             <span>Progress</span>
             <span>{quest.progress} / {quest.maxProgress}</span>
           </div>
           <Progress
             value={(quest.progress / quest.maxProgress) * 100}
-            className={`h-2 ${isFailed ? 'bg-gray-200 dark:bg-gray-800' : ''}`}
+            className={`h-2 bg-slate-700 ${isFailed ? 'opacity-50' : ''}`}
           />
         </div>
 
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500 dark:text-gray-400">Reward:</span>
+            <span className="text-xs text-slate-400">Reward:</span>
             {quest.claimValue && quest.claimSymbol ? (
               <div className="flex items-center gap-1">
-                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                <span className="text-sm font-medium text-blue-400">
                   {formatClaimValue(quest.claimValue)}
                 </span>
                 {quest.claimSymbol !== 'REPL' && (
-                  <span className="text-xs font-medium text-blue-500 dark:text-blue-300">
+                  <span className="text-xs font-medium text-blue-300">
                     {quest.claimSymbol}
                   </span>
                 )}
               </div>
             ) : (
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              <span className="text-sm font-medium text-slate-400">
                 {quest.reward} Points
               </span>
             )}
           </div>
           {quest.isCompleted && !isFailed && (
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600">
+              <Badge variant="outline" className="text-xs text-slate-300 border-slate-600">
                 Completed
               </Badge>
               <Button
                 size="sm"
                 variant="outline"
-                className="text-xs h-6 px-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="text-xs h-6 px-2 border-slate-600 text-slate-300 hover:bg-slate-800"
                 onClick={() => window.open('https://www.boradeeps.cc/?bappId=10006', '_blank')}
               >
                 Claim
@@ -370,7 +370,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
 
   if (isLoading) {
     return (
-      <Card className="w-full max-w-4xl">
+      <Card className="w-full">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -401,11 +401,11 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   }
 
   return (
-    <Card className="w-full max-w-4xl">
+    <Card className="w-full bg-slate-900 border-slate-800">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-            <Trophy className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-white">
+            <Trophy className="w-5 h-5 text-slate-400" />
             Quests
           </CardTitle>
           <div className="flex items-center gap-3">
@@ -421,7 +421,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
               size="sm"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="flex items-center gap-2 border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="flex items-center gap-2 border-slate-700 text-slate-300 hover:bg-slate-800"
               title="Refresh Quests"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -485,12 +485,12 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
 
             <TabsContent value="general" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 */}
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-4">
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <Info className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{tabDescriptions.general.title}</span>
+                  <Info className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-200">{tabDescriptions.general.title}</span>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   {tabDescriptions.general.description}
                 </p>
               </div>
@@ -507,12 +507,12 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
 
             <TabsContent value="daily" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 */}
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-4">
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <Info className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{tabDescriptions.daily.title}</span>
+                  <Info className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-200">{tabDescriptions.daily.title}</span>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   {tabDescriptions.daily.description}
                 </p>
               </div>
@@ -529,12 +529,12 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
 
             <TabsContent value="attendance" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 */}
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-4">
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <Info className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{tabDescriptions.attendance.title}</span>
+                  <Info className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-200">{tabDescriptions.attendance.title}</span>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   {tabDescriptions.attendance.description}
                 </p>
               </div>
@@ -554,12 +554,12 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
 
 
               {/* 현재 시즌 랭킹 정보 */}
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-4">
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Trophy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Current Season Ranking</span>
+                  <Trophy className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-200">Current Season Ranking</span>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
+                <p className="text-xs text-slate-400">
                   Quests are automatically completed based on ranking when the season ends. (Ends: 2025-10-15 11:00 KST)
                 </p>
               </div>
@@ -578,12 +578,12 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
 
             <TabsContent value="purchase" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 */}
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-4">
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <Info className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{tabDescriptions.purchase.title}</span>
+                  <Info className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-200">{tabDescriptions.purchase.title}</span>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   {tabDescriptions.purchase.description}
                 </p>
               </div>
@@ -602,12 +602,12 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
 
             <TabsContent value="other" className="space-y-3 mt-4">
               {/* 탭별 설명 영역 */}
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-4">
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <Info className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{tabDescriptions.other.title}</span>
+                  <Info className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-200">{tabDescriptions.other.title}</span>
                 </div>
-                <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+                <p className="text-xs text-slate-300 mt-1">
                   {tabDescriptions.other.description}
                 </p>
               </div>

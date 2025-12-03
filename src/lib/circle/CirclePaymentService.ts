@@ -248,7 +248,8 @@ export class CirclePaymentService {
      */
     async completePayment(circleTransactionId: string, txHash?: string) {
         // 1. CircleTransaction 업데이트 (txHash 포함)
-        const updateData: { status: string; txHash?: string } = { status: 'COMPLETE' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updateData: { status: any; txHash?: string } = { status: 'COMPLETE' };
         if (txHash) {
             updateData.txHash = txHash;
         }
@@ -259,7 +260,8 @@ export class CirclePaymentService {
         });
 
         // 2. PaymentHistory 업데이트 (txHash 포함)
-        const paymentUpdateData: { status: string; txHash?: string } = { status: 'COMPLETED' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const paymentUpdateData: { status: any; txHash?: string } = { status: 'COMPLETED' };
         if (txHash) {
             paymentUpdateData.txHash = txHash;
         }
@@ -277,13 +279,15 @@ export class CirclePaymentService {
         // 1. CircleTransaction 업데이트
         const transaction = await prisma.circleTransaction.update({
             where: { circleTransactionId },
-            data: { status: 'FAILED' },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data: { status: 'FAILED' as any },
         });
 
         // 2. PaymentHistory 업데이트
         await prisma.paymentHistory.updateMany({
             where: { circleTransactionId: transaction.id },
-            data: { status: 'FAILED' },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data: { status: 'FAILED' as any },
         });
     }
 }

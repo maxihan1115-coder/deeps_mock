@@ -17,7 +17,7 @@ interface AccountLinkProps {
 
 export default function AccountLink({ userUuid, username }: AccountLinkProps) {
   const router = useRouter();
-  const { disconnect } = useDisconnect();
+  // const { disconnect } = useDisconnect();
   const [isLinked, setIsLinked] = useState(false);
   const [requestCode, setRequestCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -179,22 +179,22 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
   };
 
   return (
-    <Card className="w-full max-w-4xl">
+    <Card className="w-full bg-slate-900 border-slate-800">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-          <Link className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-white">
+          <Link className="w-5 h-5 text-slate-400" />
           Platform Link
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Username:</span>
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">{username}</span>
+            <span className="text-sm font-medium text-slate-400">Username:</span>
+            <span className="text-sm font-semibold text-white">{username}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">UUID:</span>
-            <Badge variant="outline" className="text-xs font-mono bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700">
+            <span className="text-sm font-medium text-slate-400">UUID:</span>
+            <Badge variant="outline" className="text-xs font-mono bg-slate-800 text-slate-400 border-slate-700">
               {userUuid}
             </Badge>
           </div>
@@ -202,27 +202,27 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
 
         {/* 연동 상태 표시 */}
         {isLinked === null ? (
-          <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Checking status...</span>
+              <div className="w-2 h-2 bg-slate-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-slate-400">Checking status...</span>
             </div>
           </div>
         ) : isLinked ? (
           <div className="space-y-3">
-            <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Platform Linked</span>
+                <span className="text-sm font-medium text-slate-200">Platform Linked</span>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 Successfully linked with BORA Platform.
               </p>
               {linkDate && (
-                <div className="mt-2 p-2 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+                <div className="mt-2 p-2 bg-slate-900 rounded border border-slate-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">📅 Linked Date:</span>
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                    <span className="text-xs font-medium text-slate-400">📅 Linked Date:</span>
+                    <span className="text-xs text-slate-500">
                       {new Date(linkDate).toLocaleDateString()} {new Date(linkDate).toLocaleTimeString()}
                     </span>
                   </div>
@@ -279,12 +279,12 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
           </div>
         ) : !requestCode ? (
           <div className="space-y-3">
-            <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Not Linked</span>
+                <div className="w-2 h-2 bg-slate-500 rounded-full"></div>
+                <span className="text-sm font-medium text-slate-300">Not Linked</span>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 Link your account to save quest progress and receive rewards.
               </p>
             </div>
@@ -292,15 +292,15 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
             <Button
               onClick={requestTempCode}
               disabled={isLoading}
-              className="w-full border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
               variant="outline"
             >
               {isLoading ? 'Requesting Code...' : 'Start Linking'}
             </Button>
             {isLoading && (
-              <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">Generating link code...</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
+                <p className="text-sm text-slate-200 font-medium">Generating link code...</p>
+                <p className="text-xs text-slate-400 mt-1">
                   Please wait a moment.
                 </p>
               </div>
@@ -308,27 +308,27 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">Temporary Code Generated!</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
+              <p className="text-sm text-slate-200 font-medium">Temporary Code Generated!</p>
+              <p className="text-xs text-slate-400 mt-1">
                 This code expires in 15 minutes.
               </p>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Link URL:</span>
+                <span className="text-sm font-medium text-slate-300">Link URL:</span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={copyLink}
-                  className="h-6 px-2 border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                  className="h-6 px-2 border-slate-700 text-slate-300 hover:bg-slate-800"
                 >
                   {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 </Button>
               </div>
 
-              <div className="p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs font-mono break-all text-gray-600 dark:text-gray-400">
+              <div className="p-2 bg-slate-900 border border-slate-700 rounded text-xs font-mono break-all text-slate-400">
                 https://www.boradeeps.cc/?requestCode={requestCode}
               </div>
             </div>
@@ -336,7 +336,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
             <div className="space-y-2">
               <Button
                 onClick={openExternalLink}
-                className="w-full border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="w-full border-slate-700 text-slate-300 hover:bg-slate-800"
                 variant="outline"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
@@ -344,7 +344,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
               </Button>
 
               {/* 디버깅용 정보 표시 */}
-              <div className="text-xs text-gray-500 dark:text-gray-500 p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+              <div className="text-xs text-slate-500 p-2 bg-slate-900 rounded border border-slate-800">
                 🔍 Debug: requestCode = {requestCode ? '✅ Set' : '❌ null'}, isLinked = {isLinked === null ? '🔄 Checking' : isLinked ? '✅ Linked' : '❌ Unlinked'}
               </div>
 
@@ -353,7 +353,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
                   console.log('🔄 Request new code');
                   setRequestCode(null);
                 }}
-                className="w-full text-gray-500 dark:text-gray-400"
+                className="w-full text-slate-500"
                 variant="ghost"
                 size="sm"
               >

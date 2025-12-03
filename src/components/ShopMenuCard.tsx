@@ -25,20 +25,20 @@ export default function ShopMenuCard({
     const [usdcBalance, setUsdcBalance] = useState('0.00');
 
     useEffect(() => {
+        const fetchUSDCBalance = async () => {
+            try {
+                const response = await fetch(`/api/circle/balance?gameUuid=${gameUuid}`);
+                const data = await response.json();
+                if (data.success) {
+                    setUsdcBalance(parseFloat(data.payload.usdc || '0').toFixed(2));
+                }
+            } catch (error) {
+                console.error('USDC 잔액 조회 실패:', error);
+            }
+        };
+
         fetchUSDCBalance();
     }, [gameUuid]);
-
-    const fetchUSDCBalance = async () => {
-        try {
-            const response = await fetch(`/api/circle/balance?gameUuid=${gameUuid}`);
-            const data = await response.json();
-            if (data.success) {
-                setUsdcBalance(parseFloat(data.payload.usdc || '0').toFixed(2));
-            }
-        } catch (error) {
-            console.error('USDC 잔액 조회 실패:', error);
-        }
-    };
 
     return (
         <Card className="border border-gray-200 dark:border-gray-700 shadow-sm dark:bg-gray-900">

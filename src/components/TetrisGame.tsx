@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TetrisGameState, TetrisBlock } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Play, Pause, RotateCw, ArrowLeft, ArrowRight, ArrowDown } from 'lucide-react';
+import { Pause, RotateCw, ArrowLeft, ArrowRight, ArrowDown, X } from 'lucide-react';
 import GameResultModal from '@/components/GameResultModal';
 
 // 테트리스 블록 모양 정의
@@ -93,14 +92,8 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   const [isGameStarted, setIsGameStarted] = useState(false);
 
   // 퀘스트 관련 상태
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLinked, setIsLinked] = useState(false);
-  const [hardDropsUsed, setHardDropsUsed] = useState(0);
-  const [windowSize, setWindowSize] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return { width: window.innerWidth, height: window.innerHeight };
-    }
-    return { width: 768, height: 1024 }; // 기본값
-  });
 
   // 플랫폼 연동 상태 확인 (platform-link/status로만 확인)
   const checkPlatformLinkStatus = useCallback(async () => {
@@ -483,7 +476,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
               }, 0);
 
               // 하드 드롭 카운트 업데이트
-              setHardDropsUsed(prev => prev + 1);
+              // setHardDropsUsed(prev => prev + 1);
             }
 
             // 다음 블록 생성
@@ -737,119 +730,167 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
     }
   }, [isGameStarted, handleKeyDown]);
 
-  // 반응형 셀 크기 계산
-  const getCellSizePx = () => {
-    // 모바일에서 더 큰 크기로 설정
-    if (windowSize.width >= 1024) return 24; // lg: w-6 h-6
-    if (windowSize.width >= 640) return 28;  // sm: 더 큰 크기
-    return 24; // 모바일: w-6 h-6 (기존 16에서 24로 증가)
-  };
+  // 고스트 블록 위치 계산
+  const ghostBlockPosition = React.useMemo(() => {
+    if (!gameState.currentBlock) return null;
 
-  // 윈도우 크기 변경 감지
+    let ghostY = gameState.currentBlock.y;
+    while (isValidPosition({ ...gameState.currentBlock, y: ghostY + 1 }, gameState.board)) {
+      ghostY++;
+    }
+
+    return { ...gameState.currentBlock, y: ghostY };
+  }, [gameState.currentBlock, gameState.board, isValidPosition]);
+
+  // 반응형 처리를 위한 ref 및 state
+  const containerRef = useRef<HTMLDivElement>(null); // 외부 컨테이너 (고정)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
   useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    if (!containerRef.current) return;
+
+    const handleResize = (entries: ResizeObserverEntry[]) => {
+      // requestAnimationFrame으로 렌더링 사이클과 분리하여 무한 루프 방지
+      window.requestAnimationFrame(() => {
+        for (const entry of entries) {
+          // 크기가 유의미하게 변했을 때만 업데이트 (0.5px 미만 무시)
+          setContainerSize(prev => {
+            const newWidth = entry.contentRect.width;
+            const newHeight = entry.contentRect.height;
+
+            if (Math.abs(prev.width - newWidth) < 1 && Math.abs(prev.height - newHeight) < 1) {
+              return prev;
+            }
+
+            return { width: newWidth, height: newHeight };
+          });
+        }
+      });
     };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
   }, []);
+
+  // 스케일링을 위한 state
+  const [uiScale, setUiScale] = useState(1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof window === 'undefined') return;
+
+      // 기준 해상도: 너비 1280px, 높이 900px
+      // 이 해상도에서 UI가 가장 예쁘게 보인다고 가정
+      const baseWidth = 1280;
+      const baseHeight = 900;
+
+      const scaleX = window.innerWidth / baseWidth;
+      const scaleY = window.innerHeight / baseHeight;
+
+      // 화면에 꽉 차게 하기 위해 더 작은 비율을 선택 (비율 유지)
+      // 1.0보다 커지지는 않도록 함 (확대 방지)
+      // 너무 작아지는 것도 방지 (최소 0.4배)
+      const newScale = Math.max(Math.min(scaleX, scaleY, 1), 0.4);
+
+      setUiScale(newScale);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const getCellSizePx = () => {
+    // 스케일링이 적용되므로, 여기서는 항상 '기준 해상도'에 맞는 최적의 크기를 반환
+    // 기준 높이 900px의 약 80% 공간 활용 -> 35px 정도가 적당
+    return 35;
+  };
 
   // 보드 렌더링
   const renderBoard = () => {
-    const displayBoard = gameState.board.map(row => [...row]);
-
-    // 현재 블록을 보드에 표시 (게임이 시작된 경우에만)
-    if (isGameStarted && gameState.currentBlock) {
-      for (let y = 0; y < gameState.currentBlock.shape.length; y++) {
-        for (let x = 0; x < gameState.currentBlock.shape[y].length; x++) {
-          if (gameState.currentBlock.shape[y][x]) {
-            const boardX = gameState.currentBlock.x + x;
-            const boardY = gameState.currentBlock.y + y;
-            if (boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
-              displayBoard[boardY][boardX] = 1;
-            }
-          }
-        }
-      }
-    }
+    const cellSize = getCellSizePx();
+    const boardWidth = cellSize * 10;
+    const boardHeight = cellSize * 20;
 
     return (
       <div
-        className="inline-block border-2 border-gray-300 bg-gray-100 touch-none select-none"
+        className="inline-block border-2 border-gray-700 bg-black/40 touch-none select-none rounded-lg shadow-inner"
         style={{ touchAction: 'none', userSelect: 'none' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         <div
-          className={`grid ${!isGameStarted ? 'opacity-50' : ''}`}
           style={{
-            gridTemplateColumns: `repeat(10, ${getCellSizePx()}px)`,
-            gridTemplateRows: `repeat(${BOARD_HEIGHT}, ${getCellSizePx()}px)`,
-            gap: 0,
-            lineHeight: 0,
-            fontSize: 0,
-            width: `${10 * getCellSizePx()}px`,
-            height: `${BOARD_HEIGHT * getCellSizePx()}px`
-          }}>
-          {displayBoard.map((row, y) =>
+            display: 'grid',
+            gridTemplateColumns: `repeat(10, ${cellSize}px)`,
+            gridTemplateRows: `repeat(20, ${cellSize}px)`,
+            width: `${boardWidth}px`,
+            height: `${boardHeight}px`,
+          }}
+        >
+          {gameState.board.map((row, y) =>
             row.map((cell, x) => {
-              // 현재 블록의 색상 확인
-              let cellColor = 'white';
-              if (cell) {
-                if (isGameStarted && gameState.currentBlock) {
-                  // 현재 블록이 있는 위치인지 확인
-                  const isCurrentBlock = (() => {
-                    for (let by = 0; by < gameState.currentBlock.shape.length; by++) {
-                      for (let bx = 0; bx < gameState.currentBlock.shape[by].length; bx++) {
-                        if (gameState.currentBlock.shape[by][bx]) {
-                          const boardX = gameState.currentBlock.x + bx;
-                          const boardY = gameState.currentBlock.y + by;
-                          if (boardX === x && boardY === y) {
-                            return true;
-                          }
-                        }
-                      }
-                    }
-                    return false;
-                  })();
+              // 현재 떨어지고 있는 블록인지 확인
+              let isCurrentBlock = false;
+              let blockColor = '';
 
-                  if (isCurrentBlock) {
-                    cellColor = gameState.currentBlock.color;
-                  } else {
-                    // 고정된 블록의 색상 (cell 값이 2 이상이면 블록 타입 인덱스)
-                    if (cell >= 2) {
-                      const blockIndex = cell - 2;
-                      cellColor = COLORS[blockIndex] || '#3b82f6';
-                    } else if (cell === 1) {
-                      cellColor = '#3b82f6'; // 기본 파란색 (기존 블록)
-                    }
-                  }
-                } else {
-                  // 고정된 블록의 색상
-                  if (cell >= 2) {
-                    const blockIndex = cell - 2;
-                    cellColor = COLORS[blockIndex] || '#3b82f6';
-                  } else if (cell === 1) {
-                    cellColor = '#3b82f6'; // 기본 파란색 (기존 블록)
-                  }
+              if (gameState.currentBlock) {
+                const { x: bx, y: by, shape, color } = gameState.currentBlock;
+                if (
+                  y >= by &&
+                  y < by + shape.length &&
+                  x >= bx &&
+                  x < bx + shape[0].length &&
+                  shape[y - by][x - bx]
+                ) {
+                  isCurrentBlock = true;
+                  blockColor = color;
                 }
+              }
+
+              // 고스트 블록 확인
+              let isGhostBlock = false;
+              if (!isCurrentBlock && ghostBlockPosition) {
+                const { x: gx, y: gy, shape } = ghostBlockPosition;
+                if (
+                  y >= gy &&
+                  y < gy + shape.length &&
+                  x >= gx &&
+                  x < gx + shape[0].length &&
+                  shape[y - gy][x - gx]
+                ) {
+                  isGhostBlock = true;
+                }
+              }
+
+              // 셀 색상 결정
+              let cellColor: string | undefined = undefined;
+
+              if (cell !== 0) {
+                // 고정된 블록
+                if (cell === 1) cellColor = '#3b82f6';
+                else if (cell >= 2) cellColor = COLORS[cell - 2] || '#3b82f6';
+              } else if (isCurrentBlock) {
+                cellColor = blockColor;
               }
 
               return (
                 <div
                   key={`${y}-${x}`}
+                  className={`border-[0.5px] border-white/5 ${cell !== 0
+                    ? ''
+                    : isCurrentBlock
+                      ? ''
+                      : isGhostBlock
+                        ? 'bg-white/10'
+                        : ''
+                    }`}
                   style={{
                     backgroundColor: cellColor,
-                    boxSizing: 'border-box',
-                    width: `${getCellSizePx()}px`,
-                    height: `${getCellSizePx()}px`,
-                    display: 'block',
-                    margin: 0,
-                    padding: 0
                   }}
                 />
               );
@@ -860,356 +901,185 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
     );
   };
 
-  // 다음 블록 렌더링 (일관된 크기 사용)
-  const renderNextBlock = (isCompact = false) => {
+  // 다음 블록 렌더링 (미니 버전)
+  const renderNextBlockMini = () => {
     if (!gameState.nextBlock) return null;
-
-    const maxCols = Math.max(...gameState.nextBlock.shape.map(row => row.length));
-    const maxRows = gameState.nextBlock.shape.length;
-    const cellSize = isCompact ? 12 : getCellSizePx(); // 컴팩트 모드에서는 더 작은 크기
-    const padding = isCompact ? 4 : 16;
-
+    const size = 10;
     return (
-      <div
-        className="border border-gray-300 bg-gray-100 flex justify-center items-center"
-        style={{
-          padding: `${padding}px`
-        }}
-      >
-        <div
-          className="grid"
-          style={{
-            gridTemplateColumns: `repeat(${maxCols}, ${cellSize}px)`,
-            gridTemplateRows: `repeat(${maxRows}, ${cellSize}px)`,
-            gap: 0,
-            lineHeight: 0,
-            fontSize: 0,
-            width: `${maxCols * cellSize}px`,
-            height: `${maxRows * cellSize}px`
-          }}
-        >
-          {gameState.nextBlock.shape.map((row, y) =>
-            row.map((cell, x) => (
-              <div
-                key={`next-${y}-${x}`}
-                style={{
-                  backgroundColor: cell && gameState.nextBlock ? gameState.nextBlock.color : 'transparent',
-                  boxSizing: 'border-box',
-                  width: `${cellSize}px`,
-                  height: `${cellSize}px`,
-                  display: 'block',
-                  margin: 0,
-                  padding: 0
-                }}
-              />
-            ))
-          )}
-        </div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${gameState.nextBlock.shape[0].length}, ${size}px)`,
+        gridTemplateRows: `repeat(${gameState.nextBlock.shape.length}, ${size}px)`,
+        gap: '1px',
+      }}>
+        {gameState.nextBlock.shape.map((row, y) =>
+          row.map((cell, x) => (
+            <div key={`${y}-${x}`} style={{
+              width: `${size}px`, height: `${size}px`,
+              backgroundColor: cell ? gameState.nextBlock!.color : 'transparent',
+              border: cell ? '0.5px solid rgba(255,255,255,0.3)' : 'none'
+            }} />
+          ))
+        )}
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 justify-center items-start w-full max-w-6xl mx-auto p-2 lg:p-8">
-      {/* 게임 보드 */}
-      <Card className="w-full max-w-sm lg:w-80 mx-auto lg:mx-0">
-        <CardHeader className="pb-2 lg:pb-6">
-          <CardTitle className="text-center text-lg lg:text-xl">BORA TETRIS</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 lg:space-y-4 relative px-2 lg:px-6">
+    <div className="relative w-full h-full bg-slate-950 flex items-center justify-center overflow-hidden font-sans select-none">
+      {/* 배경 그라데이션 효과 */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black" />
 
-          {/* 게임 보드 중앙 정렬 컨테이너 */}
-          <div className="flex justify-center">
-            {renderBoard()}
-          </div>
+      {/* 배경 그리드 패턴 (은은하게) */}
+      <div className="absolute inset-0 opacity-[0.03]"
+        style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }}
+      />
 
-          {/* 게임 시작 전 오버레이 */}
-          {!isGameStarted && !isProcessingGameOver && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center rounded-lg">
-              <div className="text-center space-y-4 lg:space-y-6 px-4">
-                <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
-                  BORA TETRIS
-                </h2>
-                <Button
+      {/* 메인 컨텐츠 컨테이너 - 스케일링 적용 */}
+      <div
+        className="relative z-10 flex w-full h-full items-center justify-center p-4 transition-transform duration-200 ease-out origin-center"
+        style={{ transform: `scale(${uiScale})` }}
+      >
+        {/* [중앙] 게임 보드 (통합 UI) */}
+        <div className="relative flex-1 h-full min-w-[280px] min-h-0">
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden" ref={containerRef}>
+            {/* 보드 테두리 및 글로우 효과 */}
+            <div className="relative rounded-lg overflow-hidden shadow-[0_0_50px_-12px_rgba(59,130,246,0.5)] border border-white/10 bg-black/80 backdrop-blur-md">
+
+              {/* [통합 UI] 상단 정보 바 */}
+              <div className="absolute top-0 left-0 right-0 h-10 bg-black/60 backdrop-blur-sm border-b border-white/10 z-10 flex items-center justify-between px-4">
+                <div className="flex gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[8px] text-slate-400 font-bold uppercase leading-none">Score</span>
+                    <span className="text-sm font-black text-white leading-none">{gameState.score.toLocaleString()}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[8px] text-slate-400 font-bold uppercase leading-none">Level</span>
+                    <span className="text-sm font-bold text-blue-400 leading-none">{gameState.level}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[8px] text-slate-400 font-bold uppercase leading-none">Lines</span>
+                    <span className="text-sm font-bold text-purple-400 leading-none">{gameState.lines}</span>
+                  </div>
+                </div>
+
+                {/* Next Block (우측 상단) */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[8px] text-slate-400 font-bold uppercase">Next</span>
+                  <div className="w-8 h-8 flex items-center justify-center bg-white/5 rounded border border-white/10">
+                    {renderNextBlockMini()}
+                  </div>
+                </div>
+              </div>
+
+              {renderBoard()}
+
+              {/* 게임 오버레이들 */}
+              {!isGameStarted && !isProcessingGameOver && (
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] z-20 cursor-pointer hover:bg-black/50 transition-colors"
                   onClick={startGame}
-                  className="text-lg lg:text-xl font-semibold px-6 py-2 lg:px-8 lg:py-3 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
-                  START
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* 게임 종료 처리 중 로딩 오버레이 */}
-          {isProcessingGameOver && (
-            <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center rounded-lg z-50">
-              <div className="text-center space-y-4 px-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
-                <h2 className="text-xl sm:text-2xl font-bold text-white">
-                  점수 집계 중...
-                </h2>
-                <div className="text-sm text-gray-300 space-y-1">
-                  <div>점수: {gameState.score.toLocaleString()}</div>
-                  <div>레벨: {gameState.level} | 라인: {gameState.lines}</div>
+                  <h1 className="text-5xl lg:text-6xl font-black italic text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 mb-4 drop-shadow-2xl tracking-tighter">
+                    TETRIS
+                  </h1>
+                  <div className="text-white/80 text-lg font-medium animate-pulse">
+                    Click to Start
+                  </div>
                 </div>
-                <p className="text-xs text-gray-400">
-                  하이스코어 및 랭킹 확인 중...
-                </p>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* 모바일 터치 컨트롤 버튼 */}
-          {isGameStarted && (
-            <div className="mt-2 lg:mt-4">
-              {/* 데스크톱: 한 줄 레이아웃 */}
-              <div className="hidden lg:flex justify-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (gameState.currentBlock) {
-                      const leftBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x - 1 };
-                      if (isValidPosition(leftBlock, gameState.board)) {
-                        setGameState(prev => ({ ...prev, currentBlock: leftBlock }));
-                      }
-                    }
-                  }}
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (gameState.currentBlock) {
-                      const rightBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x + 1 };
-                      if (isValidPosition(rightBlock, gameState.board)) {
-                        setGameState(prev => ({ ...prev, currentBlock: rightBlock }));
-                      }
-                    }
-                  }}
-                >
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (gameState.currentBlock) {
-                      const downBlock = { ...gameState.currentBlock, y: gameState.currentBlock.y + 1 };
-                      if (isValidPosition(downBlock, gameState.board)) {
-                        setGameState(prev => ({ ...prev, currentBlock: downBlock }));
-                      }
-                    }
-                  }}
-                >
-                  <ArrowDown className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (gameState.currentBlock) {
-                      const rotatedShape = gameState.currentBlock.shape[0].map((_, i) =>
-                        gameState.currentBlock!.shape.map(row => row[row.length - 1 - i])
-                      );
-                      const rotatedBlock = { ...gameState.currentBlock, shape: rotatedShape };
-                      if (isValidPosition(rotatedBlock, gameState.board)) {
-                        setGameState(prev => ({ ...prev, currentBlock: rotatedBlock }));
-                      }
-                    }
-                  }}
-                >
-                  <RotateCw className="w-4 h-4" />
-                </Button>
-              </div>
-
-              {/* 모바일: 그리드 레이아웃 */}
-              <div className="block lg:hidden">
-                <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
-                  {/* 빈 공간 */}
-                  <div></div>
-                  {/* 회전 버튼 */}
-                  <Button
-                    variant="outline"
-                    className="h-12 w-full"
-                    onClick={() => {
-                      if (gameState.currentBlock) {
-                        const rotatedShape = gameState.currentBlock.shape[0].map((_, i) =>
-                          gameState.currentBlock!.shape.map(row => row[row.length - 1 - i])
-                        );
-                        const rotatedBlock = { ...gameState.currentBlock, shape: rotatedShape };
-                        if (isValidPosition(rotatedBlock, gameState.board)) {
-                          setGameState(prev => ({ ...prev, currentBlock: rotatedBlock }));
-                        }
-                      }
-                    }}
-                  >
-                    <RotateCw className="w-6 h-6" />
-                  </Button>
-                  {/* 빈 공간 */}
-                  <div></div>
-
-                  {/* 좌측 버튼 */}
-                  <Button
-                    variant="outline"
-                    className="h-12 w-full"
-                    onClick={() => {
-                      if (gameState.currentBlock) {
-                        const leftBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x - 1 };
-                        if (isValidPosition(leftBlock, gameState.board)) {
-                          setGameState(prev => ({ ...prev, currentBlock: leftBlock }));
-                        }
-                      }
-                    }}
-                  >
-                    <ArrowLeft className="w-6 h-6" />
-                  </Button>
-
-                  {/* 하향 버튼 */}
-                  <Button
-                    variant="outline"
-                    className="h-12 w-full"
-                    onClick={() => {
-                      if (gameState.currentBlock) {
-                        const downBlock = { ...gameState.currentBlock, y: gameState.currentBlock.y + 1 };
-                        if (isValidPosition(downBlock, gameState.board)) {
-                          setGameState(prev => ({ ...prev, currentBlock: downBlock }));
-                        }
-                      }
-                    }}
-                  >
-                    <ArrowDown className="w-6 h-6" />
-                  </Button>
-
-                  {/* 우측 버튼 */}
-                  <Button
-                    variant="outline"
-                    className="h-12 w-full"
-                    onClick={() => {
-                      if (gameState.currentBlock) {
-                        const rightBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x + 1 };
-                        if (isValidPosition(rightBlock, gameState.board)) {
-                          setGameState(prev => ({ ...prev, currentBlock: rightBlock }));
-                        }
-                      }
-                    }}
-                  >
-                    <ArrowRight className="w-6 h-6" />
-                  </Button>
+              {isProcessingGameOver && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-50">
+                  <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+                  <div className="text-white font-bold text-xl animate-pulse">Processing...</div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* 컨트롤 안내 */}
-          {isGameStarted && (
-            <div className="text-xs text-gray-500 text-center space-y-1 mt-2">
-              {/* 모바일: 터치 안내 */}
-              <p className="block lg:hidden">터치 버튼을 사용하여 게임을 조작하세요</p>
-              {/* 데스크톱: 키보드 안내 */}
-              <p className="hidden lg:block">← → : 이동 | ↑ : 회전 | ↓ : 빠른 하강 | 스페이스바 : 즉시 떨어뜨리기</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 게임 정보 */}
-      <Card className="w-80">
-        <CardHeader>
-          <CardTitle>게임 정보</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* 플랫폼 연동 상태 */}
-          <div className="p-3 rounded-lg border">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">플랫폼 연동:</span>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${isLinked
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                {isLinked ? '연동됨' : '미연동'}
-              </span>
-            </div>
-            {!isLinked && (
-              <p className="text-xs text-gray-500 mt-1">
-                퀘스트 진행도를 저장하려면 플랫폼 연동이 필요합니다
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span>점수:</span>
-              <span className="font-bold">{gameState.score}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>레벨:</span>
-              <span className="font-bold">{gameState.level}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>라인:</span>
-              <span className="font-bold">{gameState.lines}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>하드 드롭:</span>
-              <span className="font-bold">{hardDropsUsed}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>게임 수:</span>
-              <span className="font-bold">-</span>
+              {/* 일시정지 오버레이 */}
+              {isGameStarted && gameState.isPaused && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-20">
+                  <div className="text-2xl font-bold text-white mb-4">PAUSED</div>
+                  <div className="flex gap-2">
+                    <Button onClick={togglePause} size="sm" variant="outline" className="bg-transparent text-white border-white/20 hover:bg-white/10">Resume</Button>
+                    <Button onClick={restartGame} size="sm" variant="outline" className="bg-transparent text-white border-white/20 hover:bg-white/10">Restart</Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        </div>
 
+        {/* 컨트롤 버튼 (우측 하단 고정 - 선택 사항) */}
+        {isGameStarted && !gameState.isPaused && (
+          <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-20 opacity-50 hover:opacity-100 transition-opacity">
+            <Button onClick={togglePause} size="icon" variant="ghost" className="text-white hover:bg-white/10 rounded-full">
+              <Pause className="w-6 h-6" />
+            </Button>
+          </div>
+        )}
 
-          {/* 다음 블록 표시 */}
+        {/* [모바일] 하단 컨트롤 및 정보 (lg:hidden) */}
+        <div className="lg:hidden w-full max-w-sm space-y-4">
+          {/* 모바일 컨트롤 버튼들 */}
           {isGameStarted && (
-            <div className="space-y-2">
-              <div className="text-center">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">다음 블록</h3>
-                {renderNextBlock()}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            {!isGameStarted ? (
-              <Button
-                onClick={startGame}
-                className="w-full"
-                variant="default"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                게임 시작
+            <div className="grid grid-cols-3 gap-2">
+              <Button variant="secondary" className="h-14 rounded-xl bg-white/10 active:bg-white/20" onClick={() => {
+                if (gameState.currentBlock) {
+                  const leftBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x - 1 };
+                  if (isValidPosition(leftBlock, gameState.board)) {
+                    setGameState(prev => ({ ...prev, currentBlock: leftBlock }));
+                  }
+                }
+              }}>
+                <ArrowLeft className="w-6 h-6 text-white" />
               </Button>
-            ) : (
-              <>
-                <Button
-                  onClick={togglePause}
-                  className="w-full"
-                  variant={gameState.isPaused ? "default" : "outline"}
-                >
-                  {gameState.isPaused ? <Play className="w-4 h-4 mr-2" /> : <Pause className="w-4 h-4 mr-2" />}
-                  {gameState.isPaused ? '계속' : '일시정지'}
-                </Button>
+              <Button variant="secondary" className="h-14 rounded-xl bg-white/10 active:bg-white/20" onClick={() => {
+                if (gameState.currentBlock) {
+                  const rotatedShape = gameState.currentBlock.shape[0].map((_, i) =>
+                    gameState.currentBlock!.shape.map(row => row[row.length - 1 - i])
+                  );
+                  const rotatedBlock = { ...gameState.currentBlock, shape: rotatedShape };
+                  if (isValidPosition(rotatedBlock, gameState.board)) {
+                    setGameState(prev => ({ ...prev, currentBlock: rotatedBlock }));
+                  }
+                }
+              }}>
+                <RotateCw className="w-6 h-6 text-white" />
+              </Button>
+              <Button variant="secondary" className="h-14 rounded-xl bg-white/10 active:bg-white/20" onClick={() => {
+                if (gameState.currentBlock) {
+                  const rightBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x + 1 };
+                  if (isValidPosition(rightBlock, gameState.board)) {
+                    setGameState(prev => ({ ...prev, currentBlock: rightBlock }));
+                  }
+                }
+              }}>
+                <ArrowRight className="w-6 h-6 text-white" />
+              </Button>
+              <div /> {/* 빈 공간 */}
+              <Button variant="secondary" className="h-14 rounded-xl bg-white/10 active:bg-white/20" onClick={() => {
+                if (gameState.currentBlock) {
+                  const downBlock = { ...gameState.currentBlock, y: gameState.currentBlock.y + 1 };
+                  if (isValidPosition(downBlock, gameState.board)) {
+                    setGameState(prev => ({ ...prev, currentBlock: downBlock }));
+                  }
+                }
+              }}>
+                <ArrowDown className="w-6 h-6 text-white" />
+              </Button>
+              <div /> {/* 빈 공간 */}
+            </div>
+          )}
 
-                <Button
-                  onClick={restartGame}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <RotateCw className="w-4 h-4 mr-2" />
-                  재시작
-                </Button>
+          {!isGameStarted && (
+            <Button onClick={startGame} className="w-full h-14 text-lg font-bold bg-blue-600 text-white rounded-xl shadow-lg">
+              START GAME
+            </Button>
+          )}
+        </div>
 
-              </>
-            )}
-          </div>
-
-        </CardContent>
-      </Card>
-
+      </div>
 
       {/* 게임 결과 모달 */}
       <GameResultModal
@@ -1220,23 +1090,15 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
 
       {/* 실패 모달 */}
       {showFailureModal && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 text-center max-w-sm mx-4">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
+        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 text-center max-w-sm mx-4 border border-white/10 shadow-2xl">
+            <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X className="w-6 h-6 text-red-500" />
             </div>
-            <h3 className="text-lg font-semibold text-red-800 mb-2">처리 실패</h3>
-            <p className="text-red-700 mb-4 text-sm">{failureMessage}</p>
-            <Button
-              onClick={() => setShowFailureModal(false)}
-              className="w-full"
-              variant="outline"
-            >
-              확인
+            <h3 className="text-lg font-bold text-white mb-2">Error</h3>
+            <p className="text-slate-400 mb-6 text-sm">{failureMessage}</p>
+            <Button onClick={() => setShowFailureModal(false)} className="w-full bg-slate-800 hover:bg-slate-700 text-white">
+              Close
             </Button>
           </div>
         </div>
