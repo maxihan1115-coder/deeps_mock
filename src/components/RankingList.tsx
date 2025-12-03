@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,11 +32,16 @@ interface SeasonInfo {
 export default function RankingList({ currentUserId }: RankingListProps) {
   const [rankings, setRankings] = useState<RankingData[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(10); // 100개 / 10개씩 = 10페이지
   const [seasonInfo, setSeasonInfo] = useState<SeasonInfo | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const fetcher = (url: string) => fetch(url).then((res) => res.json());
+  const { data: apiData, error, isLoading } = useSWR('/api/rankings?period=season&startDate=2025-01-01T00:00:00%2B09:00&limit=100', fetcher, {
+    refreshInterval: 1800000, // 30분마다 자동 갱신
+    revalidateOnFocus: false,
+  });
 
   const itemsPerPage = 10;
 
@@ -165,49 +171,33 @@ export default function RankingList({ currentUserId }: RankingListProps) {
   };
 
   useEffect(() => {
-    const fetchRankings = async () => {
-      setIsLoading(true);
-      try {
-        // 실제 API 호출
-        const response = await fetch('/api/rankings?period=season&startDate=2025-01-01T00:00:00%2B09:00&limit=100');
-        const data = await response.json();
+    if (apiData && Array.isArray(apiData)) {
+      // API 응답 데이터를 점수 기준으로 정렬 후 순위 계산
+      type ApiRanking = { score: number; level: number; lines: number; user?: { username?: string }; userId?: string };
+      const sortedData = (apiData as ApiRanking[]).sort((a, b) => b.score - a.score);
+      const rankingData: RankingData[] = sortedData.map((item, index: number) => ({
+        rank: index + 1,
+        username: item.user?.username || 'Unknown',
+        score: item.score,
+        level: item.level,
+        lines: item.lines,
+        isCurrentUser: currentUserId ? item.userId === currentUserId : false
+      }));
 
-        if (data && Array.isArray(data)) {
-          // API 응답 데이터를 점수 기준으로 정렬 후 순위 계산
-          type ApiRanking = { score: number; level: number; lines: number; user?: { username?: string }; userId?: string };
-          const sortedData = (data as ApiRanking[]).sort((a, b) => b.score - a.score);
-          const rankingData: RankingData[] = sortedData.map((item, index: number) => ({
-            rank: index + 1,
-            username: item.user?.username || 'Unknown',
-            score: item.score,
-            level: item.level,
-            lines: item.lines,
-            isCurrentUser: currentUserId ? item.userId === currentUserId : false
-          }));
+      setRankings(rankingData);
+      setTotalPages(Math.ceil(rankingData.length / itemsPerPage));
+    } else if (error || (apiData && !Array.isArray(apiData))) {
+      console.error('랭킹 데이터 로딩 실패 또는 형식 오류:', error || apiData);
+      // 에러 시 목업 데이터 사용
+      const mockRankings = generateMockRankings();
+      setRankings(mockRankings);
+      setTotalPages(Math.ceil(mockRankings.length / itemsPerPage));
+    }
+  }, [apiData, error, currentUserId]);
 
-          setRankings(rankingData);
-          setTotalPages(Math.ceil(rankingData.length / itemsPerPage));
-        } else {
-          console.error('랭킹 데이터 형식이 올바르지 않습니다:', data);
-          // API 실패 시 목업 데이터 사용
-          const mockRankings = generateMockRankings();
-          setRankings(mockRankings);
-          setTotalPages(Math.ceil(mockRankings.length / itemsPerPage));
-        }
-      } catch (error) {
-        console.error('랭킹 데이터 로딩 실패:', error);
-        // 에러 시 목업 데이터 사용
-        const mockRankings = generateMockRankings();
-        setRankings(mockRankings);
-        setTotalPages(Math.ceil(mockRankings.length / itemsPerPage));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRankings();
+  useEffect(() => {
     fetchSeasonInfo();
-  }, [currentUserId]);
+  }, []);
 
   const getCurrentPageData = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;

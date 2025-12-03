@@ -94,6 +94,7 @@ export class DiamondPurchaseListener {
                     data: {
                         userId: Number(gameUuid),
                         circleTransactionId: transactionHash,
+                        txHash: transactionHash,
                         diamondAmount: Number(diamondAmount),
                         usdcAmount: (Number(usdcAmount) / 1000000).toString(), // 6 decimals
                         status: 'COMPLETED',

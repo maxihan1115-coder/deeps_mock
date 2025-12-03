@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -17,11 +18,20 @@ interface QuestPanelProps {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   const [quests, setQuests] = useState<Quest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false); // 새로고침 상태 추가
   // 카탈로그 방식: 별도 초기화 불필요
   const [error, setError] = useState<string | null>(null);
   const [isLinked, setIsLinked] = useState<boolean | null>(null);
+
+  const fetcher = (url: string) => fetch(url).then((res) => res.json());
+  const { data: apiData, error: swrError, isLoading, mutate } = useSWR(
+    gameUuid ? `/api/quests?gameUuid=${gameUuid}` : null,
+    fetcher,
+    {
+      refreshInterval: 900000, // 15분마다 자동 갱신
+      revalidateOnFocus: true, // 탭 전환 시 갱신 (반응성 확보)
+    }
+  );
 
   // 탭별 설명 데이터
   const tabDescriptions = {
@@ -74,53 +84,41 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
     }
   }, [gameUuid]);
 
-  // 퀘스트 목록 가져오기
-  const fetchQuests = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/quests?gameUuid=${gameUuid}`);
-      const data = await response.json();
+  // 퀘스트 데이터 처리
+  useEffect(() => {
+    if (apiData && apiData.success) {
+      const questsData = apiData.payload || [];
+      setError(null);
 
-      if (data.success) {
-        const questsData = data.payload || [];
-        setError(null);
+      // 미완료 퀘스트를 위에, 완료된 퀘스트를 아래에 정렬
+      const sortedQuests = questsData.sort((a: Quest, b: Quest) => {
+        // 미완료 퀘스트가 위에 오도록 정렬
+        if (a.isCompleted && !b.isCompleted) return 1;
+        if (!a.isCompleted && b.isCompleted) return -1;
+        // 완료 상태가 같으면 ID 순으로 정렬
+        return parseInt(a.id) - parseInt(b.id);
+      });
 
-        // 미완료 퀘스트를 위에, 완료된 퀘스트를 아래에 정렬
-        const sortedQuests = questsData.sort((a: Quest, b: Quest) => {
-          // 미완료 퀘스트가 위에 오도록 정렬
-          if (a.isCompleted && !b.isCompleted) return 1;
-          if (!a.isCompleted && b.isCompleted) return -1;
-          // 완료 상태가 같으면 ID 순으로 정렬
-          return parseInt(a.id) - parseInt(b.id);
-        });
-
-        setQuests(sortedQuests);
-      } else {
-        console.error('퀘스트 목록 가져오기 실패:', data.error);
-        setQuests([]);
-        setIsLinked(false);
-        setError(data.error || '퀘스트 조회에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('퀘스트 목록 가져오기 중 오류:', error);
+      setQuests(sortedQuests);
+    } else if (swrError || (apiData && !apiData.success)) {
+      console.error('퀘스트 목록 가져오기 실패:', swrError || apiData?.error);
       setQuests([]);
       setIsLinked(false);
-      setError('퀘스트 조회 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
+      setError(apiData?.error || '퀘스트 조회에 실패했습니다.');
     }
-  }, [gameUuid]);
+  }, [apiData, swrError]);
 
-  // 새로고침 핸들러 추가
+  // 새로고침 핸들러 수정
   const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return; // 이미 새로고침 중이면 중복 실행 방지
+    if (isRefreshing) return;
 
     setIsRefreshing(true);
     try {
-      await fetchQuests();
+      await mutate();
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing, fetchQuests]);
+  }, [isRefreshing, mutate]);
 
   // claimValue 포맷팅 함수
   const formatClaimValue = (claimValue: string | number | object): string => {
@@ -340,33 +338,12 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
   //   }
   // }, [currentScore, quests]);
 
-  // 초기 연동 상태 확인 및 퀘스트 로드 (병렬 처리)
+  // 초기 연동 상태 확인 (퀘스트 로드는 SWR이 담당)
   useEffect(() => {
-    const initializePanel = async () => {
-      // 플랫폼 연동 상태 확인과 퀘스트 로드를 병렬로 실행
-      await Promise.all([
-        checkPlatformLinkStatus(),
-        fetchQuests()
-      ]);
-    };
-
     if (gameUuid) {
-      initializePanel();
+      checkPlatformLinkStatus();
     }
-  }, [gameUuid, fetchQuests, checkPlatformLinkStatus]);
-
-  // 주기적으로 퀘스트 상태 새로고침 (연동된 유저만)
-  useEffect(() => {
-    if (!isLinked || !gameUuid) return;
-
-    const refreshInterval = setInterval(() => {
-      fetchQuests();
-    }, 30000); // 30초마다 새로고침
-
-    return () => {
-      clearInterval(refreshInterval);
-    };
-  }, [isLinked, gameUuid, fetchQuests]);
+  }, [gameUuid, checkPlatformLinkStatus]);
 
   if (isLoading) {
     return (
@@ -440,7 +417,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
             <Button
               onClick={() => {
                 setError(null);
-                fetchQuests();
+                mutate();
               }}
               size="sm"
               variant="outline"

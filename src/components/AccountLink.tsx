@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Link, ExternalLink, Copy, Check } from 'lucide-react';
 
-import { useDisconnect } from 'wagmi';
+
 
 interface AccountLinkProps {
   userUuid: number;

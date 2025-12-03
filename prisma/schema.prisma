@@ -79,6 +79,7 @@ model QuestProgress {
   user    User          @relation(fields: [userId], references: [uuid], onDelete: Cascade)
 
   @@unique([userId, catalogId])
+  @@index([userId, isCompleted]) // 퀘스트 상태별 조회 최적화
   @@map("quest_progress")
 }
 
@@ -266,6 +267,7 @@ model Ranking {
   @@index([userId, rankingPeriod, periodStartDate], map: "idx_user_period")
   @@unique([userId, rankingPeriod, periodStartDate], map: "uniq_user_period")
   @@index([rankingPeriod, periodStartDate, rankPosition], map: "idx_period_rank")
+  @@index([rankingPeriod, periodStartDate, score], map: "idx_period_score") // 점수순 정렬 최적화
   @@index([gameUuid], map: "idx_game_uuid")
   @@map("rankings")
 }

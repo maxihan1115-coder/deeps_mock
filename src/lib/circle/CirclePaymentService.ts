@@ -247,11 +247,34 @@ export class CirclePaymentService {
      * 결제 완료 처리 (Webhook)
      */
     async completePayment(circleTransactionId: string, txHash?: string) {
+        let finalTxHash = txHash;
+
+        // txHash가 없으면 Circle API로 조회 시도
+        if (!finalTxHash) {
+            try {
+                console.log(`🔍 txHash 누락됨. Circle API로 트랜잭션 조회 시도: ${circleTransactionId}`);
+                const client = getCircleClient();
+                const response = await client.getTransaction({ id: circleTransactionId });
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const txData = response.data as any;
+
+                if (txData && txData.txHash) {
+                    finalTxHash = txData.txHash;
+                    console.log(`✅ Circle API 조회로 txHash 확보: ${finalTxHash}`);
+                } else {
+                    console.log(`⚠️ Circle API 조회 결과에도 txHash가 없습니다.`);
+                }
+            } catch (error) {
+                console.warn(`⚠️ 트랜잭션 조회 실패 (txHash 확보 불가):`, error);
+            }
+        }
+
         // 1. CircleTransaction 업데이트 (txHash 포함)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updateData: { status: any; txHash?: string } = { status: 'COMPLETE' };
-        if (txHash) {
-            updateData.txHash = txHash;
+        if (finalTxHash) {
+            updateData.txHash = finalTxHash;
         }
 
         const transaction = await prisma.circleTransaction.update({
@@ -262,8 +285,8 @@ export class CirclePaymentService {
         // 2. PaymentHistory 업데이트 (txHash 포함)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const paymentUpdateData: { status: any; txHash?: string } = { status: 'COMPLETED' };
-        if (txHash) {
-            paymentUpdateData.txHash = txHash;
+        if (finalTxHash) {
+            paymentUpdateData.txHash = finalTxHash;
         }
 
         await prisma.paymentHistory.updateMany({
