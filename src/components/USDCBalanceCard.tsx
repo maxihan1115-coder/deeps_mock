@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wallet, RefreshCw, ExternalLink, Loader2 } from 'lucide-react';
+import { Wallet, RefreshCw, ExternalLink, Loader2, Unplug } from 'lucide-react';
+import { useDisconnect } from 'wagmi';
 
 interface USDCBalanceCardProps {
     gameUuid: number;
@@ -14,11 +15,47 @@ export default function USDCBalanceCard({ gameUuid }: USDCBalanceCardProps) {
     const [walletAddress, setWalletAddress] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [isUnlinking, setIsUnlinking] = useState(false);
+    const { disconnect } = useDisconnect();
 
     useEffect(() => {
+        // gameUuid 변경 시 즉시 상태 초기화 (이전 사용자 정보 표시 방지)
+        setBalance('0');
+        setWalletAddress('');
+        setLoading(true);
+
         fetchBalance();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [gameUuid]);
+
+    const handleUnlinkWallet = async () => {
+        if (!confirm('정말로 지갑 연동을 해제하시겠습니까?')) return;
+
+        setIsUnlinking(true);
+        try {
+            const response = await fetch('/api/wallet/disconnect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gameUuid, address: walletAddress })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                // DB 연동 해제 성공 시, 로컬 지갑 연결도 끊기
+                disconnect();
+                setWalletAddress('');
+                setBalance('0');
+                alert('지갑 연동이 해제되었습니다.');
+            } else {
+                alert(data.error || '연동 해제 실패');
+            }
+        } catch (error) {
+            console.error('Unlink failed:', error);
+            alert('연동 해제 중 오류가 발생했습니다.');
+        } finally {
+            setIsUnlinking(false);
+        }
+    };
 
     const fetchBalance = async () => {
         setLoading(true);
@@ -137,6 +174,31 @@ export default function USDCBalanceCard({ gameUuid }: USDCBalanceCardProps) {
                             </a>
                             에 입력하면 테스트 USDC를 받을 수 있습니다.
                         </div>
+
+                        {/* 지갑 연결 해제 버튼 */}
+                        {walletAddress && (
+                            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleUnlinkWallet}
+                                    disabled={isUnlinking}
+                                    className="w-full text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                >
+                                    {isUnlinking ? (
+                                        <>
+                                            <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                                            연동 해제 중...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Unplug className="w-3 h-3 mr-2" />
+                                            지갑 연동 해제
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        )}
                     </>
                 )}
             </CardContent>

@@ -20,7 +20,7 @@ interface GoldItem {
   price: number;
   currency: 'GOLD' | 'DIAMOND';
   isGacha: boolean;
-  gachaRewards?: Array<{diamonds: number, probability: number}>;
+  gachaRewards?: Array<{ diamonds: number, probability: number }>;
 }
 
 interface PurchaseResult {
@@ -36,11 +36,11 @@ interface PurchaseResult {
   };
 }
 
-export default function GoldPurchaseModal({ 
-  isOpen, 
-  onClose, 
+export default function GoldPurchaseModal({
+  isOpen,
+  onClose,
   gameUuid,
-  onPurchaseSuccess 
+  onPurchaseSuccess
 }: GoldPurchaseModalProps) {
   const [items, setItems] = useState<GoldItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,15 +90,15 @@ export default function GoldPurchaseModal({
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         // 상태를 동시에 업데이트
         setPurchasedItem(data.payload);
         setPurchaseSuccess(item.id);
-        
+
         // 성공 모달 표시
         setShowSuccessModal(true);
-        
+
         // 2초 후 성공 상태 초기화
         setTimeout(() => {
           setPurchaseSuccess(null);
@@ -135,11 +135,11 @@ export default function GoldPurchaseModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Coins className="w-5 h-5 text-yellow-500" />
-              골드 구매
+            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Coins className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              Gold Shop
             </DialogTitle>
           </DialogHeader>
 
@@ -147,55 +147,52 @@ export default function GoldPurchaseModal({
             {isLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto"></div>
-                <p className="text-sm text-gray-500 mt-2">골드 구매 아이템을 불러오는 중...</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading gold items...</p>
               </div>
             ) : items.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                골드 구매 아이템이 없습니다.
+              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                No gold items available.
               </div>
             ) : (
               <div className="space-y-3">
                 {items.map((item) => {
                   const goldAmount = getGoldAmount(item.name);
                   const pricePerGold = getPricePerGold(item.price, goldAmount);
-                  
+
                   return (
-                    <div key={item.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <div key={item.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-lg">{item.name}</h3>
-                            <Badge variant="secondary" className="text-xs">
-                              {pricePerGold} 다이아/골드
+                            <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{item.name}</h3>
+                            <Badge variant="outline" className="text-xs border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
+                              {pricePerGold} per gold
                             </Badge>
                           </div>
                           {item.description && (
-                            <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.description}</p>
                           )}
                           <div className="flex items-center gap-4 text-sm">
-                            <span className="text-yellow-600 font-medium">
-                              +{goldAmount.toLocaleString()} 골드
+                            <span className="text-gray-700 dark:text-gray-300 font-medium">
+                              +{goldAmount.toLocaleString()} Gold
                             </span>
-                            <span className="text-blue-600 font-medium">
-                              -{item.price.toLocaleString()} 다이아
+                            <span className="text-gray-700 dark:text-gray-300 font-medium">
+                              -{item.price.toLocaleString()} Diamond
                             </span>
                           </div>
                         </div>
                         <Button
                           onClick={() => handlePurchase(item)}
                           disabled={purchasing === item.id}
-                          className={`ml-4 min-w-[80px] ${
-                            purchaseSuccess === item.id
-                              ? 'bg-green-500 hover:bg-green-600'
-                              : 'bg-yellow-500 hover:bg-yellow-600'
-                          } text-white`}
+                          variant={purchaseSuccess === item.id ? "outline" : "default"}
+                          className="ml-4 min-w-[80px]"
                         >
                           {purchasing === item.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : purchaseSuccess === item.id ? (
                             <Check className="w-4 h-4" />
                           ) : (
-                            '구매'
+                            'Buy'
                           )}
                         </Button>
                       </div>
@@ -212,39 +209,39 @@ export default function GoldPurchaseModal({
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
         <DialogContent className="sm:max-w-md z-50">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-bold bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
-              <Sparkles className="w-6 h-6" />
-              구매 완료!
+            <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center justify-center gap-2">
+              <Check className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              Purchase Complete
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="text-center space-y-4 py-4">
             {purchasedItem && (
               <>
                 <div className="flex items-center justify-center gap-3">
                   <Coins className="w-8 h-8 text-yellow-500" />
-                  <span className="text-3xl font-bold text-yellow-600">
+                  <span className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
                     {getGoldAmount(purchasedItem.item.name).toLocaleString()}
                   </span>
-                  <span className="text-lg font-semibold text-gray-700">골드</span>
+                  <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">Gold</span>
                 </div>
-                
-                <p className="text-lg text-gray-600">
-                  골드를 성공적으로 구매했습니다!
+
+                <p className="text-lg text-gray-600 dark:text-gray-400">
+                  Successfully purchased Gold!
                 </p>
-                
-                <p className="text-sm text-gray-500">
-                  {purchasedItem.item.price.toLocaleString()} 다이아를 사용했습니다.
+
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Used {purchasedItem.item.price.toLocaleString()} Diamonds.
                 </p>
-                
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium mb-2 text-gray-700">현재 잔액</h4>
+
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="font-medium mb-2 text-gray-700 dark:text-gray-300">Current Balance</h4>
                   <div className="flex justify-between text-sm">
-                    <span className="text-yellow-600 font-medium">
-                      골드: {purchasedItem.remainingBalance.gold.toLocaleString()}
+                    <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                      Gold: {purchasedItem.remainingBalance.gold.toLocaleString()}
                     </span>
-                    <span className="text-blue-600 font-medium">
-                      다이아: {purchasedItem.remainingBalance.diamond.toLocaleString()}
+                    <span className="text-blue-600 dark:text-blue-400 font-medium">
+                      Diamond: {purchasedItem.remainingBalance.diamond.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -253,22 +250,22 @@ export default function GoldPurchaseModal({
           </div>
 
           <div className="flex justify-center">
-                <Button
-                  onClick={() => {
-                    setShowSuccessModal(false);
-                    setPurchasedItem(null);
-                    setPurchaseSuccess(null);
-                    onClose(); // 구매 모달도 함께 닫기
-                    
-                    // 잔액 업데이트 (확인 버튼 클릭 시에만)
-                    if (onPurchaseSuccess) {
-                      onPurchaseSuccess();
-                    }
-                  }}
-                  className="px-8 py-2 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-semibold"
-                >
-                  확인
-                </Button>
+            <Button
+              onClick={() => {
+                setShowSuccessModal(false);
+                setPurchasedItem(null);
+                setPurchaseSuccess(null);
+                onClose(); // 구매 모달도 함께 닫기
+
+                // 잔액 업데이트 (확인 버튼 클릭 시에만)
+                if (onPurchaseSuccess) {
+                  onPurchaseSuccess();
+                }
+              }}
+              className="px-8 py-2 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white font-semibold"
+            >
+              Confirm
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -277,17 +274,17 @@ export default function GoldPurchaseModal({
       <Dialog open={showErrorModal} onOpenChange={() => setShowErrorModal(false)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertCircle className="w-5 h-5" />
-              구매 실패
+            <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              Purchase Failed
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-center text-gray-600">
+            <p className="text-center text-gray-600 dark:text-gray-400">
               {errorMessage}
             </p>
             <Button onClick={() => setShowErrorModal(false)} className="w-full">
-              확인
+              Confirm
             </Button>
           </div>
         </DialogContent>

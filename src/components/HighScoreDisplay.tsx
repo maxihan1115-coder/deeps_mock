@@ -54,15 +54,15 @@ export default function HighScoreDisplay({
 
   if (isLoading) {
     return (
-      <Card className="w-80 lg:w-80 min-w-80">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="w-5 h-5" />
-            최고 점수
+      <Card className="border border-gray-200 dark:border-gray-700 shadow-sm dark:bg-gray-900">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            High Score
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-gray-500">로딩 중...</div>
+          <div className="text-center text-gray-500 dark:text-gray-400">Loading...</div>
         </CardContent>
       </Card>
     );
@@ -71,11 +71,11 @@ export default function HighScoreDisplay({
   // 현재 점수와 최고 점수 비교는 제거 (props에서 currentScore 제거됨)
 
   return (
-    <Card className="w-80 lg:w-80 min-w-80">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trophy className="w-5 h-5" />
-          최고 점수
+    <Card className="border border-gray-200 dark:border-gray-700 shadow-sm dark:bg-gray-900">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          <Trophy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          High Score
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -83,25 +83,25 @@ export default function HighScoreDisplay({
           <>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">최고 점수:</span>
-                <span className="text-sm font-bold text-gray-900">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Score</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">
                   {highScore.score.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">달성 레벨:</span>
-                <span className="text-sm font-bold">{highScore.level}</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Level</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{highScore.level}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">클리어 라인:</span>
-                <span className="text-sm font-bold">{highScore.lines}</span>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Lines</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">{highScore.lines}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">달성일:</span>
+              <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-800">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Achieved</span>
                 <div className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-gray-500" />
-                  <span className="text-xs text-gray-600">
-                    {new Date(highScore.createdAt).toLocaleDateString('ko-KR')}
+                  <Calendar className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {new Date(highScore.createdAt).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -109,9 +109,9 @@ export default function HighScoreDisplay({
 
           </>
         ) : (
-          <div className="text-center text-gray-500">
-            <p className="text-sm">아직 기록이 없습니다.</p>
-            <p className="text-xs mt-1">첫 번째 기록을 만들어보세요!</p>
+          <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+            <p className="text-sm">No record</p>
+            <p className="text-xs mt-1">Play your first game!</p>
           </div>
         )}
       </CardContent>

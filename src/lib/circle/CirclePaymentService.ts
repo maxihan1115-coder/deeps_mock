@@ -119,9 +119,11 @@ export class CirclePaymentService {
             const payment = await prisma.paymentHistory.create({
                 data: {
                     userId: gameUuid,
+                    paymentMethod: 'USDC',
                     circleTransactionId: transaction.id,
                     diamondAmount,
                     usdcAmount,
+                    txHash: null, // 초기에는 null, webhook에서 업데이트
                     status: 'PENDING',
                 },
             });
@@ -244,17 +246,27 @@ export class CirclePaymentService {
     /**
      * 결제 완료 처리 (Webhook)
      */
-    async completePayment(circleTransactionId: string, _txHash?: string) {
-        // 1. CircleTransaction 업데이트
+    async completePayment(circleTransactionId: string, txHash?: string) {
+        // 1. CircleTransaction 업데이트 (txHash 포함)
+        const updateData: { status: string; txHash?: string } = { status: 'COMPLETE' };
+        if (txHash) {
+            updateData.txHash = txHash;
+        }
+
         const transaction = await prisma.circleTransaction.update({
             where: { circleTransactionId },
-            data: { status: 'COMPLETE' },
+            data: updateData,
         });
 
-        // 2. PaymentHistory 업데이트
+        // 2. PaymentHistory 업데이트 (txHash 포함)
+        const paymentUpdateData: { status: string; txHash?: string } = { status: 'COMPLETED' };
+        if (txHash) {
+            paymentUpdateData.txHash = txHash;
+        }
+
         await prisma.paymentHistory.updateMany({
             where: { circleTransactionId: transaction.id },
-            data: { status: 'COMPLETED' },
+            data: paymentUpdateData,
         });
     }
 

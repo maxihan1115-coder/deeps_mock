@@ -62,6 +62,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // ⭐️ 결제 내역 저장 (PaymentHistory)
+    await prisma.paymentHistory.create({
+      data: {
+        userId: parsedGameUuid,
+        paymentMethod: 'FIAT',
+        diamondAmount: amount,
+        fiatAmount: price?.toString() || '0',
+        currency: 'KRW',
+        status: 'COMPLETED', // 일반 결제는 즉시 완료
+      },
+    });
+
     // 퀘스트 진행도 업데이트 (다이아몬드 구매)
     try {
       // 플랫폼 연동 상태 확인
@@ -69,7 +81,7 @@ export async function POST(request: NextRequest) {
         where: { gameUuid: parsedGameUuid }
       });
       const isLinked = !!platformLink;
-      
+
       await mysqlGameStore.updateDiamondPurchaseQuestProgress(parsedGameUuid, amount, isLinked);
       console.log('✅ 다이아몬드 구매 퀘스트 진행도 업데이트 완료');
     } catch (error) {

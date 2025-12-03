@@ -50,7 +50,7 @@ export default function RankingList({ currentUserId }: RankingListProps) {
   // 시즌 종료 처리
   const handleEndSeason = async () => {
     if (!seasonInfo) return;
-    
+
     setIsProcessing(true);
     try {
       const response = await fetch('/api/seasons/end', {
@@ -67,7 +67,7 @@ export default function RankingList({ currentUserId }: RankingListProps) {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         alert('시즌이 종료되었습니다.');
         // 시즌 정보 새로고침
@@ -86,7 +86,7 @@ export default function RankingList({ currentUserId }: RankingListProps) {
   // 새 시즌 시작 처리
   const handleStartNewSeason = async () => {
     if (!seasonInfo) return;
-    
+
     const newSeasonName = prompt('새 시즌명을 입력하세요 (예: 2025-02):');
     if (!newSeasonName) return;
 
@@ -113,7 +113,7 @@ export default function RankingList({ currentUserId }: RankingListProps) {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         alert('새 시즌이 시작되었습니다.');
         // 시즌 정보 새로고침
@@ -136,7 +136,7 @@ export default function RankingList({ currentUserId }: RankingListProps) {
     try {
       const response = await fetch('/api/seasons/status');
       const data = await response.json();
-      
+
       if (data.success && data.season) {
         setSeasonInfo(data.season);
       }
@@ -171,7 +171,7 @@ export default function RankingList({ currentUserId }: RankingListProps) {
         // 실제 API 호출
         const response = await fetch('/api/rankings?period=season&startDate=2025-01-01T00:00:00%2B09:00&limit=100');
         const data = await response.json();
-        
+
         if (data && Array.isArray(data)) {
           // API 응답 데이터를 점수 기준으로 정렬 후 순위 계산
           type ApiRanking = { score: number; level: number; lines: number; user?: { username?: string }; userId?: string };
@@ -184,7 +184,7 @@ export default function RankingList({ currentUserId }: RankingListProps) {
             lines: item.lines,
             isCurrentUser: currentUserId ? item.userId === currentUserId : false
           }));
-          
+
           setRankings(rankingData);
           setTotalPages(Math.ceil(rankingData.length / itemsPerPage));
         } else {
@@ -235,19 +235,19 @@ export default function RankingList({ currentUserId }: RankingListProps) {
   };
 
   const getRankBadgeColor = (rank: number) => {
-    if (rank === 1) return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    if (rank === 2) return "bg-gray-100 text-gray-800 border-gray-200";
-    if (rank === 3) return "bg-amber-100 text-amber-800 border-amber-200";
-    if (rank <= 10) return "bg-blue-100 text-blue-800 border-blue-200";
-    return "bg-gray-50 text-gray-700 border-gray-200";
+    if (rank === 1) return "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700";
+    if (rank === 2) return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600";
+    if (rank === 3) return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700";
+    if (rank <= 10) return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700";
+    return "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">랭킹 로딩 중...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100 mx-auto"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading rankings...</p>
         </div>
       </div>
     );
@@ -262,31 +262,29 @@ export default function RankingList({ currentUserId }: RankingListProps) {
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5"></div>
           <div className="relative p-4">
             <div className="flex items-center justify-center gap-2 mb-3">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                seasonInfo.status === 'ended' ? 'bg-red-100' : 'bg-blue-100'
-              }`}>
-                <Clock className={`w-4 h-4 ${
-                  seasonInfo.status === 'ended' ? 'text-red-600' : 'text-blue-600'
-                }`} />
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${seasonInfo.status === 'ended' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-blue-100 dark:bg-blue-900/30'
+                }`}>
+                <Clock className={`w-4 h-4 ${seasonInfo.status === 'ended' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'
+                  }`} />
               </div>
-              <span className="text-sm font-semibold text-slate-700">시즌 일정</span>
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Season Schedule</span>
               {seasonInfo.status === 'ended' && (
-                <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
-                  종료됨
+                <span className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">
+                  Ended
                 </span>
               )}
             </div>
-            
+
             <div className="flex items-center justify-center gap-6">
               {/* 시작일 */}
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1 mb-1">
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span className="text-xs font-medium text-slate-600">시작</span>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Start</span>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-bold text-slate-800">
-                    {new Date(seasonInfo.seasonStartDate).toLocaleDateString('ko-KR', {
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    {new Date(seasonInfo.seasonStartDate).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric'
@@ -302,11 +300,11 @@ export default function RankingList({ currentUserId }: RankingListProps) {
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1 mb-1">
                   <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span className="text-xs font-medium text-slate-600">종료</span>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">End</span>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-bold text-slate-800">
-                    {new Date(seasonInfo.seasonEndDate).toLocaleDateString('ko-KR', {
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    {new Date(seasonInfo.seasonEndDate).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric'
@@ -327,9 +325,9 @@ export default function RankingList({ currentUserId }: RankingListProps) {
 
       {/* 시즌 종료 안내 메시지 */}
       {seasonInfo && seasonInfo.status === 'ended' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
-          <p className="text-amber-800 font-medium">
-            시즌이 종료되었습니다. 최종 랭킹 결과입니다.
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-center">
+          <p className="text-amber-800 dark:text-amber-300 font-medium">
+            Season has ended. Here are the final rankings.
           </p>
         </div>
       )}
@@ -367,9 +365,9 @@ export default function RankingList({ currentUserId }: RankingListProps) {
                   {isProcessing ? '처리 중...' : '새 시즌 시작'}
                 </Button>
               )}
-              
+
               <div className="text-xs text-purple-600">
-                {seasonInfo.status === 'active' 
+                {seasonInfo.status === 'active'
                   ? '현재 시즌을 종료하고 최종 랭킹을 확정합니다.'
                   : '새로운 시즌을 시작하고 랭킹을 초기화합니다.'
                 }
@@ -380,64 +378,63 @@ export default function RankingList({ currentUserId }: RankingListProps) {
       )}
 
       {/* 랭킹 테이블 */}
-      <Card>
+      <Card className="dark:bg-gray-900 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="text-center">
-            {seasonInfo && seasonInfo.status === 'ended' ? '최종 랭킹' : '순위표'}
+          <CardTitle className="text-center text-gray-900 dark:text-white">
+            {seasonInfo && seasonInfo.status === 'ended' ? 'Final Rankings' : 'Leaderboard'}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">순위</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">플레이어</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">점수</th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-700">레벨</th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-700">라인</th>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Rank</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Player</th>
+                  <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Score</th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Level</th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Lines</th>
                 </tr>
               </thead>
               <tbody>
                 {getCurrentPageData().map((player, index) => (
-                  <tr 
-                    key={`${player.username}-${player.score}-${index}`} 
-                    className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                      player.isCurrentUser ? 'bg-blue-50 border-blue-200' : ''
-                    }`}
+                  <tr
+                    key={`${player.username}-${player.score}-${index}`}
+                    className={`border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${player.isCurrentUser ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : ''
+                      }`}
                   >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         {getRankIcon(player.rank)}
                         <Badge className={getRankBadgeColor(player.rank)}>
-                          {player.rank}위
+                          {player.rank}
                         </Badge>
                       </div>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <span className={`font-medium ${player.isCurrentUser ? 'text-blue-700' : 'text-gray-900'}`}>
+                        <span className={`font-medium ${player.isCurrentUser ? 'text-blue-700 dark:text-blue-300' : 'text-gray-900 dark:text-white'}`}>
                           {player.username}
                         </span>
                         {player.isCurrentUser && (
-                          <Badge variant="outline" className="text-blue-600 border-blue-300">
-                            나
+                          <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700">
+                            Me
                           </Badge>
                         )}
                       </div>
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <span className="font-mono font-semibold text-gray-900">
+                      <span className="font-mono font-semibold text-gray-900 dark:text-white">
                         {player.score.toLocaleString()}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
                         Lv.{player.level}
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className="text-gray-700">{player.lines}줄</span>
+                      <span className="text-gray-700 dark:text-gray-300">{player.lines} lines</span>
                     </td>
                   </tr>
                 ))}
@@ -449,8 +446,8 @@ export default function RankingList({ currentUserId }: RankingListProps) {
 
       {/* 페이지네이션 */}
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600">
-          {currentPage}페이지 / 총 {totalPages}페이지
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Page {currentPage} of {totalPages}
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -458,12 +455,12 @@ export default function RankingList({ currentUserId }: RankingListProps) {
             size="sm"
             onClick={handlePreviousPage}
             disabled={currentPage === 1}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             <ChevronLeft className="w-4 h-4" />
-            이전
+            Prev
           </Button>
-          
+
           {/* 페이지 번호들 */}
           <div className="flex items-center gap-1">
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -477,7 +474,7 @@ export default function RankingList({ currentUserId }: RankingListProps) {
               } else {
                 pageNum = currentPage - 2 + i;
               }
-              
+
               return (
                 <Button
                   key={pageNum}
@@ -497,9 +494,9 @@ export default function RankingList({ currentUserId }: RankingListProps) {
             size="sm"
             onClick={handleNextPage}
             disabled={currentPage === totalPages}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
           >
-            다음
+            Next
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>

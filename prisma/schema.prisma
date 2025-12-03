@@ -342,16 +342,21 @@ model USDCBalance {
 
 // 결제 내역 (다이아몬드 구매)
 model PaymentHistory {
-  id                  String   @id @default(uuid())
-  userId              Int      // User.uuid 참조
-  user                User     @relation(fields: [userId], references: [uuid])
-  circleTransactionId String?  // CircleTransaction.id
-  diamondAmount       Int      // 구매한 다이아몬드 수량
-  usdcAmount          String   // 지불한 USDC
+  id                  String        @id @default(uuid())
+  userId              Int           // User.uuid 참조
+  user                User          @relation(fields: [userId], references: [uuid])
+  paymentMethod       PaymentMethod @default(USDC) // 결제 수단 (FIAT, USDC)
+  circleTransactionId String?       // CircleTransaction.id (USDC 결제 시)
+  diamondAmount       Int           // 구매한 다이아몬드 수량
+  usdcAmount          String?       // 지불한 USDC (USDC 결제 시)
+  fiatAmount          String?       // 지불한 법정화폐 금액 (일반 결제 시)
+  currency            String?       // 법정화폐 통화 (KRW, USD 등)
+  txHash              String?       // 블록체인 트랜잭션 해시 (USDC 결제 시)
   status              PaymentStatus
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  @@index([userId, createdAt])
   @@map("payment_history")
 }
 
@@ -359,7 +364,7 @@ model ExternalWallet {
   id        String   @id @default(uuid())
   userId    Int
   user      User     @relation(fields: [userId], references: [uuid])
-  address   String   // 지갑 주소 (0x...)
+  address   String   @unique // 지갑 주소 (0x...) - 글로벌 unique 제약
   chain     String   // 연결된 체인 (e.g., "MATIC-AMOY")
   label     String?  // 지갑 별칭 (e.g., "MetaMask")
   isPrimary Boolean  @default(false)
@@ -367,6 +372,7 @@ model ExternalWallet {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, address])
+  @@index([address])
   @@map("external_wallets")
 }
 
@@ -407,3 +413,9 @@ enum PaymentStatus {
   FAILED
   REFUNDED
 }
+
+enum PaymentMethod {
+  FIAT  // 일반 결제 (원화 등)
+  USDC  // USDC 결제
+}
+

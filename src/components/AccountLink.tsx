@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Link, ExternalLink, Copy, Check } from 'lucide-react';
 
+import { useDisconnect } from 'wagmi';
+
 interface AccountLinkProps {
   userUuid: number;
   username: string;
@@ -15,6 +17,7 @@ interface AccountLinkProps {
 
 export default function AccountLink({ userUuid, username }: AccountLinkProps) {
   const router = useRouter();
+  const { disconnect } = useDisconnect();
   const [isLinked, setIsLinked] = useState(false);
   const [requestCode, setRequestCode] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -107,12 +110,12 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
           clearInterval(checkInterval);
         }, 600000);
       } else {
-        console.error('❌ API 에러:', data.error);
-        setError(data.error || '임시 코드 요청에 실패했습니다.');
+        console.error('❌ API Error:', data.error);
+        setError(data.error || 'Failed to request temporary code.');
       }
     } catch (error) {
       console.error('❌ Request code error:', error);
-      setError('임시 코드 요청 중 오류가 발생했습니다.');
+      setError('An error occurred while requesting the code.');
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +133,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
       setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
       console.error('Copy failed:', error);
-      setError('링크 복사에 실패했습니다.');
+      setError('Failed to copy link.');
     }
   };
 
@@ -166,10 +169,10 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
         router.push('/');
         return;
       }
-      setError(data?.error || '탈퇴 처리에 실패했습니다.');
+      setError(data?.error || 'Failed to unlink account.');
     } catch (e) {
-      console.error('❌ 탈퇴 처리 오류:', e);
-      setError('탈퇴 처리 중 오류가 발생했습니다.');
+      console.error('❌ Unlink error:', e);
+      setError('An error occurred while unlinking.');
     } finally {
       setIsDisconnecting(false);
     }
@@ -178,20 +181,20 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
   return (
     <Card className="w-full max-w-4xl">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Link className="w-5 h-5" />
-          플랫폼 연동
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+          <Link className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          Platform Link
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">사용자명:</span>
-            <span className="text-sm font-semibold text-gray-900">{username}</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Username:</span>
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">{username}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">UUID:</span>
-            <Badge variant="outline" className="text-xs font-mono bg-gray-50">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">UUID:</span>
+            <Badge variant="outline" className="text-xs font-mono bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700">
               {userUuid}
             </Badge>
           </div>
@@ -199,36 +202,28 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
 
         {/* 연동 상태 표시 */}
         {isLinked === null ? (
-          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-gray-600">연동 상태 확인 중...</span>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Checking status...</span>
             </div>
           </div>
         ) : isLinked ? (
           <div className="space-y-3">
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium text-green-800">플랫폼 연동 완료</span>
+                <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Platform Linked</span>
               </div>
-              <p className="text-xs text-green-700 mt-1">
-                현재 BORA 플랫폼과 성공적으로 연동되어 있습니다.
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Successfully linked with BORA Platform.
               </p>
               {linkDate && (
-                <div className="mt-2 p-2 bg-green-100 rounded border border-green-300">
+                <div className="mt-2 p-2 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-green-800">📅 연동일자:</span>
-                    <span className="text-xs text-green-700">
-                      {new Date(linkDate).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        weekday: 'long'
-                      })} {new Date(linkDate).toLocaleTimeString('ko-KR', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">📅 Linked Date:</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      {new Date(linkDate).toLocaleDateString()} {new Date(linkDate).toLocaleTimeString()}
                     </span>
                   </div>
                 </div>
@@ -239,34 +234,34 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
               <DialogTrigger asChild>
                 <Button
                   disabled={isDisconnecting}
-                  className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300"
-                  variant="destructive"
+                  className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  variant="outline"
                 >
                   {isDisconnecting ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      탈퇴 처리 중...
+                      <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Processing...
                     </>
                   ) : (
-                    'BORA TETRIS 탈퇴'
+                    'Unlink Account'
                   )}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>BORA TETRIS 탈퇴</DialogTitle>
+                  <DialogTitle>Unlink Account</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <p className="text-sm text-gray-600">정말로 탈퇴하시겠습니까?</p>
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-xs text-yellow-800">
-                      ⚠️ 탈퇴 시 UUID를 제외한 게임 데이터(퀘스트 포함)와 연동 이력이 모두 삭제됩니다.
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Are you sure you want to unlink?</p>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <p className="text-xs text-gray-700 dark:text-gray-300">
+                      ⚠️ Unlinking will remove all game data (including quests) except UUID.
                     </p>
                   </div>
                   <div className="flex gap-2 justify-end">
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm">
-                        취소
+                        Cancel
                       </Button>
                     </DialogTrigger>
                     <Button
@@ -275,7 +270,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
                       variant="destructive"
                       size="sm"
                     >
-                      {isDisconnecting ? '처리 중...' : '탈퇴 확인'}
+                      {isDisconnecting ? 'Processing...' : 'Confirm Unlink'}
                     </Button>
                   </div>
                 </div>
@@ -284,55 +279,56 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
           </div>
         ) : !requestCode ? (
           <div className="space-y-3">
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm font-medium text-yellow-800">미연동 상태</span>
+                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Not Linked</span>
               </div>
-              <p className="text-xs text-yellow-700 mt-1">
-                플랫폼 연동을 통해 퀘스트 진행도를 저장하고 보상을 받으세요.
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Link your account to save quest progress and receive rewards.
               </p>
             </div>
 
             <Button
               onClick={requestTempCode}
               disabled={isLoading}
-              className="w-full"
+              className="w-full border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              variant="outline"
             >
-              {isLoading ? '임시 코드 요청 중...' : '플랫폼 연동 시작'}
+              {isLoading ? 'Requesting Code...' : 'Start Linking'}
             </Button>
             {isLoading && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800 font-medium">연동 코드를 생성하고 있습니다...</p>
-                <p className="text-xs text-blue-600 mt-1">
-                  잠시만 기다려주세요.
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">Generating link code...</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  Please wait a moment.
                 </p>
               </div>
             )}
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-800 font-medium">임시 코드가 생성되었습니다!</p>
-              <p className="text-xs text-green-600 mt-1">
-                이 코드는 15분 후 만료됩니다.
+            <div className="p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">Temporary Code Generated!</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                This code expires in 15 minutes.
               </p>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">플랫폼 연동 링크:</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Link URL:</span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={copyLink}
-                  className="h-6 px-2"
+                  className="h-6 px-2 border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                 </Button>
               </div>
 
-              <div className="p-2 bg-gray-50 border rounded text-xs font-mono break-all">
+              <div className="p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded text-xs font-mono break-all text-gray-600 dark:text-gray-400">
                 https://www.boradeeps.cc/?requestCode={requestCode}
               </div>
             </div>
@@ -340,28 +336,28 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
             <div className="space-y-2">
               <Button
                 onClick={openExternalLink}
-                className="w-full bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                variant="default"
+                className="w-full border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                variant="outline"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                🚀 외부 브라우저에서 열기
+                Open in Browser
               </Button>
 
               {/* 디버깅용 정보 표시 */}
-              <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded border">
-                🔍 Debug: requestCode = {requestCode ? '✅ 설정됨' : '❌ null'}, isLinked = {isLinked === null ? '🔄 확인중' : isLinked ? '✅ 연동됨' : '❌ 미연동'}
+              <div className="text-xs text-gray-500 dark:text-gray-500 p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                🔍 Debug: requestCode = {requestCode ? '✅ Set' : '❌ null'}, isLinked = {isLinked === null ? '🔄 Checking' : isLinked ? '✅ Linked' : '❌ Unlinked'}
               </div>
 
               <Button
                 onClick={() => {
-                  console.log('🔄 새 코드 요청 - requestCode 초기화');
+                  console.log('🔄 Request new code');
                   setRequestCode(null);
                 }}
-                className="w-full"
+                className="w-full text-gray-500 dark:text-gray-400"
                 variant="ghost"
                 size="sm"
               >
-                새 코드 요청
+                Request New Code
               </Button>
             </div>
           </div>
@@ -386,9 +382,9 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
         )}
 
         <div className="text-xs text-gray-500 space-y-1">
-          <p>• 임시 코드는 15분간 유효합니다</p>
-          <p>• 외부 브라우저에서 플랫폼 로그인 후 연동이 완료됩니다</p>
-          <p>• 연동 완료 후 게임에서 플랫폼 기능을 이용할 수 있습니다</p>
+          <p>• Temporary code is valid for 15 minutes.</p>
+          <p>• Linking completes after logging in via external browser.</p>
+          <p>• Platform features will be available after linking.</p>
         </div>
       </CardContent>
     </Card>

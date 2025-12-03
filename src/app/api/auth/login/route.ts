@@ -7,12 +7,12 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   if (!isProduction) console.log('🔐 Login API called');
-  
+
   try {
     const { username } = await request.json();
-    
+
     if (!isProduction) console.log('📝 Login attempt for username:', username);
 
     if (!username) {
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (!hasAttendanceToday) {
       const today = new Date().toISOString().split('T')[0];
       await mysqlGameStore.addAttendanceRecord(user.uuid, today); // user.id → user.uuid (숫자)
-      
+
       // 플랫폼 연동 상태 확인 후 퀘스트 업데이트
       try {
         const platformLink = await prisma.platformLink.findUnique({
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
             attendanceRecords = attendanceRecords.filter(r => r.date >= eligibleDateStr);
           }
           const consecutiveDays = calculateConsecutiveDays(attendanceRecords);
-          
+
           // DAILY_LOGIN 퀘스트 ID: '12' - quest_progress 시스템 사용
           await mysqlGameStore.upsertQuestProgress(user.uuid, '12', Math.min(consecutiveDays, 7)); // user.id → user.uuid (숫자)
           if (!isProduction) console.log('✅ DAILY_LOGIN 퀘스트 업데이트:', consecutiveDays, '일 연속');
@@ -83,6 +83,12 @@ export async function POST(request: NextRequest) {
 
     // 공통 카탈로그 구조로 전환: 개별 유저 퀘스트 초기화 제거
 
+    // 지갑 정보 조회
+    const linkedWallet = await prisma.externalWallet.findFirst({
+      where: { userId: user.uuid },
+      orderBy: { createdAt: 'desc' }
+    });
+
     const response = NextResponse.json({
       success: true,
       error: null,
@@ -92,6 +98,7 @@ export async function POST(request: NextRequest) {
           username: user.username,
           uuid: user.uuid,
           lastLoginAt: user.lastLoginAt,
+          walletAddress: linkedWallet?.address || null, // 지갑 주소 포함
         },
         message: '로그인 성공',
       },

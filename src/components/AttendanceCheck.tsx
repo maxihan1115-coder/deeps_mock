@@ -173,25 +173,17 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
   // 플랫폼 미연동 상태 UI
   if (!platformCheckLoading && !isLinked) {
     return (
-      <Card className="w-80 lg:w-80 min-w-80">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-              <Check className="w-3 h-3 text-white" />
-            </div>
-            출석체크
+      <Card className="border border-gray-200 dark:border-gray-700 shadow-sm dark:bg-gray-900">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <Check className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            Attendance
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="text-center p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
-              <div className="w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center">
-                <Check className="w-2.5 h-2.5 text-white" />
-              </div>
-              <span className="text-sm font-medium">출석체크</span>
-            </div>
-            <p className="text-xs text-gray-500">
-              플랫폼 연동 후 출석체크가 활성화됩니다.
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Attendance check is available after linking platform.
             </p>
           </div>
         </CardContent>
@@ -201,19 +193,17 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
 
   if (isLoading || platformCheckLoading) {
     return (
-      <Card className="w-80 lg:w-80 min-w-80">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-              <Check className="w-3 h-3 text-white" />
-            </div>
-            출석체크
+      <Card className="border border-gray-200 dark:border-gray-700 shadow-sm dark:bg-gray-900">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <Check className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            Attendance
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-gray-500">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mx-auto mb-2"></div>
-            로딩 중...
+          <div className="text-center text-gray-500 dark:text-gray-400">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100 mx-auto mb-2"></div>
+            Loading...
           </div>
         </CardContent>
       </Card>
@@ -221,45 +211,35 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
   }
 
   return (
-    <Card className="w-80 lg:w-80 min-w-80">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-            <Check className="w-3 h-3 text-white" />
-          </div>
-          출석체크
+    <Card className="border border-gray-200 dark:border-gray-700 shadow-sm dark:bg-gray-900">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          <Check className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          Attendance
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {/* 연속 출석 현황 */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">연속 출석</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Consecutive Days</span>
             <Badge
-              variant={calculateConsecutiveDays(attendanceRecords) >= 7 ? "default" : "outline"}
-              className={`text-xs ${calculateConsecutiveDays(attendanceRecords) >= 7
-                  ? 'bg-green-600 text-white'
-                  : calculateConsecutiveDays(attendanceRecords) > 0
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-600'
-                }`}
+              variant="outline"
+              className="text-xs border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
             >
-              {calculateConsecutiveDays(attendanceRecords)}일 연속
+              {calculateConsecutiveDays(attendanceRecords)} days
             </Badge>
           </div>
 
           {/* 연속 출석 진행도 */}
           <div className="space-y-1">
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>7일 연속 출석 목표</span>
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+              <span>7-Day Goal</span>
               <span>{calculateConsecutiveDays(attendanceRecords)}/7</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div
-                className={`h-2 rounded-full transition-all duration-300 ${calculateConsecutiveDays(attendanceRecords) >= 7
-                    ? 'bg-green-500'
-                    : 'bg-blue-500'
-                  }`}
+                className="h-2 rounded-full transition-all duration-300 bg-gray-700 dark:bg-gray-300"
                 style={{
                   width: `${Math.min((calculateConsecutiveDays(attendanceRecords) / 7) * 100, 100)}%`
                 }}
@@ -278,35 +258,27 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
 
             if (todayAttended) {
               return (
-                <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center justify-center gap-1 text-green-700 mb-1">
+                <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex items-center justify-center gap-1 text-gray-700 dark:text-gray-300 mb-1">
                     <Check className="w-4 h-4" />
-                    <span className="text-sm font-medium">오늘 출석 완료!</span>
+                    <span className="text-sm font-medium">Checked In</span>
                   </div>
-                  <div className="text-xs text-green-600">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {consecutiveDays >= 7
-                      ? '🎉 7일 연속 출석 달성!'
-                      : `${consecutiveDays}일 연속 출석 중`
+                      ? '7-day streak achieved!'
+                      : `${consecutiveDays}-day streak`
                     }
                   </div>
                 </div>
               );
             } else if (!todayAvailable) {
               return (
-                <div className="text-center p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="flex items-center justify-center gap-1 text-yellow-700">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full flex items-center justify-center">
-                      <X className="w-2 h-2 text-white" />
-                    </div>
-                    <span className="text-sm font-medium">
-                      {linkedDate ?
-                        `${linkedDate} 이후 출석 가능` :
-                        '출석 불가능한 날짜'
-                      }
-                    </span>
-                  </div>
-                  <p className="text-xs text-yellow-600 mt-1">
-                    플랫폼 연동 날짜부터 출석체크가 가능합니다
+                <div className="text-center p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {linkedDate ?
+                      `Available after ${linkedDate}` :
+                      'Date not available'
+                    }
                   </p>
                 </div>
               );
@@ -316,17 +288,17 @@ export default function AttendanceCheck({ userId, gameUuid }: AttendanceCheckPro
                 <div className="space-y-2">
                   <Button
                     onClick={checkAttendance}
-                    className="w-full"
-                    variant="default"
+                    className="w-full border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                    variant="outline"
                     size="sm"
                   >
                     <Check className="w-3 h-3 mr-1" />
-                    오늘 출석하기
+                    Check In
                   </Button>
-                  <div className="text-center text-xs text-gray-600">
+                  <div className="text-center text-xs text-gray-500 dark:text-gray-400">
                     {consecutiveDays > 0
-                      ? `출석하면 ${nextConsecutive}일 연속!`
-                      : '출석하면 연속 출석 시작!'
+                      ? `Reach ${nextConsecutive}-day streak!`
+                      : 'Start your streak!'
                     }
                   </div>
                 </div>

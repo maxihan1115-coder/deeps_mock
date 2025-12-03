@@ -314,11 +314,11 @@ export default function DiamondPurchaseModal({
     <>
       {/* 구매 모달 */}
       <Dialog open={isOpen && !showSuccessModal} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl flex items-center gap-2">
-              <Gem className="w-6 h-6 text-purple-500" />
-              다이아몬드 구매
+            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Gem className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              Diamond Shop
             </DialogTitle>
           </DialogHeader>
 
@@ -326,11 +326,11 @@ export default function DiamondPurchaseModal({
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="fiat" className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4" />
-                일반 결제
+                Fiat
               </TabsTrigger>
               <TabsTrigger value="usdc" className="flex items-center gap-2">
                 <Wallet className="w-4 h-4" />
-                USDC 결제
+                USDC
               </TabsTrigger>
             </TabsList>
 
@@ -339,8 +339,8 @@ export default function DiamondPurchaseModal({
               <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Wallet className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium">USDC 잔액</span>
+                    <Wallet className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <span className="font-medium text-gray-900 dark:text-white">USDC Balance</span>
                   </div>
                   <div className="flex items-center gap-3">
                     {loadingBalance ? (
@@ -354,10 +354,10 @@ export default function DiamondPurchaseModal({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50"
+                        className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                         onClick={() => disconnect()}
                       >
-                        연결 해제
+                        Disconnect
                       </Button>
                     )}
                   </div>
@@ -407,9 +407,12 @@ export default function DiamondPurchaseModal({
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">구매 완료!</DialogTitle>
-            <DialogDescription className="text-center text-gray-500">
-              다이아몬드 구매가 성공적으로 완료되었습니다.
+            <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white text-center flex items-center justify-center gap-2">
+              <Check className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              Purchase Complete
+            </DialogTitle>
+            <DialogDescription className="text-center text-gray-500 dark:text-gray-400">
+              Diamond purchase completed successfully.
             </DialogDescription>
           </DialogHeader>
 
@@ -421,10 +424,10 @@ export default function DiamondPurchaseModal({
             <div className="space-y-2">
               <p className="text-lg flex items-center justify-center gap-2">
                 <Gem className="w-5 h-5 text-purple-500" />
-                <span className="font-bold text-purple-600">
+                <span className="font-bold text-purple-600 dark:text-purple-400">
                   {purchasedAmount.toLocaleString()}
                 </span>
-                <span>다이아몬드를 획득했습니다!</span>
+                <span className="text-gray-900 dark:text-white">Diamonds acquired!</span>
               </p>
             </div>
 
@@ -432,7 +435,7 @@ export default function DiamondPurchaseModal({
               onClick={handleCloseSuccessModal}
               className="w-full"
             >
-              확인
+              Confirm
             </Button>
           </div>
         </DialogContent>
@@ -467,29 +470,29 @@ function PackageCard({
   const isInsufficientBalance = paymentMethod === 'usdc' && parseFloat(usdcBalance) < parseFloat(pkg.priceUSDC);
 
   return (
-    <Card className={`relative overflow-hidden transition-all hover:shadow-lg ${isSuccess ? 'ring-2 ring-green-500' : ''
+    <Card className={`relative overflow-hidden transition-all hover:shadow-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800 ${isSuccess ? 'ring-2 ring-gray-500' : ''
       } ${isInsufficientBalance ? 'opacity-50' : ''}`}>
       {pkg.bonus && (
-        <div className="absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+        <div className="absolute top-2 right-2 bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
           <Sparkles className="w-3 h-3" />
-          +{pkg.bonus} 보너스
+          +{pkg.bonus} Bonus
         </div>
       )}
 
       <CardContent className="p-6">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <Gem className="w-8 h-8 text-purple-500" />
+            <Gem className="w-8 h-8 text-gray-700 dark:text-gray-300" />
             <div>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {totalAmount.toLocaleString()}
               </div>
-              <div className="text-sm text-gray-500">다이아몬드</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Diamond</div>
             </div>
           </div>
 
-          <div className="pt-4 border-t">
-            <div className="text-2xl font-bold text-purple-600">
+          <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
               {paymentMethod === 'fiat' ? (
                 `₩${pkg.priceKRW.toLocaleString()}`
               ) : (
@@ -507,17 +510,17 @@ function PackageCard({
             {isPurchasing ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                처리중...
+                Processing...
               </>
             ) : isSuccess ? (
               <>
                 <Check className="w-4 h-4 mr-2" />
-                구매 완료
+                Purchased
               </>
             ) : isInsufficientBalance ? (
-              '잔액 부족'
+              'Insufficient Balance'
             ) : (
-              '구매하기'
+              'Buy'
             )}
           </Button>
         </div>

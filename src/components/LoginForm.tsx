@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Lock, Loader2 } from 'lucide-react';
 
 interface LoginFormProps {
-  onLogin?: (user: { id: string; username: string; uuid: number }) => void;
+  onLogin?: (user: { id: string; username: string; uuid: number; walletAddress?: string | null }) => void;
 }
 
 export default function LoginForm({ onLogin }: LoginFormProps) {
@@ -21,7 +21,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   const waitForToken = async (): Promise<string> => {
     let attempts = 0;
     const maxAttempts = 30; // 3초 대기 (100ms * 30)
-    
+
     while (attempts < maxAttempts) {
       const userInfo = localStorage.getItem('userInfo');
       if (userInfo) {
@@ -38,13 +38,13 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
       await new Promise(resolve => setTimeout(resolve, 100));
       attempts++;
     }
-    
+
     throw new Error('토큰 준비 시간 초과 (3초)');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!username.trim()) {
       setError('사용자명을 입력해주세요.');
       return;
@@ -66,8 +66,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
       const data = await response.json();
 
       if (data.success) {
-        const user = data.payload.user as { id: string; username: string; uuid: number };
-        
+        const user = data.payload.user as { id: string; username: string; uuid: number; walletAddress?: string | null };
+
         // 2. 사용자 정보를 localStorage에 저장
         try {
           localStorage.setItem('userInfo', JSON.stringify(user));
@@ -79,23 +79,23 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
         // 3. 토큰 준비 상태로 변경
         setLoginStatus('preparing');
-        
+
         // 4. 토큰이 준비될 때까지 대기
         await waitForToken();
-        
+
         // 5. 토큰 준비 완료 후 로그인 성공 처리
         setLoginStatus('success');
-        
+
         if (onLogin) {
           onLogin(user);
         }
-        
+
         // 6. 잠시 후 게임 페이지로 이동 (사용자가 성공 메시지를 볼 수 있도록)
         setTimeout(() => {
           console.log('🚀 게임 페이지로 이동합니다...');
           window.location.href = `/game?userId=${user.id}&username=${encodeURIComponent(user.username)}&uuid=${user.uuid}`;
         }, 1500); // 1.5초로 증가하여 사용자가 성공 메시지를 충분히 볼 수 있도록
-        
+
       } else {
         setError(data.error || '로그인에 실패했습니다.');
         setLoginStatus('error');
@@ -201,9 +201,9 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
               <div className="text-red-600 text-sm p-2 bg-red-50 rounded">{error}</div>
             )}
 
-            <Button 
-              type="submit" 
-              className="w-full flex items-center justify-center gap-2" 
+            <Button
+              type="submit"
+              className="w-full flex items-center justify-center gap-2"
               disabled={isButtonDisabled}
             >
               {getButtonIcon()}
