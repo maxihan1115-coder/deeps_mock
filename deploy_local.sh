@@ -28,7 +28,7 @@ rsync -avz -e "ssh -i $KEY_PATH" \
     --exclude 'node_modules' \
     --exclude '.git' \
     --exclude '.env.local' \
-    .next public package.json package-lock.json prisma next.config.mjs \
+    .next public package.json package-lock.json prisma next.config.ts \
     $EC2_USER@$EC2_HOST:$REMOTE_DIR
 
 # 4. EC2에서 의존성 설치 및 재시작
