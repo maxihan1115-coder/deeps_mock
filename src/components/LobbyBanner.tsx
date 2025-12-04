@@ -95,7 +95,6 @@ export default function LobbyBanner({ onOpenDiamondShop, onOpenShop }: LobbyBann
             decorations: (
                 <>
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-yellow-400 opacity-10 rounded-full blur-3xl animate-pulse"></div>
-                    <div className="absolute top-0 left-0 w-full h-full bg-[url('/noise.png')] opacity-5 mix-blend-overlay"></div>
                 </>
             )
         }
