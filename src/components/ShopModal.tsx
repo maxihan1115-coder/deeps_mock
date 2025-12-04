@@ -168,50 +168,56 @@ export default function ShopModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-xl max-h-[80vh] overflow-y-auto bg-slate-900 border-slate-800">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto bg-slate-900 border-slate-800 p-4 sm:p-6">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
                 <ShoppingBag className="w-6 h-6 text-slate-400" />
                 Item Shop
               </DialogTitle>
-              <Button
-                onClick={() => setShowGachaHistory(true)}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 border-slate-700 text-slate-300 hover:bg-slate-800"
-              >
-                <History className="w-4 h-4" />
-                History
-              </Button>
             </div>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 gap-3 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             {items.map((item) => (
-              <Card key={item.id} className="bg-slate-800/50 border-slate-700">
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div>
-                      <h3 className="font-semibold text-lg text-white">{item.name}</h3>
-                      {item.description && (
-                        <p className="text-sm text-slate-400 mt-1">{item.description}</p>
-                      )}
+              <Card key={item.id} className="bg-slate-800/50 border-slate-700 flex flex-col">
+                <CardContent className="p-4 flex flex-col h-full justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-lg text-white mb-1">{item.name}</h3>
+                    {item.description && (
+                      <p className="text-sm text-slate-400 line-clamp-2">{item.description}</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between mt-auto pt-2">
+                    <div className="flex items-center gap-2 text-slate-200">
+                      {getCurrencyIcon(item.currency)}
+                      <span className="font-bold text-lg">
+                        {formatPrice(item.price)}
+                      </span>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-slate-200">
-                        {getCurrencyIcon(item.currency)}
-                        <span className="font-bold text-lg">
-                          {formatPrice(item.price)}
-                        </span>
-                      </div>
-
+                    <div className="flex items-center gap-2">
+                      {item.isGacha && (
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowGachaHistory(true);
+                          }}
+                          variant="ghost"
+                          size="icon"
+                          className="w-8 h-8 text-slate-400 hover:text-white hover:bg-slate-700"
+                          title="History"
+                        >
+                          <History className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         onClick={() => item.isGacha ? handleGachaPurchase(item) : handlePurchase(item)}
                         disabled={purchasing === item.id}
                         variant="outline"
-                        className="min-w-[80px] border-slate-600 text-slate-300 hover:bg-slate-700"
+                        size="sm"
+                        className="min-w-[70px] border-slate-600 text-slate-300 hover:bg-slate-700"
                       >
                         {purchasing === item.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />

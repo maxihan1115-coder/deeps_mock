@@ -1,5 +1,5 @@
 'use client';
-import React, { useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef, forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 import { Gem } from 'lucide-react';
 
 interface GachaResult {
@@ -24,15 +24,24 @@ const RouletteWheel = forwardRef<RouletteWheelRef, RouletteWheelProps>(
   ({ rewards, colors, onSpinComplete }, ref) => {
     const wheelRef = useRef<HTMLDivElement>(null);
     const isSpinningRef = useRef(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+      const checkMobile = () => {
+        setIsMobile(window.innerWidth < 640);
+      };
+
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     // colors prop 강제 사용 (디버깅용)
-    console.log('RouletteWheel colors prop:', colors);
     const defaultColors = [
       '#FF6B6B', '#FF6B6B', '#FF6B6B', '#FF6B6B', '#FF6B6B',
       '#FF6B6B', '#FF6B6B', '#FF6B6B', '#FF6B6B', '#FF6B6B', '#FF6B6B'
     ];
     const finalColors = colors && colors.length > 0 ? colors : defaultColors;
-    console.log('RouletteWheel finalColors:', finalColors);
 
     // props로 받은 rewards 사용, 없으면 기본값 (하드코딩 제거 또는 fallback)
     const displayRewards = rewards && rewards.length > 0 ? rewards : [500, 9000, 8000, 6000, 2000, 3000, 4000, 7000, 5000, 10000, 1000];
@@ -79,14 +88,6 @@ const RouletteWheel = forwardRef<RouletteWheelRef, RouletteWheelProps>(
           const randomOffset = (Math.random() - 0.5) * sectionAngle * 0.8;
 
           const finalRotation = baseRotations + indexRotation + centerCorrection + randomOffset;
-
-          console.log('🎯 룰렛 회전 계산:', {
-            targetReward,
-            targetIndex,
-            sectionAngle,
-            finalRotation,
-            randomOffset
-          });
 
           const wheel = wheelRef.current;
           wheel.style.transition = 'transform 6s cubic-bezier(0.2, 0.8, 0.2, 1)'; // 이징 함수 개선
@@ -182,8 +183,10 @@ const RouletteWheel = forwardRef<RouletteWheelRef, RouletteWheelProps>(
                 // 웨지의 정중앙 각도 계산 (좌측으로 치우친 현상 보정을 위해 +5도 추가)
                 const midAngle = startOffset + (sectionAngle * index) + (sectionAngle / 2) + 5;
 
-                // 텍스트 위치 반지름 (룰렛 크기 420px -> 반지름 210px. 텍스트는 약 140px 지점에 위치)
-                const radius = 140;
+                // 텍스트 위치 반지름 (반응형 조정)
+                // Mobile (320px): radius 160px -> text radius 100px
+                // Desktop (450px): radius 225px -> text radius 140px
+                const radius = isMobile ? 100 : 140;
 
                 const x = Math.cos((midAngle * Math.PI) / 180) * radius;
                 const y = Math.sin((midAngle * Math.PI) / 180) * radius;
@@ -194,12 +197,12 @@ const RouletteWheel = forwardRef<RouletteWheelRef, RouletteWheelProps>(
                 return (
                   <div
                     key={index}
-                    className="absolute text-white font-black text-lg drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] z-20"
+                    className="absolute text-white font-black drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] z-20"
                     style={{
                       left: `calc(50% + ${x}px)`,
                       top: `calc(50% + ${y}px)`,
                       transform: `translate(-50%, -50%) rotate(${rotate}deg)`,
-                      fontSize: '18px',
+                      fontSize: isMobile ? '14px' : '18px',
                       textShadow: '0 2px 4px rgba(0,0,0,0.9)',
                       whiteSpace: 'nowrap',
                     }}

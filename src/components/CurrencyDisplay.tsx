@@ -70,38 +70,38 @@ export default function CurrencyDisplay({ gameUuid }: CurrencyDisplayProps) {
   return (
     <>
       {isLoading ? (
-        <div className="flex gap-2">
-          <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
-            <Coins className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">-</span>
+        <div className="flex gap-1 sm:gap-2">
+          <div className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+            <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 dark:text-gray-500" />
+            <span className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">-</span>
           </div>
-          <div className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
-            <Gem className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">-</span>
+          <div className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+            <Gem className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 dark:text-gray-500" />
+            <span className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">-</span>
           </div>
         </div>
       ) : (
-        <div className="flex gap-2">
+        <div className="flex gap-1 sm:gap-2">
           {/* 골드 (클릭 가능) */}
           <div
-            className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 bg-gray-50 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             onClick={() => setShowGoldPurchaseModal(true)}
             title="Buy Gold"
           >
-            <Coins className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
+            <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
               {balance.gold.toLocaleString()}
             </span>
           </div>
 
           {/* 다이아 (클릭 가능) */}
           <div
-            className="flex items-center gap-1 px-3 py-1.5 bg-gray-50 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 bg-gray-50 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             onClick={() => setShowDiamondPurchaseModal(true)}
             title="Buy Diamonds"
           >
-            <Gem className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <Gem className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400" />
+            <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
               {balance.diamond.toLocaleString()}
             </span>
           </div>

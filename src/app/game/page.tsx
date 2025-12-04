@@ -44,8 +44,8 @@ export default function GamePage() {
 function GamePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
+  // const { isConnected } = useAccount();
+  // const { disconnect } = useDisconnect();
   const [currentUser, setCurrentUser] = useState<{
     id: string;
     username: string;
@@ -91,9 +91,9 @@ function GamePageContent() {
   // 로그아웃
   const handleLogout = async () => {
     try {
-      if (isConnected) {
-        await disconnect();
-      }
+      // if (isConnected) {
+      //   await disconnect();
+      // }
       try {
         localStorage.removeItem('userInfo');
       } catch { }
@@ -135,16 +135,16 @@ function GamePageContent() {
 
       {/* 헤더 */}
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Gamepad2 className="w-6 h-6 text-blue-600" />
-                BORA TETRIS
+        <div className="max-w-[1800px] mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Gamepad2 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                <span className="hidden xs:inline">BORA TETRIS</span>
               </h1>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="hidden md:flex items-center space-x-2">
                 <User className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser.username}</span>
@@ -165,9 +165,9 @@ function GamePageContent() {
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
-                className="border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                className="border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 h-8 px-2 sm:px-3"
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <LogOut className="w-4 h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>

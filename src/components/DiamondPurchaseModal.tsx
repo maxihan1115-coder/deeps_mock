@@ -1,10 +1,8 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Gem, Check, Loader2, Sparkles, Wallet, CreditCard } from 'lucide-react';
+import { Gem, Check, Loader2, Sparkles, Wallet, CreditCard, AlertCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWriteContract, usePublicClient, useAccount, useSwitchChain, useChainId, useDisconnect } from 'wagmi';
 import { parseUnits } from 'viem';
@@ -50,6 +48,19 @@ export default function DiamondPurchaseModal({
   const [purchasedAmount, setPurchasedAmount] = useState(0);
   const [usdcBalance, setUsdcBalance] = useState<string>('0');
   const [loadingBalance, setLoadingBalance] = useState(false);
+
+  // Status Modal State (Loading / Error)
+  const [statusModal, setStatusModal] = useState<{
+    isOpen: boolean;
+    type: 'loading' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'loading',
+    title: '',
+    message: ''
+  });
 
   // USDC 결제 (스마트 컨트랙트) 훅 - 최상단으로 이동
   const { writeContractAsync } = useWriteContract();
@@ -134,21 +145,34 @@ export default function DiamondPurchaseModal({
           onPurchaseSuccess();
         }
       } else {
-        alert(`구매 실패: ${data.payload || '알 수 없는 오류'}`);
+        setStatusModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Purchase Failed',
+          message: `Purchase failed: ${data.payload || 'Unknown error'}`
+        });
       }
     } catch (error) {
       console.error('Purchase error:', error);
-      alert('구매 중 오류가 발생했습니다.');
+      setStatusModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Purchase Error',
+        message: 'An error occurred during purchase.'
+      });
     } finally {
       setPurchasing(null);
     }
   };
 
-
-
   const handleUSDCPurchase = async (packageData: DiamondPackage) => {
     if (!isConnected || !address) {
-      alert('지갑이 연결되지 않았습니다. 먼저 지갑을 연결해주세요.');
+      setStatusModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Wallet Not Connected',
+        message: 'Please connect your wallet first.'
+      });
       return;
     }
 
@@ -159,7 +183,12 @@ export default function DiamondPurchaseModal({
         await switchChainAsync({ chainId: 80002 });
       } catch (error) {
         console.error('Network switch failed:', error);
-        alert('Polygon Amoy 네트워크로 전환해야 합니다. 지갑에서 네트워크를 변경해주세요.');
+        setStatusModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Network Error',
+          message: 'Please switch to Polygon Amoy network in your wallet.'
+        });
         return;
       }
     }
@@ -174,7 +203,12 @@ export default function DiamondPurchaseModal({
       const requiredAmount = parseFloat(packageData.priceUSDC);
 
       if (balanceNum < requiredAmount) {
-        alert(`USDC 잔액이 부족합니다.\n현재: ${usdcBalance} USDC\n필요: ${packageData.priceUSDC} USDC`);
+        setStatusModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Insufficient Balance',
+          message: `Insufficient USDC balance.\nCurrent: ${usdcBalance} USDC\nRequired: ${packageData.priceUSDC} USDC`
+        });
         setPurchasing(null);
         return;
       }
@@ -193,7 +227,12 @@ export default function DiamondPurchaseModal({
 
       if (allowance < usdcAmountBigInt) {
         // 3. USDC Approve (필요한 경우에만)
-        alert('지갑에서 USDC 사용 승인(Approve) 서명을 해주세요.\n(모바일 지갑을 확인하세요)');
+        setStatusModal({
+          isOpen: true,
+          type: 'loading',
+          title: 'Approve USDC',
+          message: 'Please sign the USDC approval transaction in your wallet.'
+        });
         console.log('Approving USDC...');
 
         const approveTx = await writeContractAsync({
@@ -203,6 +242,13 @@ export default function DiamondPurchaseModal({
           args: [DIAMOND_PURCHASE_ADDRESS as `0x${string}`, usdcAmountBigInt],
           chainId: 80002,
           gas: BigInt(100000), // 가스 한도 명시적 설정 (Approve는 보통 5만~6만 소모)
+        });
+
+        setStatusModal({
+          isOpen: true,
+          type: 'loading',
+          title: 'Approving...',
+          message: 'Waiting for approval confirmation...'
         });
 
         console.log('Waiting for approve...', approveTx);
@@ -231,7 +277,12 @@ export default function DiamondPurchaseModal({
       }
 
       // 4. Purchase Diamond
-      alert('지갑에서 다이아몬드 구매(Purchase) 서명을 해주세요.\n(모바일 지갑을 확인하세요)');
+      setStatusModal({
+        isOpen: true,
+        type: 'loading',
+        title: 'Purchase Diamond',
+        message: 'Please sign the purchase transaction in your wallet.'
+      });
       console.log('Purchasing Diamond...');
 
       // 가스 추정 (에러 미리 확인용)
@@ -248,7 +299,7 @@ export default function DiamondPurchaseModal({
         // revert reason 추출 시도
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const revertReason = simError.walk?.((e: any) => e.data)?.data || simError.shortMessage || simError.message;
-        throw new Error(`트랜잭션 시뮬레이션 실패: ${revertReason}`);
+        throw new Error(`Transaction simulation failed: ${revertReason}`);
       }
 
       const purchaseTx = await writeContractAsync({
@@ -259,10 +310,18 @@ export default function DiamondPurchaseModal({
         chainId: 80002,
       });
 
+      setStatusModal({
+        isOpen: true,
+        type: 'loading',
+        title: 'Purchasing...',
+        message: 'Waiting for purchase confirmation...'
+      });
+
       console.log('Waiting for purchase...', purchaseTx);
       await publicClient.waitForTransactionReceipt({ hash: purchaseTx });
 
       // 5. 성공 처리
+      setStatusModal(prev => ({ ...prev, isOpen: false })); // Close status modal
       setPurchaseSuccess(packageData.amount);
       setPurchasedAmount(packageData.amount + (packageData.bonus || 0));
       setShowSuccessModal(true);
@@ -285,9 +344,19 @@ export default function DiamondPurchaseModal({
       // 에러 메시지 추출
       const errorMessage = error.message || JSON.stringify(error);
       if (errorMessage.includes('User rejected')) {
-        alert('사용자가 서명을 거부했습니다.');
+        setStatusModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Transaction Rejected',
+          message: 'User rejected the signature.'
+        });
       } else {
-        alert(`구매 중 오류가 발생했습니다.\n${errorMessage.slice(0, 100)}...`);
+        setStatusModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Purchase Failed',
+          message: `An error occurred during purchase.\n${errorMessage.slice(0, 100)}...`
+        });
       }
     } finally {
       setPurchasing(null);
@@ -313,8 +382,8 @@ export default function DiamondPurchaseModal({
   return (
     <>
       {/* 구매 모달 */}
-      <Dialog open={isOpen && !showSuccessModal} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-xl bg-slate-900 border-slate-800">
+      <Dialog open={isOpen && !showSuccessModal && !statusModal.isOpen} onOpenChange={onClose}>
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto bg-slate-900 border-slate-800 p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
               <Gem className="w-6 h-6 text-slate-400" />
@@ -366,7 +435,7 @@ export default function DiamondPurchaseModal({
             )}
 
             <TabsContent value="fiat" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {DIAMOND_PACKAGES.map((pkg) => (
                   <PackageCard
                     key={pkg.amount}
@@ -381,7 +450,7 @@ export default function DiamondPurchaseModal({
             </TabsContent>
 
             <TabsContent value="usdc" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {DIAMOND_PACKAGES.map((pkg) => (
                   <PackageCard
                     key={pkg.amount}
@@ -396,6 +465,50 @@ export default function DiamondPurchaseModal({
               </div>
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Status Modal (Loading / Error) */}
+      <Dialog open={statusModal.isOpen} onOpenChange={(open) => {
+        if (!open && statusModal.type === 'error') {
+          setStatusModal(prev => ({ ...prev, isOpen: false }));
+        }
+      }}>
+        <DialogContent
+          className="sm:max-w-md bg-slate-900 border-slate-800"
+          onInteractOutside={(e) => {
+            if (statusModal.type === 'loading') e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            if (statusModal.type === 'loading') e.preventDefault();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className={`text-center text-xl font-bold flex items-center justify-center gap-2 ${statusModal.type === 'error' ? 'text-red-500' : 'text-white'
+              }`}>
+              {statusModal.type === 'loading' ? (
+                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+              ) : (
+                <AlertCircle className="w-6 h-6 text-red-500" />
+              )}
+              {statusModal.title}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="text-center py-4 space-y-4">
+            <p className="text-slate-300 whitespace-pre-line">
+              {statusModal.message}
+            </p>
+
+            {statusModal.type === 'error' && (
+              <Button
+                onClick={() => setStatusModal(prev => ({ ...prev, isOpen: false }))}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white"
+              >
+                Close
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

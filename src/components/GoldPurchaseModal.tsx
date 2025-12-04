@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Coins, AlertCircle, Check, Loader2 } from 'lucide-react';
 
 interface GoldPurchaseModalProps {
@@ -42,6 +43,7 @@ export default function GoldPurchaseModal({
   gameUuid,
   onPurchaseSuccess
 }: GoldPurchaseModalProps) {
+  // ... existing state ...
   const [items, setItems] = useState<GoldItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export default function GoldPurchaseModal({
   const [purchasedItem, setPurchasedItem] = useState<PurchaseResult | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // 골드 구매 아이템 목록 조회
+  // ... existing fetchItems ...
   const fetchItems = async () => {
     try {
       const response = await fetch('/api/gold-purchase/items');
@@ -74,7 +76,7 @@ export default function GoldPurchaseModal({
     }
   }, [isOpen]);
 
-  // 골드 구매
+  // ... existing handlePurchase ...
   const handlePurchase = async (item: GoldItem) => {
     setPurchasing(item.id);
     try {
@@ -135,7 +137,7 @@ export default function GoldPurchaseModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-xl bg-slate-900 border-slate-800">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto bg-slate-900 border-slate-800 p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
               <Coins className="w-6 h-6 text-slate-400" />
@@ -154,49 +156,54 @@ export default function GoldPurchaseModal({
                 No gold items available.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {items.map((item) => {
                   const goldAmount = getGoldAmount(item.name);
                   const pricePerGold = getPricePerGold(item.price, goldAmount);
 
                   return (
-                    <div key={item.id} className="border border-slate-700 rounded-lg p-4 bg-slate-800/50 hover:bg-slate-800 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                    <Card key={item.id} className="bg-slate-800/50 border-slate-700 flex flex-col hover:bg-slate-800 transition-colors">
+                      <CardContent className="p-4 flex flex-col h-full justify-between gap-4">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
                             <h3 className="font-semibold text-lg text-white">{item.name}</h3>
-                            <Badge variant="outline" className="text-xs border-slate-600 text-slate-400">
-                              {pricePerGold} per gold
+                            <Badge variant="outline" className="text-[10px] border-slate-600 text-slate-400 px-1.5 py-0 h-5">
+                              {pricePerGold}/G
                             </Badge>
                           </div>
                           {item.description && (
-                            <p className="text-sm text-slate-400 mb-2">{item.description}</p>
+                            <p className="text-sm text-slate-400 mb-2 line-clamp-2">{item.description}</p>
                           )}
-                          <div className="flex items-center gap-4 text-sm">
-                            <span className="text-slate-300 font-medium">
+                          <div className="flex flex-col gap-1 text-sm mt-2">
+                            <span className="text-yellow-400 font-medium flex items-center gap-1">
+                              <Coins className="w-3 h-3" />
                               +{goldAmount.toLocaleString()} Gold
-                            </span>
-                            <span className="text-slate-300 font-medium">
-                              -{item.price.toLocaleString()} Diamond
                             </span>
                           </div>
                         </div>
-                        <Button
-                          onClick={() => handlePurchase(item)}
-                          disabled={purchasing === item.id}
-                          variant={purchaseSuccess === item.id ? "outline" : "default"}
-                          className="ml-4 min-w-[80px]"
-                        >
-                          {purchasing === item.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : purchaseSuccess === item.id ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            'Buy'
-                          )}
-                        </Button>
-                      </div>
-                    </div>
+
+                        <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-700/50">
+                          <span className="text-slate-300 font-medium text-sm">
+                            {item.price.toLocaleString()} Dia
+                          </span>
+                          <Button
+                            onClick={() => handlePurchase(item)}
+                            disabled={purchasing === item.id}
+                            variant={purchaseSuccess === item.id ? "outline" : "default"}
+                            size="sm"
+                            className="min-w-[70px]"
+                          >
+                            {purchasing === item.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : purchaseSuccess === item.id ? (
+                              <Check className="w-3 h-3" />
+                            ) : (
+                              'Buy'
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   );
                 })}
               </div>

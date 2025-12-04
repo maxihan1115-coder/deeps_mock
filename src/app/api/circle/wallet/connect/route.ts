@@ -33,23 +33,30 @@ export async function POST(request: NextRequest) {
         }
 
         // 기존 지갑이 있으면 업데이트, 없으면 생성
-        const existingWallet = await prisma.externalWallet.findUnique({
-            where: {
-                userId_address: {
-                    userId: parsedGameUuid,
-                    address: address.toLowerCase()
-                }
-            }
+        // 1. 해당 유저의 기존 지갑 확인
+        const userWallets = await prisma.externalWallet.findMany({
+            where: { userId: parsedGameUuid }
         });
+
+        // 2. 이미 등록된 지갑 중 현재 연결하려는 주소와 다른 지갑이 있다면 삭제 (1인 1지갑 정책)
+        const otherWallets = userWallets.filter(w => w.address.toLowerCase() !== address.toLowerCase());
+        if (otherWallets.length > 0) {
+            await prisma.externalWallet.deleteMany({
+                where: {
+                    id: { in: otherWallets.map(w => w.id) }
+                }
+            });
+        }
+
+        // 3. 현재 지갑 주소가 이미 있는지 확인
+        const existingWallet = userWallets.find(w => w.address.toLowerCase() === address.toLowerCase());
 
         let wallet;
 
         if (existingWallet) {
-            // 기존 지갑을 primary로 설정
+            // 이미 존재하는 지갑이면 정보 업데이트
             wallet = await prisma.externalWallet.update({
-                where: {
-                    id: existingWallet.id
-                },
+                where: { id: existingWallet.id },
                 data: {
                     isPrimary: true,
                     label,
@@ -69,19 +76,6 @@ export async function POST(request: NextRequest) {
                 }
             });
         }
-
-        // 같은 사용자의 다른 지갑들은 primary 해제
-        await prisma.externalWallet.updateMany({
-            where: {
-                userId: parsedGameUuid,
-                id: {
-                    not: wallet.id
-                }
-            },
-            data: {
-                isPrimary: false
-            }
-        });
 
         return NextResponse.json(
             createSuccessResponse({

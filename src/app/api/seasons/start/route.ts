@@ -42,13 +42,13 @@ export async function POST(request: NextRequest) {
       throw new Error('Invalid backup table name');
     }
 
-    const query = `
-      CREATE TABLE IF NOT EXISTS ${backupTableName} AS 
-      SELECT * FROM rankings 
-      WHERE rankingPeriod = 'season' 
-      AND periodStartDate = ?
-      AND periodEndDate = ?
-    `;
+    // const query = `
+    //   CREATE TABLE IF NOT EXISTS ${backupTableName} AS 
+    //   SELECT * FROM rankings 
+    //   WHERE rankingPeriod = 'season' 
+    //   AND periodStartDate = ?
+    //   AND periodEndDate = ?
+    // `;
 
     // Note: Prisma maps model fields to DB columns. 
     // If using raw SQL, we must use the actual DB column names.
