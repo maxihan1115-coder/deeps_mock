@@ -90,7 +90,7 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
     };
 
     return (
-        <Card className="w-full border-0 shadow-none">
+        <Card className="w-full border-0 shadow-none bg-slate-900">
             <CardHeader className="px-0 pt-0">
                 <CardTitle className="flex items-center justify-between text-base">
                     <div className="flex items-center gap-2 text-slate-300">
@@ -122,7 +122,7 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
                 ) : (
                     <div className="space-y-3">
                         {/* 테이블 헤더 */}
-                        <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 border-b border-slate-800 pb-2">
+                        <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-400 border-b border-slate-800 pb-2">
                             <div className="col-span-3">Date</div>
                             <div className="col-span-2">Item</div>
                             <div className="col-span-2">Method</div>
@@ -177,13 +177,13 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => openTxExplorer(record.txHash!)}
-                                            className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                                            className="h-6 w-6 p-0 text-slate-400 hover:text-slate-200"
                                             title="View Transaction"
                                         >
                                             <ExternalLink className="w-3 h-3" />
                                         </Button>
                                     ) : (
-                                        <span className="text-gray-300 dark:text-gray-600 text-xs">-</span>
+                                        <span className="text-slate-600 text-xs">-</span>
                                     )}
                                 </div>
                             </div>

@@ -347,7 +347,7 @@ export default function QuestPanel({ userId, gameUuid }: QuestPanelProps) {
 
   if (isLoading) {
     return (
-      <Card className="w-full">
+      <Card className="w-full bg-slate-900 border-slate-800">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">

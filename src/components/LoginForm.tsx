@@ -136,23 +136,23 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
   const isButtonDisabled = loginStatus === 'loading' || loginStatus === 'preparing' || loginStatus === 'success';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <Card className="w-full max-w-md shadow-lg bg-slate-900 border-slate-800">
         <CardHeader>
-          <CardTitle className="text-center">로그인</CardTitle>
+          <CardTitle className="text-center text-white">Login</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="username">사용자명</Label>
+              <Label htmlFor="username" className="text-slate-200">Username</Label>
               <div className="relative mt-1">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <Input
                   id="username"
-                  placeholder="사용자명을 입력하세요"
+                  placeholder="Enter username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
                   autoComplete="username"
                   disabled={isButtonDisabled}
                 />
@@ -160,16 +160,16 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             </div>
 
             <div>
-              <Label htmlFor="password">비밀번호 (선택)</Label>
+              <Label htmlFor="password" className="text-slate-200">Password (Optional)</Label>
               <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <Input
                   id="password"
                   type="password"
-                  placeholder="비밀번호를 입력하세요 (선택사항)"
+                  placeholder="Enter password (optional)"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
                   autoComplete="current-password"
                   disabled={isButtonDisabled}
                 />
@@ -178,32 +178,32 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
             {/* 상태별 메시지 표시 */}
             {loginStatus === 'preparing' && (
-              <div className="text-blue-600 text-sm text-center p-2 bg-blue-50 rounded border border-blue-200">
+              <div className="text-blue-400 text-sm text-center p-2 bg-blue-900/20 rounded border border-blue-800">
                 <div className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                  <span className="font-medium">토큰을 준비하고 있습니다...</span>
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
+                  <span className="font-medium">Preparing token...</span>
                 </div>
-                <p className="text-xs text-blue-600 mt-1">잠시만 기다려주세요</p>
+                <p className="text-xs text-blue-400/80 mt-1">Please wait a moment</p>
               </div>
             )}
 
             {loginStatus === 'success' && (
-              <div className="text-green-600 text-sm text-center p-2 bg-green-50 rounded border border-green-200">
+              <div className="text-green-400 text-sm text-center p-2 bg-green-900/20 rounded border border-green-800">
                 <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="text-green-500">✓</span>
-                  <span className="font-medium">로그인 성공!</span>
+                  <span className="text-green-400">✓</span>
+                  <span className="font-medium">Login Successful!</span>
                 </div>
-                <p className="text-xs text-green-600">곧 게임 페이지로 이동합니다...</p>
+                <p className="text-xs text-green-400/80">Redirecting to game...</p>
               </div>
             )}
 
             {error && (
-              <div className="text-red-600 text-sm p-2 bg-red-50 rounded">{error}</div>
+              <div className="text-red-400 text-sm p-2 bg-red-900/20 border border-red-800 rounded">{error}</div>
             )}
 
             <Button
               type="submit"
-              className="w-full flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
               disabled={isButtonDisabled}
             >
               {getButtonIcon()}
