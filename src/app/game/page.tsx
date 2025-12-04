@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAccount, useDisconnect } from 'wagmi';
+
 import TetrisGame from '@/components/TetrisGame';
 import QuestPanel from '@/components/QuestPanel';
 import AccountLink from '@/components/AccountLink';
