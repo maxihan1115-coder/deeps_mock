@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,6 +8,7 @@ import { Gem, Check, Loader2, Sparkles, Wallet, CreditCard, AlertCircle } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWriteContract, usePublicClient, useAccount, useSwitchChain, useChainId, useDisconnect } from 'wagmi';
 import { parseUnits } from 'viem';
+import { useModal } from 'connectkit';
 import {
   USDC_ADDRESS,
   DIAMOND_PURCHASE_ADDRESS,
@@ -48,6 +51,7 @@ export default function DiamondPurchaseModal({
   const [purchasedAmount, setPurchasedAmount] = useState(0);
   const [usdcBalance, setUsdcBalance] = useState<string>('0');
   const [loadingBalance, setLoadingBalance] = useState(false);
+  const [dbWalletAddress, setDbWalletAddress] = useState<string | null>(null);
 
   // Status Modal State (Loading / Error)
   const [statusModal, setStatusModal] = useState<{
@@ -62,13 +66,14 @@ export default function DiamondPurchaseModal({
     message: ''
   });
 
-  // USDC 결제 (스마트 컨트랙트) 훅 - 최상단으로 이동
+  // USDC 결제 (스마트 컨트랙트) 훅
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
   const { isConnected, address } = useAccount();
   const { disconnect } = useDisconnect();
   const { switchChainAsync } = useSwitchChain();
   const currentChainId = useChainId();
+  const { setOpen } = useModal();
 
   const fetchUSDCBalance = React.useCallback(async () => {
     setLoadingBalance(true);
@@ -116,6 +121,40 @@ export default function DiamondPurchaseModal({
       fetchUSDCBalance();
     }
   }, [isOpen, paymentMethod, fetchUSDCBalance]);
+
+  // 지갑 연결 상태 동기화 (모달 열릴 때)
+  useEffect(() => {
+    if (isOpen) {
+      const syncWallet = async () => {
+        try {
+          // 1. 서버에 저장된 지갑 정보 조회
+          const res = await fetch(`/api/wallet/connect?gameUuid=${gameUuid}`);
+          const data = await res.json();
+          const linkedWallets = data.payload || [];
+
+          console.log('Linked Wallets:', linkedWallets);
+          console.log('Current Address:', address);
+          console.log('Is Connected:', isConnected);
+
+          if (linkedWallets.length > 0) {
+            setDbWalletAddress(linkedWallets[0].address);
+          } else {
+            setDbWalletAddress(null);
+          }
+
+          // 2. 연결된 지갑이 있는데 현재 연결이 안되어 있다면?
+          if (linkedWallets.length > 0 && !isConnected) {
+            console.log('User has linked wallet but not connected. Prompting connection...');
+            // UI에서 "Reconnect" 버튼이 보이도록 dbWalletAddress 설정됨
+          }
+        } catch (e) {
+          console.error('Failed to sync wallet:', e);
+        }
+      };
+
+      syncWallet();
+    }
+  }, [isOpen, gameUuid, isConnected, address]);
 
   // 일반 결제 (기존 방식)
   const handleFiatPurchase = async (packageData: DiamondPackage) => {
@@ -166,13 +205,8 @@ export default function DiamondPurchaseModal({
   };
 
   const handleUSDCPurchase = async (packageData: DiamondPackage) => {
-    if (!isConnected || !address) {
-      setStatusModal({
-        isOpen: true,
-        type: 'error',
-        title: 'Wallet Not Connected',
-        message: 'Please connect your wallet first.'
-      });
+    if (!isConnected || !address || !publicClient) {
+      setOpen(true); // Open wallet connection modal
       return;
     }
 
@@ -383,7 +417,11 @@ export default function DiamondPurchaseModal({
     <>
       {/* 구매 모달 */}
       <Dialog open={isOpen && !showSuccessModal && !statusModal.isOpen} onOpenChange={onClose}>
-        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto bg-slate-900 border-slate-800 p-4 sm:p-6">
+        <DialogContent
+          className="w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto bg-slate-900 border-slate-800 p-4 sm:p-6"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
               <Gem className="w-6 h-6 text-slate-400" />
@@ -412,25 +450,59 @@ export default function DiamondPurchaseModal({
                     <span className="font-medium text-white">USDC Balance</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    {loadingBalance ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                    {/* 지갑이 연결되어 있거나, DB에 저장된 지갑이 있는 경우 */}
+                    {(isConnected || dbWalletAddress) ? (
+                      <>
+                        {loadingBalance ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <span className="text-xl font-bold text-blue-600">
+                            {parseFloat(usdcBalance).toFixed(2)} USDC
+                          </span>
+                        )}
+
+                        {/* 실제 연결은 안 되어있지만 DB에는 있는 경우 (재연결 유도) */}
+                        {!isConnected && dbWalletAddress && (
+                          <Button
+                            onClick={() => setOpen(true)}
+                            size="sm"
+                            variant="outline"
+                            className="text-xs border-yellow-600 text-yellow-500 hover:bg-yellow-900/20"
+                          >
+                            Reconnect
+                          </Button>
+                        )}
+
+                        {/* 실제 연결된 경우 (해제 버튼) */}
+                        {isConnected && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            onClick={() => disconnect()}
+                          >
+                            Disconnect
+                          </Button>
+                        )}
+                      </>
                     ) : (
-                      <span className="text-xl font-bold text-blue-600">
-                        {parseFloat(usdcBalance).toFixed(2)} USDC
-                      </span>
-                    )}
-                    {isConnected && (
+                      /* 아예 아무것도 없는 경우 */
                       <Button
-                        variant="ghost"
+                        onClick={() => setOpen(true)}
                         size="sm"
-                        className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        onClick={() => disconnect()}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
-                        Disconnect
+                        Connect Wallet
                       </Button>
                     )}
                   </div>
                 </div>
+                {/* DB 지갑 주소 표시 (연결 안됐을 때 참고용) */}
+                {!isConnected && dbWalletAddress && (
+                  <div className="mt-2 text-right text-xs text-slate-500">
+                    Linked: {dbWalletAddress.slice(0, 6)}...{dbWalletAddress.slice(-4)}
+                  </div>
+                )}
               </div>
             )}
 
