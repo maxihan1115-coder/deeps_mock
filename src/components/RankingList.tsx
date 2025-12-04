@@ -111,6 +111,8 @@ export default function RankingList({ currentUserId }: RankingListProps) {
         },
         body: JSON.stringify({
           currentSeasonName: seasonInfo.seasonName,
+          currentSeasonStartDate: seasonInfo.seasonStartDate,
+          currentSeasonEndDate: seasonInfo.seasonEndDate,
           newSeasonName,
           newSeasonStartDate: newStartDate,
           newSeasonEndDate: newEndDate,
@@ -248,18 +250,18 @@ export default function RankingList({ currentUserId }: RankingListProps) {
 
       {/* 시즌 일정 정보 */}
       {seasonInfo && (
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 border border-blue-100 shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-indigo-500/5"></div>
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 shadow-sm">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10"></div>
           <div className="relative p-4">
             <div className="flex items-center justify-center gap-2 mb-3">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${seasonInfo.status === 'ended' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-blue-100 dark:bg-blue-900/30'
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${seasonInfo.status === 'ended' ? 'bg-red-900/30' : 'bg-blue-900/30'
                 }`}>
-                <Clock className={`w-4 h-4 ${seasonInfo.status === 'ended' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'
+                <Clock className={`w-4 h-4 ${seasonInfo.status === 'ended' ? 'text-red-400' : 'text-blue-400'
                   }`} />
               </div>
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Season Schedule</span>
+              <span className="text-sm font-semibold text-slate-200">Season Schedule</span>
               {seasonInfo.status === 'ended' && (
-                <span className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded-full">
+                <span className="text-xs font-medium text-red-400 bg-red-900/20 px-2 py-1 rounded-full">
                   Ended
                 </span>
               )}
@@ -270,10 +272,10 @@ export default function RankingList({ currentUserId }: RankingListProps) {
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1 mb-1">
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Start</span>
+                  <span className="text-xs font-medium text-slate-400">Start</span>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                  <p className="text-sm font-bold text-slate-200">
                     {new Date(seasonInfo.seasonStartDate).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
@@ -284,16 +286,16 @@ export default function RankingList({ currentUserId }: RankingListProps) {
               </div>
 
               {/* 구분선 */}
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent"></div>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent"></div>
 
               {/* 종료일 */}
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1 mb-1">
                   <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">End</span>
+                  <span className="text-xs font-medium text-slate-400">End</span>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                  <p className="text-sm font-bold text-slate-200">
                     {new Date(seasonInfo.seasonEndDate).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',

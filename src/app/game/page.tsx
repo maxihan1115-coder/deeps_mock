@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { LogOut, User, Gamepad2, Trophy, Link, Calendar, Award, Home, Play, X, Star } from 'lucide-react';
+import { LogOut, User, Gamepad2, Trophy, Link, Calendar, Award, Home, Play, X } from 'lucide-react';
 import CurrencyDisplay from '@/components/CurrencyDisplay';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import ShopModal from '@/components/ShopModal';
@@ -24,6 +24,7 @@ import PurchaseHistoryModal from '@/components/PurchaseHistoryModal';
 import ShopMenuCard from '@/components/ShopMenuCard';
 import GoldPurchaseModal from '@/components/GoldPurchaseModal';
 import DiamondPurchaseModal from '@/components/DiamondPurchaseModal';
+import LobbyBanner from '@/components/LobbyBanner';
 
 export default function GamePage() {
   return (
@@ -214,28 +215,11 @@ function GamePageContent() {
 
             {/* 탭 컨텐츠들 */}
             <TabsContent value="lobby" className="space-y-6 animate-in fade-in-50 duration-300">
-              {/* 로비 배너 */}
-              <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
-                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-yellow-300 opacity-10 rounded-full blur-3xl"></div>
-
-                <div className="relative z-10">
-                  <h2 className="text-3xl font-bold mb-2">Welcome to BORA TETRIS!</h2>
-                  <p className="text-indigo-100 text-lg mb-6 max-w-xl">
-                    Compete with players worldwide, complete quests, and earn rewards.
-                    Start playing now to climb the leaderboard!
-                  </p>
-
-                  <div className="flex flex-wrap gap-3">
-                    <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 px-3 py-1">
-                      <Star className="w-3 h-3 mr-1 fill-current" /> Season 1 Live
-                    </Badge>
-                    <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 px-3 py-1">
-                      <Trophy className="w-3 h-3 mr-1" /> Weekly Rewards
-                    </Badge>
-                  </div>
-                </div>
-              </div>
+              {/* 로비 배너 (캐러셀) */}
+              <LobbyBanner
+                onOpenDiamondShop={() => setShowDiamondShop(true)}
+                onOpenShop={() => setShowShopModal(true)}
+              />
 
               {/* 모바일 전용 UI (lg hidden) */}
               <div className="lg:hidden space-y-6">

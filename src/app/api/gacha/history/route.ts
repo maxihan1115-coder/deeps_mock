@@ -62,8 +62,26 @@ export async function GET(request: NextRequest) {
       netGain: (totalEarned._sum.earnedDiamonds || 0) - (totalSpent._sum.diamondCost || 0)
     };
 
+    // 영문 변환
+    const translatedHistory = gachaHistory.map(item => {
+      let name = item.gachaItem.name;
+      if (name.includes('룰렛') || name.includes('다이아몬드')) {
+        name = 'Diamond Roulette';
+      } else if (name.includes('테스트')) {
+        name = 'Test Item';
+      }
+
+      return {
+        ...item,
+        gachaItem: {
+          ...item.gachaItem,
+          name
+        }
+      };
+    });
+
     return NextResponse.json(createSuccessResponse({
-      history: gachaHistory,
+      history: translatedHistory,
       stats: stats
     }));
 

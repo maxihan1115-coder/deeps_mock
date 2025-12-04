@@ -186,7 +186,7 @@ export default function DiamondPurchaseModal({
         address: USDC_ADDRESS,
         abi: ERC20_ABI,
         functionName: 'allowance',
-        args: [address, DIAMOND_PURCHASE_ADDRESS]
+        args: [address as `0x${string}`, DIAMOND_PURCHASE_ADDRESS as `0x${string}`]
       });
 
       console.log(`Current Allowance: ${allowance}, Required: ${usdcAmountBigInt}`);
@@ -200,7 +200,7 @@ export default function DiamondPurchaseModal({
           address: USDC_ADDRESS,
           abi: ERC20_ABI,
           functionName: 'approve',
-          args: [DIAMOND_PURCHASE_ADDRESS, usdcAmountBigInt],
+          args: [DIAMOND_PURCHASE_ADDRESS as `0x${string}`, usdcAmountBigInt],
           chainId: 80002,
           gas: BigInt(100000), // 가스 한도 명시적 설정 (Approve는 보통 5만~6만 소모)
         });
@@ -216,7 +216,7 @@ export default function DiamondPurchaseModal({
             address: USDC_ADDRESS,
             abi: ERC20_ABI,
             functionName: 'allowance',
-            args: [address, DIAMOND_PURCHASE_ADDRESS]
+            args: [address as `0x${string}`, DIAMOND_PURCHASE_ADDRESS as `0x${string}`]
           });
 
           if (newAllowance >= usdcAmountBigInt) {
@@ -237,7 +237,7 @@ export default function DiamondPurchaseModal({
       // 가스 추정 (에러 미리 확인용)
       try {
         await publicClient.simulateContract({
-          address: DIAMOND_PURCHASE_ADDRESS,
+          address: DIAMOND_PURCHASE_ADDRESS as `0x${string}`,
           abi: DIAMOND_PURCHASE_ABI,
           functionName: 'purchaseDiamond',
           args: [BigInt(gameUuid), BigInt(packageData.amount + (packageData.bonus || 0)), usdcAmountBigInt],
@@ -252,7 +252,7 @@ export default function DiamondPurchaseModal({
       }
 
       const purchaseTx = await writeContractAsync({
-        address: DIAMOND_PURCHASE_ADDRESS,
+        address: DIAMOND_PURCHASE_ADDRESS as `0x${string}`,
         abi: DIAMOND_PURCHASE_ABI,
         functionName: 'purchaseDiamond',
         args: [BigInt(gameUuid), BigInt(packageData.amount + (packageData.bonus || 0)), usdcAmountBigInt],

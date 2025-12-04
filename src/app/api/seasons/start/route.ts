@@ -4,7 +4,15 @@ import { prisma } from '@/lib/prisma';
 // 새 시즌 시작 처리
 export async function POST(request: NextRequest) {
   try {
-    const { currentSeasonName, newSeasonName, newSeasonStartDate, newSeasonEndDate, adminUserId } = await request.json();
+    const {
+      currentSeasonName,
+      currentSeasonStartDate,
+      currentSeasonEndDate,
+      newSeasonName,
+      newSeasonStartDate,
+      newSeasonEndDate,
+      adminUserId
+    } = await request.json();
 
     // 관리자 권한 검증 (maxi.moff 계정 UUID 허용)
     const adminUuids = ['1', 1, '138afdb1-d873-4032-af80-77b5fb8a23cf'];
@@ -21,22 +29,60 @@ export async function POST(request: NextRequest) {
     // 1. 기존 시즌 데이터 백업
     const backupTableName = `rankings_backup_${currentSeasonName.replace('-', '_')}`;
     console.log(`📦 기존 시즌 데이터 백업: ${backupTableName}`);
-    
+
     // 백업 테이블 생성 및 데이터 복사
-    await prisma.$executeRaw`
+    // Prisma raw query limitations require careful handling of dates
+    const startDate = new Date(currentSeasonStartDate);
+    const endDate = new Date(currentSeasonEndDate);
+
+    // Use executeRawUnsafe for dynamic table name
+    // Note: This is an admin-only endpoint, but we should still be careful.
+    // Ensure backupTableName is safe (alphanumeric + underscores)
+    if (!/^[a-zA-Z0-9_]+$/.test(backupTableName)) {
+      throw new Error('Invalid backup table name');
+    }
+
+    const query = `
       CREATE TABLE IF NOT EXISTS ${backupTableName} AS 
       SELECT * FROM rankings 
-      WHERE ranking_period = 'season' 
-      AND period_start_date = ${new Date('2025-01-01T00:00:00+09:00')}
-      AND period_end_date = ${new Date('2025-10-15T11:00:00+09:00')}
+      WHERE rankingPeriod = 'season' 
+      AND periodStartDate = ?
+      AND periodEndDate = ?
     `;
+
+    // Note: Prisma maps model fields to DB columns. 
+    // If using raw SQL, we must use the actual DB column names.
+    // Based on schema.prisma:
+    // rankingPeriod -> rankingPeriod (no map)
+    // periodStartDate -> periodStartDate (no map)
+    // periodEndDate -> periodEndDate (no map)
+    // Wait, schema says @@map("rankings"), but fields are camelCase in schema.
+    // Prisma usually preserves camelCase unless @map is used on fields.
+    // Let's check schema again. No @map on fields.
+    // So column names are likely `rankingPeriod`, `periodStartDate`, `periodEndDate` 
+    // OR Prisma might default to camelCase in DB if not specified otherwise? 
+    // Actually, Prisma default is to use the field name as column name.
+    // However, standard SQL convention is snake_case. 
+    // Let's check the error log or assume camelCase as per schema definition if no @map.
+
+    // Actually, looking at the previous error, it might be safer to select * and filter in application code if raw query is tricky,
+    // BUT CREATE TABLE AS SELECT is efficient.
+
+    // Let's try to use the raw query with Unsafe, but we need to be sure about column names.
+    // If the previous query failed, it might be because of the table name parameterization.
+
+    await prisma.$executeRawUnsafe(
+      `CREATE TABLE IF NOT EXISTS \`${backupTableName}\` AS SELECT * FROM rankings WHERE rankingPeriod = 'season' AND periodStartDate = ? AND periodEndDate = ?`,
+      startDate,
+      endDate
+    );
 
     // 2. 기존 시즌 랭킹 데이터 삭제
     const deleteResult = await prisma.ranking.deleteMany({
       where: {
         rankingPeriod: 'season',
-        periodStartDate: new Date('2025-01-01T00:00:00+09:00'),
-        periodEndDate: new Date('2025-10-15T11:00:00+09:00')
+        periodStartDate: startDate,
+        periodEndDate: endDate
       }
     });
     console.log(`🗑️ 기존 시즌 랭킹 데이터 ${deleteResult.count}개 삭제`);

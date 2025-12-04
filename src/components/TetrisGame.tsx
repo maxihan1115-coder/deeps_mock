@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TetrisGameState, TetrisBlock } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Pause, RotateCw, ArrowLeft, ArrowRight, ArrowDown, X } from 'lucide-react';
+import { Pause, X } from 'lucide-react';
 import GameResultModal from '@/components/GameResultModal';
 
 // 테트리스 블록 모양 정의
@@ -743,59 +743,42 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   }, [gameState.currentBlock, gameState.board, isValidPosition]);
 
   // 반응형 처리를 위한 ref 및 state
-  const containerRef = useRef<HTMLDivElement>(null); // 외부 컨테이너 (고정)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  useEffect(() => {
-    if (!containerRef.current) return;
 
-    const handleResize = (entries: ResizeObserverEntry[]) => {
-      // requestAnimationFrame으로 렌더링 사이클과 분리하여 무한 루프 방지
-      window.requestAnimationFrame(() => {
-        for (const entry of entries) {
-          // 크기가 유의미하게 변했을 때만 업데이트 (0.5px 미만 무시)
-          setContainerSize(prev => {
-            const newWidth = entry.contentRect.width;
-            const newHeight = entry.contentRect.height;
-
-            if (Math.abs(prev.width - newWidth) < 1 && Math.abs(prev.height - newHeight) < 1) {
-              return prev;
-            }
-
-            return { width: newWidth, height: newHeight };
-          });
-        }
-      });
-    };
-
-    const observer = new ResizeObserver(handleResize);
-    observer.observe(containerRef.current);
-
-    return () => observer.disconnect();
-  }, []);
-
-  // 스케일링을 위한 state
-  const [uiScale, setUiScale] = useState(1);
+  // 화면 크기에 맞춰 보드 크기 조절
+  const [boardDimensions, setBoardDimensions] = useState({ width: 350, height: 700, cellSize: 35 });
 
   useEffect(() => {
     const handleResize = () => {
       if (typeof window === 'undefined') return;
 
-      // 기준 해상도: 너비 1280px, 높이 900px
-      // 이 해상도에서 UI가 가장 예쁘게 보인다고 가정
-      const baseWidth = 1280;
-      const baseHeight = 900;
+      const isMobile = window.innerWidth < 1024; // lg breakpoint
 
-      const scaleX = window.innerWidth / baseWidth;
-      const scaleY = window.innerHeight / baseHeight;
+      // 여백 설정
+      const paddingX = 32;
+      const paddingY = isMobile ? 200 : 64; // 모바일에서는 하단 컨트롤 공간 확보를 위해 더 많은 여백
 
-      // 화면에 꽉 차게 하기 위해 더 작은 비율을 선택 (비율 유지)
-      // 1.0보다 커지지는 않도록 함 (확대 방지)
-      // 너무 작아지는 것도 방지 (최소 0.4배)
-      const newScale = Math.max(Math.min(scaleX, scaleY, 1), 0.4);
+      const availableWidth = window.innerWidth - paddingX;
+      const availableHeight = window.innerHeight - paddingY;
 
-      setUiScale(newScale);
+      // 보드 비율 10:20 (1:2)
+      // 셀 크기 계산
+      const cellWidth = availableWidth / 10;
+      const cellHeight = (availableHeight - 40) / 20; // 상단 바 40px 제외
+
+      // 최대 크기 제한 (너무 커지지 않도록)
+      const maxCellSize = isMobile ? 50 : 40;
+
+      const newCellSize = Math.floor(Math.min(cellWidth, cellHeight, maxCellSize));
+
+      // 최소 크기 보장
+      const finalCellSize = Math.max(newCellSize, 15);
+
+      setBoardDimensions({
+        cellSize: finalCellSize,
+        width: finalCellSize * 10,
+        height: finalCellSize * 20
+      });
     };
 
     handleResize();
@@ -804,9 +787,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
   }, []);
 
   const getCellSizePx = () => {
-    // 스케일링이 적용되므로, 여기서는 항상 '기준 해상도'에 맞는 최적의 크기를 반환
-    // 기준 높이 900px의 약 80% 공간 활용 -> 35px 정도가 적당
-    return 35;
+    return boardDimensions.cellSize;
   };
 
   // 보드 렌더링
@@ -937,17 +918,16 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
 
       {/* 메인 컨텐츠 컨테이너 - 스케일링 적용 */}
       <div
-        className="relative z-10 flex w-full h-full items-center justify-center p-4 transition-transform duration-200 ease-out origin-center"
-        style={{ transform: `scale(${uiScale})` }}
+        className="relative z-10 flex w-full h-full items-center justify-center p-4"
       >
         {/* [중앙] 게임 보드 (통합 UI) */}
         <div className="relative flex-1 h-full min-w-[280px] min-h-0">
-          <div className="absolute inset-0 flex items-center justify-center overflow-hidden" ref={containerRef}>
+          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
             {/* 보드 테두리 및 글로우 효과 */}
-            <div className="relative rounded-lg overflow-hidden shadow-[0_0_50px_-12px_rgba(59,130,246,0.5)] border border-white/10 bg-black/80 backdrop-blur-md">
+            <div className="relative rounded-lg overflow-hidden shadow-[0_0_50px_-12px_rgba(59,130,246,0.5)] border border-white/10 bg-black/80 backdrop-blur-md flex flex-col">
 
               {/* [통합 UI] 상단 정보 바 */}
-              <div className="absolute top-0 left-0 right-0 h-10 bg-black/60 backdrop-blur-sm border-b border-white/10 z-10 flex items-center justify-between px-4">
+              <div className="w-full h-10 bg-black/60 backdrop-blur-sm border-b border-white/10 z-10 flex items-center justify-between px-4 flex-none">
                 <div className="flex gap-4">
                   <div className="flex flex-col">
                     <span className="text-[8px] text-slate-400 font-bold uppercase leading-none">Score</span>
@@ -972,7 +952,10 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                 </div>
               </div>
 
-              {renderBoard()}
+              {/* Board Area */}
+              <div className="flex-1 flex items-center justify-center bg-black/20">
+                {renderBoard()}
+              </div>
 
               {/* 게임 오버레이들 */}
               {!isGameStarted && !isProcessingGameOver && (
@@ -1019,65 +1002,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
           </div>
         )}
 
-        {/* [모바일] 하단 컨트롤 및 정보 (lg:hidden) */}
-        <div className="lg:hidden w-full max-w-sm space-y-4">
-          {/* 모바일 컨트롤 버튼들 */}
-          {isGameStarted && (
-            <div className="grid grid-cols-3 gap-2">
-              <Button variant="secondary" className="h-14 rounded-xl bg-white/10 active:bg-white/20" onClick={() => {
-                if (gameState.currentBlock) {
-                  const leftBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x - 1 };
-                  if (isValidPosition(leftBlock, gameState.board)) {
-                    setGameState(prev => ({ ...prev, currentBlock: leftBlock }));
-                  }
-                }
-              }}>
-                <ArrowLeft className="w-6 h-6 text-white" />
-              </Button>
-              <Button variant="secondary" className="h-14 rounded-xl bg-white/10 active:bg-white/20" onClick={() => {
-                if (gameState.currentBlock) {
-                  const rotatedShape = gameState.currentBlock.shape[0].map((_, i) =>
-                    gameState.currentBlock!.shape.map(row => row[row.length - 1 - i])
-                  );
-                  const rotatedBlock = { ...gameState.currentBlock, shape: rotatedShape };
-                  if (isValidPosition(rotatedBlock, gameState.board)) {
-                    setGameState(prev => ({ ...prev, currentBlock: rotatedBlock }));
-                  }
-                }
-              }}>
-                <RotateCw className="w-6 h-6 text-white" />
-              </Button>
-              <Button variant="secondary" className="h-14 rounded-xl bg-white/10 active:bg-white/20" onClick={() => {
-                if (gameState.currentBlock) {
-                  const rightBlock = { ...gameState.currentBlock, x: gameState.currentBlock.x + 1 };
-                  if (isValidPosition(rightBlock, gameState.board)) {
-                    setGameState(prev => ({ ...prev, currentBlock: rightBlock }));
-                  }
-                }
-              }}>
-                <ArrowRight className="w-6 h-6 text-white" />
-              </Button>
-              <div /> {/* 빈 공간 */}
-              <Button variant="secondary" className="h-14 rounded-xl bg-white/10 active:bg-white/20" onClick={() => {
-                if (gameState.currentBlock) {
-                  const downBlock = { ...gameState.currentBlock, y: gameState.currentBlock.y + 1 };
-                  if (isValidPosition(downBlock, gameState.board)) {
-                    setGameState(prev => ({ ...prev, currentBlock: downBlock }));
-                  }
-                }
-              }}>
-                <ArrowDown className="w-6 h-6 text-white" />
-              </Button>
-              <div /> {/* 빈 공간 */}
-            </div>
-          )}
 
-          {!isGameStarted && (
-            <Button onClick={startGame} className="w-full h-14 text-lg font-bold bg-blue-600 text-white rounded-xl shadow-lg">
-              START GAME
-            </Button>
-          )}
-        </div>
 
       </div>
 
