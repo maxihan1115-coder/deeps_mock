@@ -15,7 +15,7 @@ interface GachaRouletteModalProps {
     name: string;
     description: string;
     price: number;
-    gachaRewards: Array<{diamonds: number, probability: number}>;
+    gachaRewards: Array<{ diamonds: number, probability: number }>;
   };
   onPurchaseSuccess?: () => void;
 }
@@ -27,9 +27,9 @@ interface GachaResult {
   };
 }
 
-export default function GachaRouletteModal({ 
-  isOpen, 
-  onClose, 
+export default function GachaRouletteModal({
+  isOpen,
+  onClose,
   gameUuid,
   gachaItem
 }: GachaRouletteModalProps) {
@@ -42,11 +42,11 @@ export default function GachaRouletteModal({
 
   // 룰렛 보상 데이터
   const rewards = gachaItem.gachaRewards.map(reward => reward.diamonds);
-  
-  // 룰렛 색상 배열 (11개) - 스크린샷에 맞게 수정
+
+  // 룰렛 색상 배열 (11개) - 다크 테마에 어울리는 블루/네이비 톤온톤
   const colors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-    '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9', '#F8C471'
+    '#3b82f6', '#1e40af', '#3b82f6', '#1e40af', '#3b82f6',
+    '#1e40af', '#3b82f6', '#1e40af', '#3b82f6', '#1e40af', '#60a5fa'
   ];
 
   const handlePurchase = async () => {
@@ -74,7 +74,7 @@ export default function GachaRouletteModal({
 
       if (data.success) {
         console.log('✅ 가챠 구매 성공:', data.payload);
-        
+
         // 서버 응답을 룰렛 회전과 함께 전달
         rouletteRef.current?.spinRandom(data.payload);
 
@@ -82,7 +82,7 @@ export default function GachaRouletteModal({
         console.error('❌ 가챠 구매 실패:', data);
         setIsSpinning(false);
         setIsLocked(false);
-        
+
         // 다이아몬드 부족 에러인지 확인
         const errorMessage = data.payload || data.error || '';
         if (errorMessage.includes('다이아몬드가 부족합니다')) {
@@ -142,10 +142,10 @@ export default function GachaRouletteModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl bg-slate-900 border-slate-800 text-white">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center">
-            {result ? '🎉 축하합니다!' : '🎰 다이아몬드 룰렛'}
+          <DialogTitle className="text-2xl font-bold text-center text-white">
+            {result ? '🎉 Congratulations!' : '🎰 Diamond Roulette'}
           </DialogTitle>
         </DialogHeader>
 
@@ -163,25 +163,25 @@ export default function GachaRouletteModal({
 
             {/* 구매 정보 */}
             <div className="text-center space-y-2">
-              <p className="text-gray-600">{gachaItem.description}</p>
+              <p className="text-slate-400">Win between 500 and 10,000 Diamonds randomly.</p>
               <div className="flex justify-center items-center gap-2">
                 <span className="text-2xl">💎</span>
-                <span className="text-xl font-bold">{gachaItem.price.toLocaleString()}</span>
-                <span className="text-gray-600">다이아몬드</span>
+                <span className="text-xl font-bold text-white">{gachaItem.price.toLocaleString()}</span>
+                <span className="text-slate-400">Diamonds</span>
               </div>
             </div>
 
             {/* 구매 버튼 */}
             <div className="flex justify-center">
-              <Button 
+              <Button
                 onClick={handlePurchase}
                 disabled={isProcessing || isLocked}
-                className="px-8 py-3 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="px-8 py-3 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30"
               >
                 {isProcessing ? (
-                  isSpinning ? '🎰 돌리는 중...' : '처리 중...'
+                  isSpinning ? 'Spinning...' : 'Processing...'
                 ) : (
-                  isLocked ? '완료됨' : '🎰 룰렛 돌리기'
+                  isLocked ? 'Completed' : 'Spin Roulette'
                 )}
               </Button>
             </div>
@@ -195,35 +195,35 @@ export default function GachaRouletteModal({
                 {getDiamondEmoji(result.earnedDiamonds)}
               </div>
               <div className="text-4xl font-bold text-green-600 mb-2">
-                {result.earnedDiamonds.toLocaleString()} 다이아몬드
+                {result.earnedDiamonds.toLocaleString()} Diamonds
               </div>
-              <div className="text-xl text-gray-600 mb-4">
-                획득!
+              <div className="text-xl text-slate-400 mb-4">
+                Earned!
               </div>
             </div>
 
             {/* 보유 다이아몬드 */}
-            <div className="bg-gray-100 rounded-lg p-4">
-              <div className="text-lg font-semibold mb-2">💎 보유 다이아몬드</div>
-              <div className="text-2xl font-bold text-blue-600">
-                {result.finalBalance.diamond.toLocaleString()}개
+            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+              <div className="text-lg font-semibold mb-2 text-slate-300">💎 Current Balance</div>
+              <div className="text-2xl font-bold text-blue-400">
+                {result.finalBalance.diamond.toLocaleString()}
               </div>
             </div>
 
             {/* 버튼들 */}
             <div className="flex gap-4 justify-center">
-              <Button 
+              <Button
                 onClick={handleClose}
                 variant="outline"
-                className="px-6"
+                className="px-6 border-slate-600 text-slate-300 hover:bg-slate-800"
               >
-                확인
+                Close
               </Button>
-              <Button 
+              <Button
                 onClick={handlePlayAgain}
-                className="px-6 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
               >
-                다시 구매
+                Spin Again
               </Button>
             </div>
           </div>
@@ -239,12 +239,12 @@ export default function GachaRouletteModal({
               다이아몬드 부족
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="text-center space-y-4 py-4">
             <div className="flex items-center justify-center">
               <AlertCircle className="w-12 h-12 text-red-500" />
             </div>
-            
+
             <div className="space-y-2">
               <p className="text-lg font-semibold text-gray-800">
                 다이아몬드가 부족합니다
@@ -253,7 +253,7 @@ export default function GachaRouletteModal({
                 가챠를 구매하려면 <span className="font-bold text-blue-600">{gachaItem.price.toLocaleString()} 다이아몬드</span>가 필요합니다.
               </p>
             </div>
-            
+
             <div className="bg-gray-100 rounded-lg p-4">
               <div className="flex items-center justify-center gap-2 text-gray-600">
                 <Gem className="w-5 h-5" />
