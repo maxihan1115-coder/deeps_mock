@@ -24,6 +24,7 @@ import PurchaseHistoryModal from '@/components/PurchaseHistoryModal';
 import ShopMenuCard from '@/components/ShopMenuCard';
 import GoldPurchaseModal from '@/components/GoldPurchaseModal';
 import DiamondPurchaseModal from '@/components/DiamondPurchaseModal';
+import CurrencyExchangeModal from '@/components/CurrencyExchangeModal';
 import LobbyBanner from '@/components/LobbyBanner';
 
 export default function GamePage() {
@@ -69,6 +70,7 @@ function GamePageContent() {
   const [showGoldShop, setShowGoldShop] = useState(false);
   const [showDiamondShop, setShowDiamondShop] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [showCurrencyExchange, setShowCurrencyExchange] = useState(false);
   const [showPurchaseHistory, setShowPurchaseHistory] = useState(false);
 
   // URL 파라미터에서 사용자 정보 확인
@@ -138,9 +140,9 @@ function GamePageContent() {
         <div className="max-w-[1800px] mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Gamepad2 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                <span className="hidden xs:inline">BORA TETRIS</span>
+                <span>BORA TETRIS</span>
               </h1>
             </div>
 
@@ -186,6 +188,7 @@ function GamePageContent() {
             onOpenGoldShop={() => setShowGoldShop(true)}
             onOpenDiamondShop={() => setShowDiamondShop(true)}
             onOpenTopUp={() => setShowTopUpModal(true)}
+            onOpenCurrencyExchange={() => setShowCurrencyExchange(true)}
             onOpenPurchaseHistory={() => setShowPurchaseHistory(true)}
           />
         </aside>
@@ -240,6 +243,7 @@ function GamePageContent() {
                     onOpenGoldShop={() => setShowGoldShop(true)}
                     onOpenDiamondShop={() => setShowDiamondShop(true)}
                     onOpenTopUp={() => setShowTopUpModal(true)}
+                    onOpenCurrencyExchange={() => setShowCurrencyExchange(true)}
                     onOpenPurchaseHistory={() => setShowPurchaseHistory(true)}
                   />
                   <AttendanceCheck userId={currentUser.id} gameUuid={currentUser.uuid} />
@@ -407,6 +411,18 @@ function GamePageContent() {
         isOpen={showDiamondShop}
         onClose={() => setShowDiamondShop(false)}
         gameUuid={currentUser?.uuid || 0}
+      />
+
+      {/* Currency Exchange Modal */}
+      <CurrencyExchangeModal
+        isOpen={showCurrencyExchange}
+        onClose={() => setShowCurrencyExchange(false)}
+        gameUuid={currentUser?.uuid || 0}
+        onSuccess={() => {
+          if (typeof (window as unknown as { updateCurrencyBalance?: () => void }).updateCurrencyBalance === 'function') {
+            (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
+          }
+        }}
       />
     </div>
   );

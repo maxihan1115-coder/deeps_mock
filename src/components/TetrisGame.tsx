@@ -756,7 +756,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
 
       // 여백 설정
       const paddingX = 32;
-      const paddingY = isMobile ? 200 : 64; // 모바일에서는 하단 컨트롤 공간 확보를 위해 더 많은 여백
+      const paddingY = isMobile ? 200 : 80; // 모바일에서는 하단 컨트롤 공간 확보, 데스크탑은 여유 있게
 
       const availableWidth = window.innerWidth - paddingX;
       const availableHeight = window.innerHeight - paddingY;
@@ -764,10 +764,10 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
       // 보드 비율 10:20 (1:2)
       // 셀 크기 계산
       const cellWidth = availableWidth / 10;
-      const cellHeight = (availableHeight - 40) / 20; // 상단 바 40px 제외
+      const cellHeight = (availableHeight - 80) / 20; // 상단 바(56px) + 여백 등 고려하여 80px 제외
 
       // 최대 크기 제한 (너무 커지지 않도록)
-      const maxCellSize = isMobile ? 50 : 40;
+      const maxCellSize = isMobile ? 50 : 45;
 
       const newCellSize = Math.floor(Math.min(cellWidth, cellHeight, maxCellSize));
 
@@ -921,32 +921,32 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
         className="relative z-10 flex w-full h-full items-center justify-center p-4"
       >
         {/* [중앙] 게임 보드 (통합 UI) */}
-        <div className="relative flex-1 h-full min-w-[280px] min-h-0">
+        <div className="relative flex-1 h-full min-w-[320px] min-h-0">
           <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
             {/* 보드 테두리 및 글로우 효과 */}
-            <div className="relative rounded-lg overflow-hidden shadow-[0_0_50px_-12px_rgba(59,130,246,0.5)] border border-white/10 bg-black/80 backdrop-blur-md flex flex-col">
+            <div className="relative rounded-lg overflow-hidden shadow-[0_0_50px_-12px_rgba(59,130,246,0.5)] border border-white/10 bg-black/80 backdrop-blur-md flex flex-col min-w-[320px]">
 
               {/* [통합 UI] 상단 정보 바 */}
-              <div className="w-full h-10 bg-black/60 backdrop-blur-sm border-b border-white/10 z-10 flex items-center justify-between px-4 flex-none">
-                <div className="flex gap-4">
-                  <div className="flex flex-col">
-                    <span className="text-[8px] text-slate-400 font-bold uppercase leading-none">Score</span>
-                    <span className="text-sm font-black text-white leading-none">{gameState.score.toLocaleString()}</span>
+              <div className="w-full h-14 bg-black/60 backdrop-blur-sm border-b border-white/10 z-10 flex items-center justify-between px-4 flex-none">
+                <div className="flex gap-6">
+                  <div className="flex flex-col justify-center">
+                    <span className="text-xs text-slate-400 font-bold uppercase leading-tight">Score</span>
+                    <span className="text-lg font-black text-white leading-tight">{gameState.score.toLocaleString()}</span>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[8px] text-slate-400 font-bold uppercase leading-none">Level</span>
-                    <span className="text-sm font-bold text-blue-400 leading-none">{gameState.level}</span>
+                  <div className="flex flex-col justify-center">
+                    <span className="text-xs text-slate-400 font-bold uppercase leading-tight">Level</span>
+                    <span className="text-lg font-bold text-blue-400 leading-tight">{gameState.level}</span>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[8px] text-slate-400 font-bold uppercase leading-none">Lines</span>
-                    <span className="text-sm font-bold text-purple-400 leading-none">{gameState.lines}</span>
+                  <div className="flex flex-col justify-center">
+                    <span className="text-xs text-slate-400 font-bold uppercase leading-tight">Lines</span>
+                    <span className="text-lg font-bold text-purple-400 leading-tight">{gameState.lines}</span>
                   </div>
                 </div>
 
                 {/* Next Block (우측 상단) */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[8px] text-slate-400 font-bold uppercase">Next</span>
-                  <div className="w-8 h-8 flex items-center justify-center bg-white/5 rounded border border-white/10">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-400 font-bold uppercase">Next</span>
+                  <div className="w-10 h-10 flex items-center justify-center bg-white/5 rounded border border-white/10">
                     {renderNextBlockMini()}
                   </div>
                 </div>
@@ -963,7 +963,7 @@ export default function TetrisGame({ userId, onScoreUpdate, onLevelUpdate, onLin
                   className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] z-20 cursor-pointer hover:bg-black/50 transition-colors"
                   onClick={startGame}
                 >
-                  <h1 className="text-5xl lg:text-6xl font-black italic text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 mb-4 drop-shadow-2xl tracking-tighter">
+                  <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black italic text-transparent bg-clip-text bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 mb-4 drop-shadow-2xl tracking-tighter pr-2">
                     TETRIS
                   </h1>
                   <div className="text-white/80 text-lg font-medium animate-pulse">

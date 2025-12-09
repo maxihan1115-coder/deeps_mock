@@ -233,14 +233,92 @@ export class CirclePaymentService {
     }
 
     /**
-     * 결제 내역 조회
+     * 결제 내역 조회 (USDC 구매 + Diamond 환전 통합)
      */
-    async getPaymentHistory(userId: number, limit: number = 10) {
-        return await prisma.paymentHistory.findMany({
+    async getPaymentHistory(userId: number, limit: number = 20) {
+        // 1. PaymentHistory (USDC -> Diamond purchases)
+        const purchases = await prisma.paymentHistory.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
             take: limit,
         });
+
+        // 2. CurrencyTransaction (Diamond -> USDC exchanges)
+        const exchanges = await prisma.currencyTransaction.findMany({
+            where: {
+                userId,
+                reason: 'EXCHANGE_TO_USDC'
+            },
+            orderBy: { createdAt: 'desc' },
+            take: limit,
+        });
+
+        // 3. Merge and format
+        const formattedPurchases = purchases.map(p => ({
+            id: p.id,
+            type: 'PURCHASE' as const,
+            paymentMethod: p.paymentMethod,
+            diamondAmount: p.diamondAmount,
+            usdcAmount: p.usdcAmount,
+            fiatAmount: p.fiatAmount,
+            currency: p.currency,
+            txHash: p.txHash,
+            status: p.status,
+            createdAt: p.createdAt.toISOString(),
+        }));
+
+        // Format exchanges and fetch txHash if needed
+        const formattedExchanges = await Promise.all(exchanges.map(async (e) => {
+            // Use 'as any' to access new schema fields
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const exchange = e as any;
+            let txHash = exchange.txHash;
+            const circleTransactionId = exchange.circleTransactionId;
+
+            // If no txHash but has circleTransactionId, try to fetch from Circle API
+            if (!txHash && circleTransactionId) {
+                try {
+                    const client = getCircleClient();
+                    const response = await client.getTransaction({ id: circleTransactionId });
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const txData = response.data as any;
+
+                    // Circle API returns { transaction: { txHash, ... } }
+                    if (txData?.transaction?.txHash) {
+                        txHash = txData.transaction.txHash;
+                        console.log(`✅ Fetched txHash for ${circleTransactionId}: ${txHash}`);
+                        // Update database with the fetched txHash
+                        await prisma.currencyTransaction.update({
+                            where: { id: e.id },
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            data: { txHash } as any,
+                        });
+                    }
+                } catch (err) {
+                    console.warn(`Failed to fetch txHash for circleTransactionId: ${circleTransactionId}`, err);
+                }
+            }
+
+            return {
+                id: e.id,
+                type: 'EXCHANGE' as const,
+                paymentMethod: 'DIAMOND' as const,
+                diamondAmount: Math.abs(e.amount),
+                usdcAmount: (Math.abs(e.amount) * 0.0001).toFixed(4),
+                fiatAmount: null,
+                currency: null,
+                txHash,
+                circleTransactionId,
+                status: 'COMPLETED',
+                createdAt: e.createdAt.toISOString(),
+            };
+        }));
+
+        // 4. Combined and sorted by date
+        const combined = [...formattedPurchases, ...formattedExchanges];
+        combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        return combined.slice(0, limit);
     }
 
     /**

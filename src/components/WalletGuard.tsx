@@ -48,9 +48,9 @@ export default function WalletGuard({ gameUuid }: WalletGuardProps) {
                     if (linkedWallets.length > 0) {
                         // Case A: User has linked wallets
                         if (!isLinked) {
-                            console.log('🚫 Wallet mismatch! Disconnecting stale wallet:', address);
-                            isDisconnectingRef.current = true;
-                            await disconnectAsync();
+                            console.log('🚫 Wallet mismatch! Disconnecting stale wallet (DISABLED):', address);
+                            // isDisconnectingRef.current = true;
+                            // await disconnectAsync();
                         } else {
                             console.log('✅ Wallet verified:', address);
                         }
@@ -59,9 +59,9 @@ export default function WalletGuard({ gameUuid }: WalletGuardProps) {
                         if (!isChecked) {
                             // Initial check on mount:
                             // If a wallet is already connected but not linked, it's likely from a previous session (Stale).
-                            console.log('🧹 Cleaning up stale wallet connection for new user...');
-                            isDisconnectingRef.current = true;
-                            await disconnectAsync();
+                            console.log('🧹 Cleaning up stale wallet connection for new user (DISABLED)...');
+                            // isDisconnectingRef.current = true;
+                            // await disconnectAsync();
                         } else {
                             // Subsequent update:
                             // User actively connected a wallet. We should link it now.

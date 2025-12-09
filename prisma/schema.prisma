@@ -183,13 +183,15 @@ model UserCurrency {
 
 // 재화 거래 내역
 model CurrencyTransaction {
-  id          String   @id @default(uuid())
-  userId      Int      // User.uuid 참조
-  type        CurrencyType
-  amount      Int      // 양수: 획득, 음수: 소모
-  reason      String   // 거래 사유
-  gameScore   Int?     // 게임 점수 (골드 획득 시)
-  createdAt   DateTime @default(now())
+  id                   String   @id @default(uuid())
+  userId               Int      // User.uuid 참조
+  type                 CurrencyType
+  amount               Int      // 양수: 획득, 음수: 소모
+  reason               String   // 거래 사유
+  gameScore            Int?     // 게임 점수 (골드 획득 시)
+  circleTransactionId  String?  // Circle API 트랜잭션 ID (환전 시)
+  txHash               String?  // 블록체인 트랜잭션 해시 (환전 시)
+  createdAt            DateTime @default(now())
 
   user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
   

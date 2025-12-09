@@ -204,209 +204,11 @@ export default function DiamondPurchaseModal({
     }
   };
 
-  const handleUSDCPurchase = async (packageData: DiamondPackage) => {
-    if (!isConnected || !address || !publicClient) {
-      setOpen(true); // Open wallet connection modal
-      return;
-    }
-
-    // 네트워크 확인 및 전환
-    if (currentChainId !== 80002) {
-      try {
-        console.log('Switching to Polygon Amoy...');
-        await switchChainAsync({ chainId: 80002 });
-      } catch (error) {
-        console.error('Network switch failed:', error);
-        setStatusModal({
-          isOpen: true,
-          type: 'error',
-          title: 'Network Error',
-          message: 'Please switch to Polygon Amoy network in your wallet.'
-        });
-        return;
-      }
-    }
-
-    if (!publicClient) return;
-
-    setPurchasing(packageData.amount);
-
-    try {
-      // 1. 잔액 확인
-      const balanceNum = parseFloat(usdcBalance);
-      const requiredAmount = parseFloat(packageData.priceUSDC);
-
-      if (balanceNum < requiredAmount) {
-        setStatusModal({
-          isOpen: true,
-          type: 'error',
-          title: 'Insufficient Balance',
-          message: `Insufficient USDC balance.\nCurrent: ${usdcBalance} USDC\nRequired: ${packageData.priceUSDC} USDC`
-        });
-        setPurchasing(null);
-        return;
-      }
-
-      const usdcAmountBigInt = parseUnits(packageData.priceUSDC, 6);
-
-      // 2. Allowance 확인
-      const allowance = await publicClient.readContract({
-        address: USDC_ADDRESS,
-        abi: ERC20_ABI,
-        functionName: 'allowance',
-        args: [address as `0x${string}`, DIAMOND_PURCHASE_ADDRESS as `0x${string}`]
-      });
-
-      console.log(`Current Allowance: ${allowance}, Required: ${usdcAmountBigInt}`);
-
-      if (allowance < usdcAmountBigInt) {
-        // 3. USDC Approve (필요한 경우에만)
-        setStatusModal({
-          isOpen: true,
-          type: 'loading',
-          title: 'Approve USDC',
-          message: 'Please sign the USDC approval transaction in your wallet.'
-        });
-        console.log('Approving USDC...');
-
-        const approveTx = await writeContractAsync({
-          address: USDC_ADDRESS,
-          abi: ERC20_ABI,
-          functionName: 'approve',
-          args: [DIAMOND_PURCHASE_ADDRESS as `0x${string}`, usdcAmountBigInt],
-          chainId: 80002,
-          gas: BigInt(100000), // 가스 한도 명시적 설정 (Approve는 보통 5만~6만 소모)
-        });
-
-        setStatusModal({
-          isOpen: true,
-          type: 'loading',
-          title: 'Approving...',
-          message: 'Waiting for approval confirmation...'
-        });
-
-        console.log('Waiting for approve...', approveTx);
-        await publicClient.waitForTransactionReceipt({ hash: approveTx });
-        console.log('Approve confirmed! Verifying allowance...');
-
-        // Allowance 업데이트 확인 (최대 10초 대기)
-        let retries = 0;
-        while (retries < 10) {
-          const newAllowance = await publicClient.readContract({
-            address: USDC_ADDRESS,
-            abi: ERC20_ABI,
-            functionName: 'allowance',
-            args: [address as `0x${string}`, DIAMOND_PURCHASE_ADDRESS as `0x${string}`]
-          });
-
-          if (newAllowance >= usdcAmountBigInt) {
-            console.log('Allowance updated:', newAllowance);
-            break;
-          }
-
-          console.log(`Allowance not updated yet (${newAllowance}), waiting...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          retries++;
-        }
-      }
-
-      // 4. Purchase Diamond
-      setStatusModal({
-        isOpen: true,
-        type: 'loading',
-        title: 'Purchase Diamond',
-        message: 'Please sign the purchase transaction in your wallet.'
-      });
-      console.log('Purchasing Diamond...');
-
-      // 가스 추정 (에러 미리 확인용)
-      try {
-        await publicClient.simulateContract({
-          address: DIAMOND_PURCHASE_ADDRESS as `0x${string}`,
-          abi: DIAMOND_PURCHASE_ABI,
-          functionName: 'purchaseDiamond',
-          args: [BigInt(gameUuid), BigInt(packageData.amount + (packageData.bonus || 0)), usdcAmountBigInt],
-          account: address
-        });
-      } catch (simError: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-        console.error('Simulation failed:', simError);
-        // revert reason 추출 시도
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const revertReason = simError.walk?.((e: any) => e.data)?.data || simError.shortMessage || simError.message;
-        throw new Error(`Transaction simulation failed: ${revertReason}`);
-      }
-
-      const purchaseTx = await writeContractAsync({
-        address: DIAMOND_PURCHASE_ADDRESS as `0x${string}`,
-        abi: DIAMOND_PURCHASE_ABI,
-        functionName: 'purchaseDiamond',
-        args: [BigInt(gameUuid), BigInt(packageData.amount + (packageData.bonus || 0)), usdcAmountBigInt],
-        chainId: 80002,
-      });
-
-      setStatusModal({
-        isOpen: true,
-        type: 'loading',
-        title: 'Purchasing...',
-        message: 'Waiting for purchase confirmation...'
-      });
-
-      console.log('Waiting for purchase...', purchaseTx);
-      await publicClient.waitForTransactionReceipt({ hash: purchaseTx });
-
-      // 5. 성공 처리
-      setStatusModal(prev => ({ ...prev, isOpen: false })); // Close status modal
-      setPurchaseSuccess(packageData.amount);
-      setPurchasedAmount(packageData.amount + (packageData.bonus || 0));
-      setShowSuccessModal(true);
-
-      // 잔액 강제 차감 (UI 즉시 반영용)
-      const currentBalance = parseFloat(usdcBalance);
-      const cost = parseFloat(packageData.priceUSDC);
-      const newBalance = Math.max(0, currentBalance - cost).toString();
-      setUsdcBalance(newBalance);
-
-      // 잔액 새로고침 (실제 데이터 동기화)
-      await fetchUSDCBalance();
-
-      if (onPurchaseSuccess) {
-        onPurchaseSuccess();
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      console.error('USDC Purchase error:', error);
-      // 에러 메시지 추출
-      const errorMessage = error.message || JSON.stringify(error);
-      if (errorMessage.includes('User rejected')) {
-        setStatusModal({
-          isOpen: true,
-          type: 'error',
-          title: 'Transaction Rejected',
-          message: 'User rejected the signature.'
-        });
-      } else {
-        setStatusModal({
-          isOpen: true,
-          type: 'error',
-          title: 'Purchase Failed',
-          message: `An error occurred during purchase.\n${errorMessage.slice(0, 100)}...`
-        });
-      }
-    } finally {
-      setPurchasing(null);
-    }
-  };
-
   const handleCloseSuccessModal = async () => {
     setShowSuccessModal(false);
     setPurchaseSuccess(null);
     setPurchasedAmount(0);
 
-    // 1. USDC 잔액 갱신 (확인 버튼 클릭 시)
-    // 이미 handleUSDCPurchase에서 강제 업데이트 및 fetch를 수행했으므로 여기서는 생략
-    // (API 지연으로 인해 이전 잔액을 가져와서 덮어씌우는 문제 방지)
-
-    // 2. 부모 컴포넌트(헤더) 갱신 요청
     if (onPurchaseSuccess) {
       onPurchaseSuccess();
     }
@@ -425,118 +227,26 @@ export default function DiamondPurchaseModal({
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
               <Gem className="w-6 h-6 text-slate-400" />
-              Diamond Shop
+              Diamond Shop (Fiat)
             </DialogTitle>
           </DialogHeader>
 
-          <Tabs value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as 'fiat' | 'usdc')}>
-            <TabsList className="grid w-full grid-cols-2 bg-slate-800 text-slate-400">
-              <TabsTrigger value="fiat" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
-                <CreditCard className="w-4 h-4" />
-                Fiat
-              </TabsTrigger>
-              <TabsTrigger value="usdc" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
-                <Wallet className="w-4 h-4" />
-                USDC
-              </TabsTrigger>
-            </TabsList>
-
-            {/* USDC 잔액 표시 */}
-            {paymentMethod === 'usdc' && (
-              <div className="mt-4 p-4 bg-blue-900/20 rounded-lg border border-blue-800">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Wallet className="w-5 h-5 text-blue-400" />
-                    <span className="font-medium text-white">USDC Balance</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {/* 지갑이 연결되어 있거나, DB에 저장된 지갑이 있는 경우 */}
-                    {(isConnected || dbWalletAddress) ? (
-                      <>
-                        {loadingBalance ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <span className="text-xl font-bold text-blue-600">
-                            {parseFloat(usdcBalance).toFixed(2)} USDC
-                          </span>
-                        )}
-
-                        {/* 실제 연결은 안 되어있지만 DB에는 있는 경우 (재연결 유도) */}
-                        {!isConnected && dbWalletAddress && (
-                          <Button
-                            onClick={() => setOpen(true)}
-                            size="sm"
-                            variant="outline"
-                            className="text-xs border-yellow-600 text-yellow-500 hover:bg-yellow-900/20"
-                          >
-                            Reconnect
-                          </Button>
-                        )}
-
-                        {/* 실제 연결된 경우 (해제 버튼) */}
-                        {isConnected && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            onClick={() => disconnect()}
-                          >
-                            Disconnect
-                          </Button>
-                        )}
-                      </>
-                    ) : (
-                      /* 아예 아무것도 없는 경우 */
-                      <Button
-                        onClick={() => setOpen(true)}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        Connect Wallet
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                {/* DB 지갑 주소 표시 (연결 안됐을 때 참고용) */}
-                {!isConnected && dbWalletAddress && (
-                  <div className="mt-2 text-right text-xs text-slate-500">
-                    Linked: {dbWalletAddress.slice(0, 6)}...{dbWalletAddress.slice(-4)}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <TabsContent value="fiat" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {DIAMOND_PACKAGES.map((pkg) => (
-                  <PackageCard
-                    key={pkg.amount}
-                    package={pkg}
-                    paymentMethod="fiat"
-                    purchasing={purchasing}
-                    purchaseSuccess={purchaseSuccess}
-                    onPurchase={handleFiatPurchase}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="usdc" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {DIAMOND_PACKAGES.map((pkg) => (
-                  <PackageCard
-                    key={pkg.amount}
-                    package={pkg}
-                    paymentMethod="usdc"
-                    purchasing={purchasing}
-                    purchaseSuccess={purchaseSuccess}
-                    onPurchase={handleUSDCPurchase}
-                    usdcBalance={usdcBalance}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {DIAMOND_PACKAGES.map((pkg) => (
+                <PackageCard
+                  key={pkg.amount}
+                  package={pkg}
+                  paymentMethod="fiat"
+                  purchasing={purchasing}
+                  purchaseSuccess={purchaseSuccess}
+                  onPurchase={handleFiatPurchase}
+                  isConnected={true}
+                  onConnect={() => { }}
+                />
+              ))}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -637,6 +347,8 @@ interface PackageCardProps {
   purchaseSuccess: number | null;
   onPurchase: (pkg: DiamondPackage) => void;
   usdcBalance?: string;
+  isConnected: boolean;
+  onConnect: () => void;
 }
 
 function PackageCard({
@@ -645,7 +357,9 @@ function PackageCard({
   purchasing,
   purchaseSuccess,
   onPurchase,
-  usdcBalance = '0'
+  usdcBalance = '0',
+  isConnected,
+  onConnect
 }: PackageCardProps) {
   const isPurchasing = purchasing === pkg.amount;
   const isSuccess = purchaseSuccess === pkg.amount;
@@ -686,28 +400,39 @@ function PackageCard({
             </div>
           </div>
 
-          <Button
-            onClick={() => onPurchase(pkg)}
-            disabled={isPurchasing || isSuccess || isInsufficientBalance}
-            className="w-full"
-            variant={isSuccess ? 'outline' : 'default'}
-          >
-            {isPurchasing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Processing...
-              </>
-            ) : isSuccess ? (
-              <>
-                <Check className="w-4 h-4 mr-2" />
-                Purchased
-              </>
-            ) : isInsufficientBalance ? (
-              'Insufficient Balance'
-            ) : (
-              'Buy'
-            )}
-          </Button>
+          {/* 지갑 미연결 시 Connect 버튼 표시 */}
+          {!isConnected && paymentMethod === 'usdc' ? (
+            <Button
+              onClick={onConnect}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Wallet className="w-4 h-4 mr-2" />
+              Connect Wallet
+            </Button>
+          ) : (
+            <Button
+              onClick={() => onPurchase(pkg)}
+              disabled={isPurchasing || isSuccess || isInsufficientBalance}
+              className="w-full"
+              variant={isSuccess ? 'outline' : 'default'}
+            >
+              {isPurchasing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : isSuccess ? (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Purchased
+                </>
+              ) : isInsufficientBalance ? (
+                'Insufficient Balance'
+              ) : (
+                'Buy'
+              )}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -18,7 +18,7 @@ export default function PurchaseHistoryModal({ isOpen, onClose, gameUuid }: Purc
                 <DialogHeader>
                     <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
                         <History className="w-6 h-6 text-slate-400" />
-                        Purchase History
+                        Transaction History
                     </DialogTitle>
                 </DialogHeader>
                 <div className="overflow-y-auto max-h-[70vh]">

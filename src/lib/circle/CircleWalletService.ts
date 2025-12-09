@@ -214,9 +214,6 @@ export class CircleWalletService {
         }
     }
 
-    /**
-     * 사용자 지갑이 존재하는지 확인하고, 없으면 자동 생성
-     */
     async ensureWalletExists(userId: number, blockchain: string = 'MATIC-AMOY') {
         let wallet = await this.getWalletByUserId(userId);
 
@@ -226,6 +223,94 @@ export class CircleWalletService {
         }
 
         return wallet;
+    }
+
+    /**
+     * 자금 이체 (Circle SDK)
+     */
+    async transfer(
+        fromWalletId: string,
+        toAddress: string,
+        amount: string,
+        tokenSymbol: string = 'USDC',
+        blockchain: string = 'MATIC-AMOY'
+    ) {
+        try {
+            console.log(`💸 자금 이체 시도: Wallet(${fromWalletId}) -> ${toAddress}, ${amount} ${tokenSymbol}`);
+            const client = getCircleClient();
+
+            // 1. 토큰 ID 조회 (잔액 조회 API 활용)
+            const balanceResponse = await client.getWalletTokenBalance({
+                id: fromWalletId,
+            });
+
+            const token = balanceResponse.data?.tokenBalances?.find(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (b: any) => b.token.symbol === tokenSymbol
+            );
+
+            if (!token) {
+                throw new Error(`${tokenSymbol} 토큰을 찾을 수 없습니다.`);
+            }
+
+            const tokenId = token.token.id;
+            console.log(`- Token ID: ${tokenId} (${tokenSymbol})`);
+
+            // 2. 트랜잭션 생성
+            const response = await client.createTransaction({
+                walletId: fromWalletId,
+                tokenId: tokenId,
+                destinationAddress: toAddress,
+                amount: [amount],
+                fee: {
+                    type: 'level',
+                    config: {
+                        feeLevel: 'MEDIUM'
+                    }
+                }
+            });
+
+            console.log(`✅ 이체 요청 성공: Transaction ID ${response.data?.id}`);
+            console.log('✅ 이체 응답 데이터:', JSON.stringify(response.data, null, 2));
+            return response.data;
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
+            console.error('❌ 자금 이체 실패:', error);
+            if (error.response?.data) {
+                console.error('Circle API Error Details:', JSON.stringify(error.response.data, null, 2));
+                throw new Error(error.response.data.message || error.message);
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * 주소로 지갑 ID 찾기 (Treasury 등)
+     */
+    async getWalletIdByAddress(address: string): Promise<string | null> {
+        try {
+            console.log(`🔍 주소로 지갑 ID 검색: ${address}`);
+            const client = getCircleClient();
+
+            // SDK 타입 정의상 address 필터가 지원되지 않을 수 있으므로 전체 조회 후 필터링
+            const response = await client.listWallets({});
+
+            const wallets = response.data?.wallets;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const targetWallet = wallets?.find((w: any) => w.address.toLowerCase() === address.toLowerCase());
+
+            if (targetWallet) {
+                console.log(`✅ 지갑 ID 발견: ${targetWallet.id}`);
+                return targetWallet.id;
+            }
+
+            console.warn(`⚠️ 해당 주소(${address})를 가진 지갑을 찾을 수 없습니다.`);
+            return null;
+        } catch (error) {
+            console.error('❌ 지갑 ID 조회 실패:', error);
+            return null;
+        }
     }
 }
 

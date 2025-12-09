@@ -12,7 +12,8 @@ interface PurchaseHistoryProps {
 
 interface PurchaseRecord {
     id: string;
-    paymentMethod: 'FIAT' | 'USDC';
+    type?: 'PURCHASE' | 'EXCHANGE';
+    paymentMethod: 'FIAT' | 'USDC' | 'DIAMOND';
     diamondAmount: number;
     usdcAmount?: string;
     fiatAmount?: string;
@@ -82,7 +83,10 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
         }
     };
 
-    const getPaymentMethodBadge = (method: 'FIAT' | 'USDC') => {
+    const getPaymentMethodBadge = (method: 'FIAT' | 'USDC' | 'DIAMOND', type?: 'PURCHASE' | 'EXCHANGE') => {
+        if (type === 'EXCHANGE') {
+            return <Badge variant="outline" className="text-purple-300 border-purple-600">Exchange</Badge>;
+        }
         if (method === 'USDC') {
             return <Badge variant="outline" className="text-slate-300 border-slate-600">USDC</Badge>;
         }
@@ -144,19 +148,27 @@ export default function PurchaseHistoryCard({ gameUuid }: PurchaseHistoryProps) 
 
                                 {/* 상품 */}
                                 <div className="col-span-2 font-medium text-white">
-                                    💎 {record.diamondAmount.toLocaleString()}
+                                    {record.type === 'EXCHANGE' ? (
+                                        <span className="text-purple-300">💎 -{record.diamondAmount.toLocaleString()}</span>
+                                    ) : (
+                                        <span>💎 +{record.diamondAmount.toLocaleString()}</span>
+                                    )}
                                 </div>
 
                                 {/* 결제수단 */}
                                 <div className="col-span-2">
-                                    {getPaymentMethodBadge(record.paymentMethod)}
+                                    {getPaymentMethodBadge(record.paymentMethod, record.type)}
                                 </div>
 
                                 {/* 금액 */}
                                 <div className="col-span-2 text-sm text-slate-300 font-medium">
-                                    {record.paymentMethod === 'USDC' ? (
+                                    {record.type === 'EXCHANGE' ? (
+                                        <span className="text-green-400">
+                                            +{parseFloat(record.usdcAmount || '0').toFixed(4)} USDC
+                                        </span>
+                                    ) : record.paymentMethod === 'USDC' ? (
                                         <span>
-                                            {parseFloat(record.usdcAmount || '0').toFixed(2)} USDC
+                                            -{parseFloat(record.usdcAmount || '0').toFixed(2)} USDC
                                         </span>
                                     ) : (
                                         <span>

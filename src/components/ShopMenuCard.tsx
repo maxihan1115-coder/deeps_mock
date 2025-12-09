@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, CreditCard, Receipt, Gem, Coins, Store } from 'lucide-react';
+import { ShoppingBag, CreditCard, Receipt, Gem, Coins, Store, ArrowLeftRight } from 'lucide-react';
 
 interface ShopMenuCardProps {
     gameUuid: number;
@@ -12,6 +12,7 @@ interface ShopMenuCardProps {
     onOpenDiamondShop: () => void;
     onOpenTopUp: () => void;
     onOpenPurchaseHistory: () => void;
+    onOpenCurrencyExchange: () => void;
 }
 
 export default function ShopMenuCard({
@@ -20,7 +21,8 @@ export default function ShopMenuCard({
     onOpenGoldShop,
     onOpenDiamondShop,
     onOpenTopUp,
-    onOpenPurchaseHistory
+    onOpenPurchaseHistory,
+    onOpenCurrencyExchange
 }: ShopMenuCardProps) {
     const [usdcBalance, setUsdcBalance] = useState('0.00');
 
@@ -90,6 +92,17 @@ export default function ShopMenuCard({
                         <span className="text-gray-700 dark:text-gray-300">Diamond Shop</span>
                     </Button>
 
+                    {/* 화폐 환전 버튼 */}
+                    <Button
+                        onClick={onOpenCurrencyExchange}
+                        variant="outline"
+                        className="w-full justify-start text-left font-medium hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 transition-all dark:bg-gray-900 dark:border-gray-700"
+                        size="default"
+                    >
+                        <ArrowLeftRight className="w-4 h-4 mr-3 text-gray-600 dark:text-gray-400" />
+                        <span className="text-gray-700 dark:text-gray-300">Currency Exchange</span>
+                    </Button>
+
                     {/* USDC 충전 버튼 */}
                     <Button
                         onClick={onOpenTopUp}
@@ -101,7 +114,7 @@ export default function ShopMenuCard({
                         <span className="text-gray-700 dark:text-gray-300">Top Up USDC</span>
                     </Button>
 
-                    {/* 구매내역 버튼 */}
+                    {/* 거래내역 버튼 */}
                     <Button
                         onClick={onOpenPurchaseHistory}
                         variant="outline"
@@ -109,7 +122,7 @@ export default function ShopMenuCard({
                         size="default"
                     >
                         <Receipt className="w-4 h-4 mr-3 text-gray-600 dark:text-gray-400" />
-                        <span className="text-gray-700 dark:text-gray-300">Purchase History</span>
+                        <span className="text-gray-700 dark:text-gray-300">Transaction History</span>
                     </Button>
                 </div>
             </CardContent>
