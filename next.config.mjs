@@ -19,6 +19,12 @@ const nextConfig = {
         maxInactiveAge: 25 * 1000,
         pagesBufferLength: 2,
     },
+    // Next.js 16 Turbopack 설정
+    turbopack: {
+        resolveAlias: {
+            '@': path.join(__dirname, 'src'),
+        },
+    },
     webpack: (config) => {
         config.resolve.alias = {
             ...config.resolve.alias,
