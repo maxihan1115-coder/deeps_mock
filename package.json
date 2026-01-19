@@ -8,7 +8,7 @@
     "prebuild": "prisma generate",
     "build:verbose": "next build --debug",
     "build:debug": "NODE_ENV=production DEBUG=* next build --debug",
-    "start": "next start",
+    "start": "NODE_OPTIONS='--max-old-space-size=384' node .next/standalone/server.js",
     "lint": "eslint",
     "deploy": "vercel --prod",
     "deploy:preview": "vercel",

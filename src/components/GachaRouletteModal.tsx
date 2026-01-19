@@ -18,6 +18,7 @@ interface GachaRouletteModalProps {
     gachaRewards: Array<{ diamonds: number, probability: number }>;
   };
   onPurchaseSuccess?: () => void;
+  onOpenDiamondShop?: () => void;
 }
 
 interface GachaResult {
@@ -31,7 +32,8 @@ export default function GachaRouletteModal({
   isOpen,
   onClose,
   gameUuid,
-  gachaItem
+  gachaItem,
+  onOpenDiamondShop
 }: GachaRouletteModalProps) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -262,13 +264,25 @@ export default function GachaRouletteModal({
             </div>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-3">
             <Button
               onClick={() => setShowInsufficientModal(false)}
-              className="px-8 py-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-semibold"
+              variant="outline"
+              className="px-6 py-2 border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold"
             >
-              확인
+              닫기
             </Button>
+            {onOpenDiamondShop && (
+              <Button
+                onClick={() => {
+                  setShowInsufficientModal(false);
+                  onOpenDiamondShop();
+                }}
+                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold"
+              >
+                다이아몬드 충전
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>

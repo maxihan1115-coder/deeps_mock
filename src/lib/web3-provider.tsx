@@ -27,8 +27,6 @@ if (typeof window === 'undefined' && typeof global !== 'undefined') {
     };
 }
 
-// WalletConnect Project ID (환경변수 또는 임시 ID)
-// 실제 서비스 시에는 https://cloud.walletconnect.com 에서 발급받은 ID를 사용해야 합니다.
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '4f9644246c5965705a66666666666666';
 
 const config = createConfig({

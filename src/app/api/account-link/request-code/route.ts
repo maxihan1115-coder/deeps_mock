@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mysqlGameStore } from '@/lib/mysql-store';
-import { 
-  createSuccessResponse, 
-  createErrorResponse, 
+import {
+  createSuccessResponse,
+  createErrorResponse,
   getErrorStatusCode,
-  API_ERROR_CODES 
+  API_ERROR_CODES
 } from '@/lib/api-errors';
 
 export async function GET(request: NextRequest) {
@@ -44,11 +44,12 @@ export async function GET(request: NextRequest) {
     }
 
     // BORA 플랫폼 API 호출하여 임시 코드 요청
+    // Note: BORA API는 실제 UUID 형식(user.id)을 요구함, 숫자 uuid가 아님
     console.log('🌐 Calling BORA platform API for temp code');
     console.log('🔑 Authorization header from env:', process.env.BAPP_API_KEY ? 'Set' : 'Not set');
-    console.log('🌐 API URL:', `https://api.boradeeps.cc/m/auth/v1/bapp/request-code?uuid=${uuid}`);
-    
-    const platformResponse = await fetch(`https://api.boradeeps.cc/m/auth/v1/bapp/request-code?uuid=${uuid}`, {
+    console.log('🌐 API URL:', `https://api.boradeeps.cc/m/auth/v1/bapp/request-code?uuid=${user.id}`);
+
+    const platformResponse = await fetch(`https://api.boradeeps.cc/m/auth/v1/bapp/request-code?uuid=${user.id}`, {
       method: 'GET',
       headers: {
         'Authorization': process.env.BAPP_API_KEY || '',
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     console.log('📊 Response status:', platformResponse.status);
     console.log('📊 Response headers:', Object.fromEntries(platformResponse.headers.entries()));
-    
+
     const platformData = await platformResponse.json();
     console.log('📡 BORA platform response:', platformData);
 

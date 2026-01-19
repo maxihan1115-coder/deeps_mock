@@ -4,17 +4,17 @@ import { createSuccessResponse, createErrorResponse, getErrorStatusCode, API_ERR
 import { mysqlGameStore } from '@/lib/mysql-store';
 
 // 가챠 보상 계산 함수
-function calculateGachaReward(gachaRewards: Array<{diamonds: number, probability: number}>): number {
-  const random = Math.random() * 100; // 0-100 사이 랜덤값
+function calculateGachaReward(gachaRewards: Array<{ diamonds: number, probability: number }>): number {
+  const random = Math.random(); // 0-1 사이 랜덤값
   let cumulativeProbability = 0;
-  
+
   for (const reward of gachaRewards) {
     cumulativeProbability += reward.probability;
     if (random <= cumulativeProbability) {
       return reward.diamonds;
     }
   }
-  
+
   // fallback (마지막 아이템)
   return gachaRewards[gachaRewards.length - 1].diamonds;
 }
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 가챠 보상 데이터 검증
-    const gachaRewards = gachaItem.gachaRewards as Array<{diamonds: number, probability: number}>;
+    const gachaRewards = gachaItem.gachaRewards as Array<{ diamonds: number, probability: number }>;
     if (!gachaRewards || !Array.isArray(gachaRewards) || gachaRewards.length === 0) {
       return NextResponse.json(
         createErrorResponse(API_ERROR_CODES.SERVICE_UNAVAILABLE, '가챠 보상 데이터가 올바르지 않습니다.'),
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
         where: { gameUuid: parsedGameUuid }
       });
       const isLinked = !!platformLink;
-      
+
       await mysqlGameStore.updateGachaQuestProgress(parsedGameUuid, isLinked);
       console.log('✅ 가챠 퀘스트 진행도 업데이트 완료');
     } catch (error) {

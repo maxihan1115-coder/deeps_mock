@@ -13,6 +13,7 @@ interface ShopModalProps {
   onClose: () => void;
   gameUuid: number;
   onPurchaseSuccess?: () => void;
+  onOpenDiamondShop?: () => void;
 }
 
 interface ShopItem {
@@ -42,7 +43,8 @@ export default function ShopModal({
   isOpen,
   onClose,
   gameUuid,
-  onPurchaseSuccess
+  onPurchaseSuccess,
+  onOpenDiamondShop
 }: ShopModalProps) {
   const [items, setItems] = useState<ShopItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -280,7 +282,6 @@ export default function ShopModal({
             <Button
               onClick={() => {
                 setShowSuccessModal(false);
-                onClose();
 
                 // 잔액 업데이트
                 if (onPurchaseSuccess) {
@@ -347,6 +348,7 @@ export default function ShopModal({
             gachaRewards: selectedGachaItem.gachaRewards || []
           }}
           onPurchaseSuccess={handleGachaSuccess}
+          onOpenDiamondShop={onOpenDiamondShop}
         />
       )}
 

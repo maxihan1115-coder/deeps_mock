@@ -3,29 +3,29 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import TetrisGame from '@/components/TetrisGame';
-import QuestPanel from '@/components/QuestPanel';
-import AccountLink from '@/components/AccountLink';
-import AttendanceCheck from '@/components/AttendanceCheck';
-import HighScoreDisplay from '@/components/HighScoreDisplay';
-import RankingList from '@/components/RankingList';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import TetrisGame from '../../components/TetrisGame';
+import QuestPanel from '../../components/QuestPanel';
+import AccountLink from '../../components/AccountLink';
+import AttendanceCheck from '../../components/AttendanceCheck';
+import HighScoreDisplay from '../../components/HighScoreDisplay';
+import RankingList from '../../components/RankingList';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { LogOut, User, Gamepad2, Trophy, Link, Calendar, Award, Home, Play, X } from 'lucide-react';
-import CurrencyDisplay from '@/components/CurrencyDisplay';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import ShopModal from '@/components/ShopModal';
-// import USDCBalanceCard from '@/components/USDCBalanceCard';
-import TopUpModal from '@/components/TopUpModal';
-import WalletGuard from '@/components/WalletGuard';
-import PurchaseHistoryModal from '@/components/PurchaseHistoryModal';
-import ShopMenuCard from '@/components/ShopMenuCard';
-import GoldPurchaseModal from '@/components/GoldPurchaseModal';
-import DiamondPurchaseModal from '@/components/DiamondPurchaseModal';
-import CurrencyExchangeModal from '@/components/CurrencyExchangeModal';
-import LobbyBanner from '@/components/LobbyBanner';
+import CurrencyDisplay from '../../components/CurrencyDisplay';
+import { ThemeToggle } from '../../components/ThemeToggle';
+import ShopModal from '../../components/ShopModal';
+// import USDCBalanceCard from '../../components/USDCBalanceCard';
+import TopUpModal from '../../components/TopUpModal';
+import WalletGuard from '../../components/WalletGuard';
+import PurchaseHistoryModal from '../../components/PurchaseHistoryModal';
+import ShopMenuCard from '../../components/ShopMenuCard';
+import GoldPurchaseModal from '../../components/GoldPurchaseModal';
+import DiamondPurchaseModal from '../../components/DiamondPurchaseModal';
+import CurrencyExchangeModal from '../../components/CurrencyExchangeModal';
+import LobbyBanner from '../../components/LobbyBanner';
 
 export default function GamePage() {
   return (
@@ -342,20 +342,21 @@ function GamePageContent() {
         setIsGameModalOpen(open);
       }}>
         <DialogContent
-          className="max-w-none w-[98vw] h-[96vh] p-0 bg-gray-900 border-gray-800 flex flex-col overflow-hidden focus:outline-none"
+          className="max-w-none w-[95vw] h-[85dvh] sm:w-[98vw] sm:h-[96vh] p-0 bg-gray-900 border-gray-800 flex flex-col overflow-hidden focus:outline-none"
           onInteractOutside={(e) => e.preventDefault()} // 바깥 클릭 방지
+          showCloseButton={false}
         >
           <DialogHeader className="sr-only">
             <DialogTitle>Tetris Game</DialogTitle>
           </DialogHeader>
-          <div className="absolute top-4 right-4 z-50">
+          <div className="absolute top-4 right-4 z-[100]">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsGameModalOpen(false)}
-              className="text-white/50 hover:text-white hover:bg-white/10 rounded-full w-10 h-10"
+              className="text-white/50 hover:text-white hover:bg-white/10 rounded-full w-8 h-8 sm:w-10 sm:h-10"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </Button>
           </div>
 
@@ -383,6 +384,7 @@ function GamePageContent() {
             (window as unknown as { updateCurrencyBalance: () => void }).updateCurrencyBalance();
           }
         }}
+        onOpenDiamondShop={() => setShowDiamondShop(true)}
       />
 
       {/* 충전 모달 */}

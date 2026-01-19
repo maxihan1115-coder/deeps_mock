@@ -262,7 +262,7 @@ export default function GoldPurchaseModal({
                 setShowSuccessModal(false);
                 setPurchasedItem(null);
                 setPurchaseSuccess(null);
-                onClose(); // 구매 모달도 함께 닫기
+                // onClose(); // 구매 모달도 함께 닫기 -> 주석 처리하여 닫히지 않게 함
 
                 // 잔액 업데이트 (확인 버튼 클릭 시에만)
                 if (onPurchaseSuccess) {

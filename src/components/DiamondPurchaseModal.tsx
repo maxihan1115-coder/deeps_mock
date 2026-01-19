@@ -212,7 +212,7 @@ export default function DiamondPurchaseModal({
     if (onPurchaseSuccess) {
       onPurchaseSuccess();
     }
-    onClose();
+    // onClose(); // 모달 닫기 제거
   };
 
   return (
