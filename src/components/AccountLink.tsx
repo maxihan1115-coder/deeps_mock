@@ -125,7 +125,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
   const copyLink = async () => {
     if (!requestCode) return;
 
-    const link = `https://www.boradeeps.cc/?requestCode=${requestCode}`;
+    const link = `https://www-v2.boradeeps.cc/?requestCode=${requestCode}`;
 
     try {
       await navigator.clipboard.writeText(link);
@@ -144,7 +144,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
       return;
     }
 
-    const link = `https://www.boradeeps.cc/?requestCode=${requestCode}`;
+    const link = `https://www-v2.boradeeps.cc/?requestCode=${requestCode}`;
     console.log('🌐 외부 브라우저에서 링크 열기:', link);
     window.open(link, '_blank');
   };
@@ -329,7 +329,7 @@ export default function AccountLink({ userUuid, username }: AccountLinkProps) {
               </div>
 
               <div className="p-2 bg-slate-900 border border-slate-700 rounded text-xs font-mono break-all text-slate-400">
-                https://www.boradeeps.cc/?requestCode={requestCode}
+                https://www-v2.boradeeps.cc/?requestCode={requestCode}
               </div>
             </div>
 
